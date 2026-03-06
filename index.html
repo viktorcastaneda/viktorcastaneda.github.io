@@ -3,657 +3,659 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width,initial-scale=1">
-<title>CASVEL – Gestor de Contratos</title>
-<link rel="preconnect" href="https://fonts.googleapis.com">
+<title>CASVEL – Contratos</title>
 <link href="https://fonts.googleapis.com/css2?family=DM+Sans:wght@400;500;600;700&family=Playfair+Display:wght@700&display=swap" rel="stylesheet">
 <script src="https://cdnjs.cloudflare.com/ajax/libs/jszip/3.10.1/jszip.min.js"></script>
 <script src="https://cdnjs.cloudflare.com/ajax/libs/html2canvas/1.4.1/html2canvas.min.js"></script>
 <style>
-/* ═══════════════════════════════════════════════════════
-   RESET & VARIABLES
-═══════════════════════════════════════════════════════ */
-*, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
-
-:root {
-  --blue:    #2563a8;
-  --blue-lt: #4F81BD;
-  --blue-bg: #dce6f1;
-  --gold:    #c5922a;
-  --dark:    #1a1f2e;
-  --mid:     #4a5568;
-  --light:   #f0f4f8;
-  --white:   #ffffff;
-  --red:     #c0392b;
-  --green:   #1a7a44;
-  --purple:  #6b3fa0;
-  --orange:  #c4620e;
-  --border:  #d1dde8;
-  --shadow:  0 4px 24px rgba(0,0,0,.12);
-  --radius:  8px;
-  --ff-body: 'DM Sans', system-ui, sans-serif;
-  --ff-head: 'Playfair Display', Georgia, serif;
+*{box-sizing:border-box;margin:0;padding:0}
+:root{
+  --blue:#2563a8;--blt:#4F81BD;--bbg:#dce6f1;
+  --dark:#1a1f2e;--mid:#4a5568;--light:#f0f4f8;
+  --white:#fff;--red:#c0392b;--green:#1a7a44;--border:#d1dde8;--r:8px;
+  --ff:'DM Sans',system-ui,sans-serif;--fh:'Playfair Display',Georgia,serif;
 }
-
-html { scroll-behavior: smooth; }
-body {
-  font-family: var(--ff-body);
-  background: var(--light);
-  color: var(--dark);
-  min-height: 100vh;
-  font-size: 14px;
-}
-
-/* ═══════════════════════════════════════════════════════
-   SIDEBAR / NAV
-═══════════════════════════════════════════════════════ */
-.sidebar {
-  position: fixed; left: 0; top: 0; bottom: 0; width: 220px;
-  background: var(--dark);
-  display: flex; flex-direction: column;
-  z-index: 100;
-  box-shadow: 4px 0 20px rgba(0,0,0,.2);
-}
-.sidebar-logo {
-  padding: 20px 18px 16px;
-  border-bottom: 1px solid rgba(255,255,255,.08);
-  display: flex; align-items: center; gap: 10px;
-}
-.sidebar-logo img { width: 44px; border-radius: 4px; }
-.sidebar-logo-text { color: #fff; }
-.sidebar-logo-text .brand { font-family: var(--ff-head); font-size: 16px; line-height:1; }
-.sidebar-logo-text .sub   { font-size: 10px; color: rgba(255,255,255,.45); margin-top:2px; }
-
-.nav-section { padding: 16px 0 4px; }
-.nav-label {
-  font-size: 9px; font-weight: 700; letter-spacing: .12em;
-  text-transform: uppercase; color: rgba(255,255,255,.3);
-  padding: 0 18px 6px;
-}
-.nav-item {
-  display: flex; align-items: center; gap: 10px;
-  padding: 9px 18px; cursor: pointer;
-  color: rgba(255,255,255,.6);
-  font-size: 13px; font-weight: 500;
-  transition: background .15s, color .15s;
-  border-left: 3px solid transparent;
-  text-decoration: none;
-}
-.nav-item:hover  { background: rgba(255,255,255,.06); color: #fff; }
-.nav-item.active { background: rgba(79,129,189,.18); color: #fff; border-left-color: var(--blue-lt); }
-.nav-item .icon  { font-size: 16px; width: 20px; text-align: center; }
-
-.sidebar-footer {
-  margin-top: auto;
-  padding: 14px 18px;
-  font-size: 10px;
-  color: rgba(255,255,255,.25);
-  border-top: 1px solid rgba(255,255,255,.06);
-}
-
-/* ═══════════════════════════════════════════════════════
-   MAIN CONTENT AREA
-═══════════════════════════════════════════════════════ */
-.main { margin-left: 220px; min-height: 100vh; }
-
-.topbar {
-  background: var(--white);
-  border-bottom: 1px solid var(--border);
-  padding: 14px 32px;
-  display: flex; align-items: center; justify-content: space-between;
-  position: sticky; top: 0; z-index: 50;
-  box-shadow: 0 1px 8px rgba(0,0,0,.06);
-}
-.topbar-title { font-family: var(--ff-head); font-size: 20px; color: var(--dark); }
-.topbar-actions { display: flex; gap: 8px; }
-
-.content { padding: 28px 32px 48px; }
-
-/* ═══════════════════════════════════════════════════════
-   VIEWS (shown/hidden)
-═══════════════════════════════════════════════════════ */
-.view { display: none; }
-.view.active { display: block; }
-
-/* ═══════════════════════════════════════════════════════
-   BUTTONS
-═══════════════════════════════════════════════════════ */
-.btn {
-  display: inline-flex; align-items: center; gap: 6px;
-  padding: 8px 16px; border: none; border-radius: var(--radius);
-  font-family: var(--ff-body); font-size: 13px; font-weight: 600;
-  cursor: pointer; transition: all .15s; white-space: nowrap;
-}
-.btn-primary { background: var(--blue); color: #fff; }
-.btn-primary:hover { background: var(--dark); }
-.btn-ghost   { background: transparent; color: var(--mid); border: 1.5px solid var(--border); }
-.btn-ghost:hover { border-color: var(--blue-lt); color: var(--blue); }
-.btn-danger  { background: var(--red); color: #fff; }
-.btn-danger:hover { background: #9c2a21; }
-.btn-green   { background: var(--green); color: #fff; }
-.btn-green:hover { background: #145c33; }
-.btn-sm { padding: 5px 11px; font-size: 12px; }
-.btn-icon { padding: 7px; }
-
-/* ═══════════════════════════════════════════════════════
-   DASHBOARD STATS
-═══════════════════════════════════════════════════════ */
-.stats-grid {
-  display: grid; grid-template-columns: repeat(4, 1fr); gap: 16px;
-  margin-bottom: 28px;
-}
-.stat-card {
-  background: var(--white); border-radius: var(--radius);
-  padding: 20px; border: 1px solid var(--border);
-  box-shadow: 0 1px 4px rgba(0,0,0,.04);
-}
-.stat-label { font-size: 11px; font-weight: 600; color: var(--mid); text-transform: uppercase; letter-spacing: .06em; }
-.stat-value { font-size: 28px; font-weight: 700; color: var(--dark); margin: 6px 0 2px; font-family: var(--ff-head); }
-.stat-sub   { font-size: 11px; color: var(--mid); }
-
-/* ═══════════════════════════════════════════════════════
-   CONTRACT LIST
-═══════════════════════════════════════════════════════ */
-.section-header {
-  display: flex; align-items: center; justify-content: space-between;
-  margin-bottom: 16px;
-}
-.section-title { font-family: var(--ff-head); font-size: 17px; color: var(--dark); }
-
-.search-bar {
-  display: flex; gap: 8px; margin-bottom: 16px;
-}
-.search-input {
-  flex: 1; padding: 8px 14px; border: 1.5px solid var(--border);
-  border-radius: var(--radius); font-family: var(--ff-body); font-size: 13px;
-  outline: none; background: var(--white);
-}
-.search-input:focus { border-color: var(--blue-lt); }
-
-.contracts-table {
-  width: 100%; background: var(--white);
-  border: 1px solid var(--border); border-radius: var(--radius);
-  overflow: hidden; box-shadow: 0 1px 4px rgba(0,0,0,.04);
-}
-.contracts-table table { width: 100%; border-collapse: collapse; }
-.contracts-table th {
-  background: var(--dark); color: #fff;
-  padding: 10px 14px; text-align: left;
-  font-size: 11px; font-weight: 700; letter-spacing: .06em; text-transform: uppercase;
-}
-.contracts-table td {
-  padding: 11px 14px; border-bottom: 1px solid var(--border);
-  font-size: 13px; vertical-align: middle;
-}
-.contracts-table tr:last-child td { border-bottom: none; }
-.contracts-table tr:hover td { background: #f7fafd; }
-.contracts-table .actions { display: flex; gap: 5px; }
-
-.badge {
-  display: inline-block; padding: 2px 9px; border-radius: 20px;
-  font-size: 11px; font-weight: 600;
-}
-.badge-blue   { background: #dbeafe; color: #1d4ed8; }
-.badge-green  { background: #dcfce7; color: #15803d; }
-
-.empty-state {
-  text-align: center; padding: 64px 20px; color: var(--mid);
-}
-.empty-state .icon { font-size: 48px; margin-bottom: 12px; }
-.empty-state p { font-size: 15px; }
-
-/* ═══════════════════════════════════════════════════════
-   CONTRACT FORM VIEW
-═══════════════════════════════════════════════════════ */
-.form-toolbar {
-  display: flex; gap: 8px; align-items: center;
-  background: var(--white); padding: 12px 20px;
-  border-radius: var(--radius); border: 1px solid var(--border);
-  margin-bottom: 20px;
-  box-shadow: 0 1px 4px rgba(0,0,0,.04);
-}
-.form-toolbar .sep { flex: 1; }
-
-/* A4 CONTRACT PAPER */
-.a4-wrap {
-  width: 794px; /* A4 at 96dpi */
-  margin: 0 auto;
-}
-.a4-page {
-  width: 794px;
-  min-height: 1123px; /* A4 height at 96dpi */
-  background: var(--white);
-  padding: 28px 38px 28px;
-  box-shadow: 0 4px 32px rgba(0,0,0,.15);
-  border-radius: 2px;
-  font-family: Arial, sans-serif;
-  position: relative;
-}
-
-/* ── Contract internals ── */
-.c-hdr   { display:flex; align-items:flex-start; gap:10px; margin-bottom:2px; }
-.c-logo  { width:72px; flex-shrink:0; }
-.c-hdr-r { flex:1; }
-.c-title { font-size:13pt; font-weight:bold; color:#2563a8; line-height:1.2; margin-bottom:3px; }
-.c-daterow { font-size:8.5pt; display:flex; justify-content:flex-end; align-items:center; gap:4px; }
-.c-daterow input[type=date] {
-  font-family:Arial; font-size:8.5pt; border:none; border-bottom:1px solid #555;
-  background:transparent; outline:none; color:#000; padding:0 2px;
-}
-.c-contact { color:#2563a8; font-size:8.5pt; margin:3px 0 5px; }
-.c-sh1 {
-  color:#2563a8; font-weight:bold; font-size:9pt; text-transform:uppercase;
-  border-bottom:1.5px solid #2563a8; padding-bottom:1px; margin:5px 0 3px;
-}
-.c-sh2 { color:#2563a8; font-weight:bold; font-size:9.5pt; margin:5px 0 3px; }
-
-.c-dt { width:100%; border-collapse:collapse; margin-bottom:3px; }
-.c-dt td { padding:2px 0; font-size:8.5pt; vertical-align:bottom; }
-.c-fl { display:flex; align-items:flex-end; gap:2px; width:100%; padding-right:6px; }
-.c-fl label { white-space:nowrap; font-size:8.5pt; }
-.c-fi {
-  flex:1; border:none; border-bottom:1px solid #444;
-  font-family:Arial; font-size:8.5pt; color:#000;
-  background:transparent; outline:none; padding:0 2px 1px; min-width:30px;
-}
-.c-fi:focus { background:#fffce8; }
-input[type=date].c-fi { flex:none; width:auto; padding:0; }
-select.c-fi {
-  flex:none; width:auto; min-width:130px; border:none; border-bottom:1px solid #444;
-  background:transparent; font-family:Arial; font-size:8.5pt; color:#000;
-  outline:none; padding:0 2px; cursor:pointer; appearance:auto;
-}
-
-.c-mob { width:100%; border-collapse:collapse; font-size:8pt; }
-.c-mob thead tr { background:#2563a8; color:#fff; }
-.c-mob thead th { padding:3px 5px; font-weight:bold; text-align:center; border:1px solid #2563a8; font-size:7.5pt; }
-.c-mob thead th:first-child { text-align:left; }
-.c-mob tbody tr.odd  { background:#dce6f1; }
-.c-mob tbody tr.even { background:#fff; }
-.c-mob tbody td { padding:2px 5px; border:1px solid #b8cce4; vertical-align:middle; }
-.c-mob tbody td.desc { font-weight:bold; }
-.c-mob tbody td.qty,.c-mob tbody td.price,.c-mob tbody td.amt { text-align:center; }
-
-.c-qi {
-  width:50px; text-align:center; border:1px solid #9ab5d4; border-radius:2px;
-  padding:1px 3px; font-size:8pt; font-family:Arial; background:#fff; outline:none;
-}
-.c-qi:focus { border-color:#2563a8; background:#eef4fb; }
-.c-pi {
-  width:58px; text-align:right; border:1px solid #9ab5d4; border-radius:2px;
-  padding:1px 2px; font-size:8pt; font-family:Arial; background:#fff; outline:none;
-}
-.c-pi:focus { border-color:#c5922a; background:#fffce8; }
-.c-pdollar { font-size:8pt; margin-right:1px; }
-
-.c-mob .foot td  { border:1px solid #b8cce4; }
-.c-mob .foot.alt td  { background:#dce6f1; }
-.c-mob .foot.wht td  { background:#fff; }
-.c-mob .foot.bld td  { background:#dce6f1; font-weight:bold; font-size:8pt; }
-.c-mob .rlbl { text-align:right; font-weight:bold; padding:2px 5px; }
-.c-mob .rval { text-align:left;  padding:2px 5px; min-width:70px; }
-.c-inrow { display:flex; align-items:center; gap:2px; }
-.c-inrow input {
-  width:62px; border:none; border-bottom:1px solid #888;
-  font-size:8pt; font-family:Arial; background:transparent; outline:none; text-align:right;
-}
-
-.c-cl, .c-cu { margin:2px 0 4px; font-size:7.5pt; }
-.c-cl ol, .c-cu ol { padding-left:18px; }
-.c-cl li, .c-cu li { margin-bottom:1px; text-align:justify; line-height:1.25; }
-
-.c-sig { width:100%; border-collapse:collapse; margin-top:10px; }
-.c-sig td { padding:0; border:none; }
-.c-sigl { border-bottom:1px solid #000; height:24px; }
-.c-sigt { text-align:center; font-size:8pt; padding-top:2px; }
-.c-foot-line { text-align:right; font-size:8pt; color:#555; margin-top:5px; }
-
-/* ANTICIPO inline */
-.anticipo-row {
-  display:flex; align-items:center; gap:3px;
-  font-weight:bold; font-size:8pt;
-}
-.anticipo-row input {
-  width:80px; border:none; border-bottom:1.5px solid #2563a8;
-  font-size:8pt; font-family:Arial; font-weight:bold;
-  background:transparent; outline:none; text-align:right; color:#000;
-}
-
-/* ═══════════════════════════════════════════════════════
-   MODAL
-═══════════════════════════════════════════════════════ */
-.overlay {
-  display:none; position:fixed; inset:0;
-  background:rgba(0,0,0,.5); z-index:2000;
-  align-items:center; justify-content:center;
-}
-.overlay.open { display:flex; }
-.modal {
-  background:#fff; border-radius:10px; padding:28px 32px;
-  min-width:320px; max-width:480px; width:90%;
-  box-shadow: 0 16px 60px rgba(0,0,0,.25);
-  font-family: var(--ff-body);
-}
-.modal-title { font-family:var(--ff-head); font-size:18px; color:var(--dark); margin-bottom:6px; }
-.modal-sub   { font-size:13px; color:var(--mid); margin-bottom:20px; }
-.modal-btns  { display:flex; gap:10px; justify-content:center; flex-wrap:wrap; }
-.modal-cancel { background:none; border:none; color:#aaa; font-size:12px; cursor:pointer; font-family:var(--ff-body); margin-top:12px; display:block; margin-left:auto; margin-right:auto; }
-.export-btn {
-  display:flex; flex-direction:column; align-items:center; gap:4px;
-  padding:14px 20px; border:none; border-radius:8px; cursor:pointer;
-  font-family:var(--ff-body); font-size:12px; font-weight:700;
-  transition:all .15s; min-width:80px;
-}
-.export-btn .icon { font-size:22px; }
-.ebtn-docx { background:#1a4b8c; color:#fff; }
-.ebtn-docx:hover { background:#12357a; }
-.ebtn-pdf  { background:var(--red); color:#fff; }
-.ebtn-pdf:hover { background:#9c2a21; }
-.ebtn-png  { background:var(--purple); color:#fff; }
-.ebtn-png:hover { background:#52318a; }
-.ebtn-jpg  { background:var(--orange); color:#fff; }
-.ebtn-jpg:hover { background:#a0500c; }
-
-/* ── Confirm delete modal ── */
-.modal-confirm .modal-actions { display:flex; gap:10px; justify-content:flex-end; margin-top:20px; }
-
-/* ═══════════════════════════════════════════════════════
-   LOADING OVERLAY
-═══════════════════════════════════════════════════════ */
-.loading-ov {
-  display:none; position:fixed; inset:0;
-  background:rgba(255,255,255,.85); z-index:3000;
-  align-items:center; justify-content:center; flex-direction:column; gap:14px;
-}
-.loading-ov.show { display:flex; }
-.spinner {
-  width:40px; height:40px; border:4px solid #dce6f1;
-  border-top:4px solid var(--blue); border-radius:50%;
-  animation:spin .7s linear infinite;
-}
-@keyframes spin { to { transform:rotate(360deg); } }
-.loading-ov p { font-family:var(--ff-body); font-size:14px; color:var(--blue); font-weight:600; }
-
-/* ═══════════════════════════════════════════════════════
-   TOAST
-═══════════════════════════════════════════════════════ */
-#toast {
-  position:fixed; bottom:24px; right:24px;
-  background:var(--dark); color:#acd4f5;
-  padding:10px 18px; border-radius:6px; font-family:var(--ff-body); font-size:13px;
-  border-left:4px solid var(--blue-lt);
-  transform:translateY(60px); opacity:0;
-  transition:all .28s; z-index:9999; pointer-events:none;
-  max-width:320px;
-}
-#toast.show { transform:translateY(0); opacity:1; }
-
-/* ═══════════════════════════════════════════════════════
-   PRINT / EXPORT STYLES
-═══════════════════════════════════════════════════════ */
-@media print {
-  html, body { margin:0; padding:0; background:#fff !important; }
-  .sidebar, .main > .topbar, .form-toolbar, .overlay, .loading-ov, #toast { display:none !important; }
-  .main { margin-left:0 !important; }
-  .content { padding:0 !important; }
-  .a4-wrap { width:100% !important; }
-  .a4-page {
-    box-shadow:none !important; border-radius:0 !important;
-    padding:12px 20px !important; width:100% !important;
-    min-height:0 !important;
-  }
-  .c-mob thead tr, .c-mob tbody tr.odd, .c-mob .foot.alt, .c-mob .foot.bld {
-    -webkit-print-color-adjust:exact; print-color-adjust:exact;
-  }
-  .c-fi, .c-pi, .c-qi { border-bottom:1px solid #444 !important; background:transparent !important; }
-  select.c-fi { border-bottom:1px solid #444 !important; }
-  @page { size:A4; margin:8mm 10mm; }
+body{font-family:var(--ff);background:var(--light);color:var(--dark);font-size:14px}
+/* sidebar */
+.sb{position:fixed;left:0;top:0;bottom:0;width:220px;background:var(--dark);
+  display:flex;flex-direction:column;z-index:100;box-shadow:4px 0 20px rgba(0,0,0,.2)}
+.sb-logo{padding:20px 18px 16px;border-bottom:1px solid rgba(255,255,255,.08);
+  display:flex;align-items:center;gap:10px}
+.sb-logo img{width:44px;border-radius:4px}
+.sb-brand{color:#fff;font-family:var(--fh);font-size:16px;line-height:1.2}
+.sb-sub{color:rgba(255,255,255,.4);font-size:10px;margin-top:2px}
+.nav-sec{padding:16px 0 4px}
+.nav-lbl{font-size:9px;font-weight:700;letter-spacing:.12em;text-transform:uppercase;
+  color:rgba(255,255,255,.3);padding:0 18px 6px}
+.nav-item{display:flex;align-items:center;gap:10px;padding:9px 18px;cursor:pointer;
+  color:rgba(255,255,255,.6);font-size:13px;font-weight:500;
+  border-left:3px solid transparent;text-decoration:none;transition:all .15s}
+.nav-item:hover{background:rgba(255,255,255,.06);color:#fff}
+.nav-item.on{background:rgba(79,129,189,.18);color:#fff;border-left-color:var(--blt)}
+.nav-item .ic{font-size:16px;width:20px;text-align:center}
+.sb-foot{margin-top:auto;padding:14px 18px;font-size:10px;
+  color:rgba(255,255,255,.25);border-top:1px solid rgba(255,255,255,.06)}
+.sb-foot a{color:rgba(255,255,255,.3);text-decoration:none}
+/* main */
+.main{margin-left:220px;min-height:100vh}
+.topbar{background:var(--white);border-bottom:1px solid var(--border);padding:14px 32px;
+  display:flex;align-items:center;justify-content:space-between;
+  position:sticky;top:0;z-index:50;box-shadow:0 1px 8px rgba(0,0,0,.06)}
+.topbar-title{font-family:var(--fh);font-size:20px}
+.content{padding:28px 32px 64px}
+/* views */
+.view{display:none}.view.on{display:block}
+/* buttons */
+.btn{display:inline-flex;align-items:center;gap:6px;padding:8px 16px;border:none;
+  border-radius:var(--r);font-family:var(--ff);font-size:13px;font-weight:600;
+  cursor:pointer;transition:all .15s;white-space:nowrap}
+.btn-p{background:var(--blue);color:#fff}.btn-p:hover{background:var(--dark)}
+.btn-g{background:transparent;color:var(--mid);border:1.5px solid var(--border)}
+.btn-g:hover{border-color:var(--blt);color:var(--blue)}
+.btn-grn{background:var(--green);color:#fff}.btn-grn:hover{background:#145c33}
+.btn-d{background:var(--red);color:#fff}.btn-d:hover{background:#9c2a21}
+.btn-sm{padding:5px 11px;font-size:12px}
+/* stats */
+.stats-grid{display:grid;grid-template-columns:repeat(4,1fr);gap:16px;margin-bottom:28px}
+.stat-card{background:var(--white);border-radius:var(--r);padding:20px;border:1px solid var(--border)}
+.stat-lbl{font-size:11px;font-weight:600;color:var(--mid);text-transform:uppercase;letter-spacing:.06em}
+.stat-val{font-size:28px;font-weight:700;margin:6px 0 2px;font-family:var(--fh)}
+/* table */
+.sec-hdr{display:flex;align-items:center;justify-content:space-between;margin-bottom:16px}
+.sec-title{font-family:var(--fh);font-size:17px}
+.search-row{display:flex;gap:8px;margin-bottom:16px}
+.search-inp{flex:1;padding:8px 14px;border:1.5px solid var(--border);border-radius:var(--r);
+  font-family:var(--ff);font-size:13px;outline:none}
+.search-inp:focus{border-color:var(--blt)}
+.ctable{background:var(--white);border:1px solid var(--border);border-radius:var(--r);overflow:hidden}
+.ctable table{width:100%;border-collapse:collapse}
+.ctable th{background:var(--dark);color:#fff;padding:10px 14px;text-align:left;
+  font-size:11px;font-weight:700;text-transform:uppercase;letter-spacing:.06em}
+.ctable td{padding:11px 14px;border-bottom:1px solid var(--border);font-size:13px;vertical-align:middle}
+.ctable tr:last-child td{border-bottom:none}
+.ctable tr:hover td{background:#f7fafd}
+.acts{display:flex;gap:5px}
+.badge{display:inline-block;padding:2px 9px;border-radius:20px;font-size:11px;font-weight:600;background:#dbeafe;color:#1d4ed8}
+.empty{text-align:center;padding:64px 20px;color:var(--mid)}
+.empty .ei{font-size:48px;margin-bottom:12px}
+/* toolbar */
+.ftbar{display:flex;gap:8px;align-items:center;background:var(--white);
+  padding:12px 20px;border-radius:var(--r);border:1px solid var(--border);margin-bottom:20px}
+.ftbar .sep{flex:1}
+.edit-lbl{font-weight:600;font-size:14px;color:var(--mid)}
+/* A4 */
+.a4-wrap{width:794px;margin:0 auto}
+.a4-page{width:794px;min-height:1123px;background:#fff;padding:28px 38px;
+  box-shadow:0 4px 32px rgba(0,0,0,.15);font-family:Arial,sans-serif;position:relative}
+.c-hdr{display:flex;align-items:flex-start;gap:10px;margin-bottom:2px}
+.c-logo{width:72px;flex-shrink:0}
+.c-hdr-r{flex:1}
+.c-title{font-size:13pt;font-weight:bold;color:#2563a8;line-height:1.2;margin-bottom:3px}
+.c-daterow{font-size:8.5pt;display:flex;justify-content:flex-end;align-items:center;gap:4px}
+.c-daterow input[type=date]{font-family:Arial;font-size:8.5pt;border:none;
+  border-bottom:1px solid #555;background:transparent;outline:none;padding:0 2px}
+.c-contact{color:#2563a8;font-size:8.5pt;margin:3px 0 5px}
+.c-sh1{color:#2563a8;font-weight:bold;font-size:9pt;text-transform:uppercase;
+  border-bottom:1.5px solid #2563a8;padding-bottom:1px;margin:5px 0 3px}
+.c-sh2{color:#2563a8;font-weight:bold;font-size:9.5pt;margin:5px 0 3px}
+.c-dt{width:100%;border-collapse:collapse;margin-bottom:3px}
+.c-dt td{padding:2px 0;font-size:8.5pt;vertical-align:bottom}
+.c-fl{display:flex;align-items:flex-end;gap:2px;padding-right:6px}
+.c-fl label{white-space:nowrap;font-size:8.5pt}
+.c-fi{flex:1;border:none;border-bottom:1px solid #444;font-family:Arial;font-size:8.5pt;
+  color:#000;background:transparent;outline:none;padding:0 2px 1px;min-width:30px}
+.c-fi:focus{background:#fffce8}
+select.c-fi{flex:none;width:auto;min-width:130px;cursor:pointer;border:none;
+  border-bottom:1px solid #444;background:transparent;font-family:Arial;font-size:8.5pt;outline:none}
+.c-mob{width:100%;border-collapse:collapse;font-size:8pt}
+.c-mob thead tr{background:#2563a8;color:#fff}
+.c-mob thead th{padding:3px 5px;font-weight:bold;text-align:center;border:1px solid #2563a8;font-size:7.5pt}
+.c-mob thead th:first-child{text-align:left}
+.c-mob tbody tr.odd{background:#dce6f1}.c-mob tbody tr.even{background:#fff}
+.c-mob tbody td{padding:2px 5px;border:1px solid #b8cce4;vertical-align:middle}
+.c-mob tbody td.desc{font-weight:bold}
+.c-mob tbody td.qty,.c-mob tbody td.price,.c-mob tbody td.amt{text-align:center}
+.c-qi{width:50px;text-align:center;border:1px solid #9ab5d4;border-radius:2px;
+  padding:1px 3px;font-size:8pt;font-family:Arial;background:#fff;outline:none}
+.c-pi{width:58px;text-align:right;border:1px solid #9ab5d4;border-radius:2px;
+  padding:1px 2px;font-size:8pt;font-family:Arial;background:#fff;outline:none}
+.c-pi:focus{border-color:#c5922a;background:#fffce8}
+.c-mob tfoot td{border:1px solid #b8cce4}
+.c-mob tfoot tr.alt td{background:#dce6f1}
+.c-mob tfoot tr.wht td{background:#fff}
+.c-mob tfoot tr.bld td{background:#dce6f1;font-weight:bold;font-size:8pt}
+.rlbl{text-align:right;font-weight:bold;padding:2px 5px}
+.rval{padding:2px 5px;min-width:70px}
+.inrow{display:flex;align-items:center;gap:2px}
+.inrow input{width:62px;border:none;border-bottom:1px solid #888;
+  font-size:8pt;font-family:Arial;background:transparent;outline:none;text-align:right}
+.ant-row{display:flex;align-items:center;gap:3px}
+.ant-row input{width:80px;border:none;border-bottom:1.5px solid #2563a8;
+  font-size:8pt;font-family:Arial;font-weight:bold;background:transparent;outline:none;text-align:right}
+.c-cl,.c-cu{margin:2px 0 4px;font-size:7.5pt}
+.c-cl ol,.c-cu ol{padding-left:18px}
+.c-cl li,.c-cu li{margin-bottom:1px;line-height:1.25;text-align:justify}
+.c-sig{width:100%;border-collapse:collapse;margin-top:10px}
+.c-sigl{border-bottom:1px solid #000;height:24px}
+.c-sigt{text-align:center;font-size:8pt;padding-top:2px}
+.c-foot{text-align:right;font-size:8pt;color:#555;margin-top:5px}
+/* overlays */
+.overlay{display:none;position:fixed;inset:0;background:rgba(0,0,0,.5);z-index:2000;
+  align-items:center;justify-content:center}
+.overlay.open{display:flex}
+.modal{background:#fff;border-radius:10px;padding:28px 32px;max-width:460px;width:90%;
+  box-shadow:0 16px 60px rgba(0,0,0,.25)}
+.modal-title{font-family:var(--fh);font-size:18px;margin-bottom:6px}
+.modal-sub{font-size:13px;color:var(--mid);margin-bottom:20px}
+.modal-btns{display:flex;gap:10px;justify-content:center;flex-wrap:wrap}
+.modal-cancel{background:none;border:none;color:#aaa;font-size:12px;cursor:pointer;
+  font-family:var(--ff);margin:12px auto 0;display:block}
+.exp-btn{display:flex;flex-direction:column;align-items:center;gap:4px;
+  padding:14px 20px;border:none;border-radius:8px;cursor:pointer;
+  font-family:var(--ff);font-size:12px;font-weight:700;transition:all .15s;min-width:80px}
+.exp-btn .ic{font-size:22px}
+.eb-docx{background:#1a4b8c;color:#fff}.eb-pdf{background:var(--red);color:#fff}
+.eb-png{background:#6b3fa0;color:#fff}.eb-jpg{background:#c4620e;color:#fff}
+.modal-acts{display:flex;gap:10px;justify-content:flex-end;margin-top:20px}
+/* loading */
+.lov{display:none;position:fixed;inset:0;background:rgba(255,255,255,.85);
+  z-index:3000;align-items:center;justify-content:center;flex-direction:column;gap:14px}
+.lov.show{display:flex}
+.spinner{width:40px;height:40px;border:4px solid var(--bbg);
+  border-top:4px solid var(--blue);border-radius:50%;animation:spin .7s linear infinite}
+@keyframes spin{to{transform:rotate(360deg)}}
+.lov p{font-size:14px;color:var(--blue);font-weight:600}
+/* toast */
+#toast{position:fixed;bottom:24px;right:24px;background:var(--dark);color:#acd4f5;
+  padding:10px 18px;border-radius:6px;font-size:13px;border-left:4px solid var(--blt);
+  transform:translateY(60px);opacity:0;transition:all .28s;z-index:9999;pointer-events:none}
+#toast.show{transform:translateY(0);opacity:1}
+/* print */
+@media print{
+  .sb,.topbar,.ftbar,.overlay,.lov,#toast{display:none!important}
+  .main{margin-left:0!important}
+  .content{padding:0!important}
+  .a4-wrap,.a4-page{width:100%!important}
+  .a4-page{box-shadow:none!important;padding:12px 20px!important;min-height:0!important}
+  .c-mob thead tr,.c-mob tbody tr.odd,.c-mob tfoot tr.alt,.c-mob tfoot tr.bld{
+    -webkit-print-color-adjust:exact;print-color-adjust:exact}
+  @page{size:A4;margin:8mm 10mm}
 }
 </style>
 </head>
 <body>
 
-<!-- ═══ SIDEBAR ════════════════════════════════════════════════════════════ -->
-<nav class="sidebar">
-  <div class="sidebar-logo">
-    <img id="sidebarLogo" src="" alt="CASVEL">
-    <div class="sidebar-logo-text">
-      <div class="brand">CASVEL</div>
-      <div class="sub">Contratos</div>
-    </div>
-  </div>
+<script>
+// Redirect mobile devices to mobile.html (skip if ?d=1 force desktop)
+if(!/[?&]d=1/.test(location.search) &&
+   (/Mobi|Android|iPhone|iPad/i.test(navigator.userAgent) || window.innerWidth < 768))
+  window.location.replace('mobile.html');
+</script>
 
-  <div class="nav-section">
-    <div class="nav-label">Menú</div>
-    <a class="nav-item active" onclick="showView('dashboard')" href="#">
-      <span class="icon">📊</span> Dashboard
-    </a>
-    <a class="nav-item" onclick="showView('historial')" href="#">
-      <span class="icon">📋</span> Historial
-    </a>
-    <a class="nav-item" onclick="showView('nuevo')" href="#">
-      <span class="icon">✏️</span> Nuevo Contrato
-    </a>
+<!-- SIDEBAR -->
+<nav class="sb">
+  <div class="sb-logo">
+    <img id="sb-logo" src="" alt="CASVEL">
+    <div><div class="sb-brand">CASVEL</div><div class="sb-sub">Contratos</div></div>
   </div>
-
-  <div class="sidebar-footer">
-    EVENTOS CASVEL &copy; 2026<br>
-    <a href="mobile.html" style="color:rgba(255,255,255,.35);font-size:10px;text-decoration:none">📱 Ver versión móvil</a>
+  <div class="nav-sec">
+    <div class="nav-lbl">Menú</div>
+    <a class="nav-item on" id="nav-dashboard" href="#" onclick="showView('dashboard');return false">
+      <span class="ic">📊</span> Dashboard</a>
+    <a class="nav-item" id="nav-historial" href="#" onclick="showView('historial');return false">
+      <span class="ic">📋</span> Historial</a>
+    <a class="nav-item" id="nav-editor" href="#" onclick="openEditor(null);return false">
+      <span class="ic">✏️</span> Nuevo Contrato</a>
   </div>
+  <div class="sb-foot">EVENTOS CASVEL © 2026<br>
+    <a href="mobile.html">📱 Versión móvil</a></div>
 </nav>
 
-<!-- ═══ MAIN ════════════════════════════════════════════════════════════════ -->
+<!-- MAIN -->
 <div class="main">
-
-  <!-- TOP BAR -->
   <div class="topbar">
-    <div class="topbar-title" id="topbarTitle">Dashboard</div>
-    <div class="topbar-actions" id="topbarActions"></div>
+    <div class="topbar-title" id="pg-title">Dashboard</div>
   </div>
 
-  <!-- ── DASHBOARD VIEW ─────────────────────────────────────────────── -->
-  <div id="view-dashboard" class="view active content">
-    <div class="stats-grid" id="statsGrid"></div>
-    <div class="section-header">
-      <div class="section-title">Contratos Recientes</div>
-      <button class="btn btn-primary" onclick="showView('nuevo')">+ Nuevo Contrato</button>
+  <!-- DASHBOARD -->
+  <div id="view-dashboard" class="view on content">
+    <div class="stats-grid" id="db-stats"></div>
+    <div class="sec-hdr">
+      <div class="sec-title">Contratos Recientes</div>
+      <button class="btn btn-p" onclick="openEditor(null)">+ Nuevo Contrato</button>
     </div>
-    <div id="recentTable"></div>
+    <div id="db-recent"></div>
   </div>
 
-  <!-- ── HISTORIAL VIEW ─────────────────────────────────────────────── -->
+  <!-- HISTORIAL -->
   <div id="view-historial" class="view content">
-    <div class="section-header">
-      <div class="section-title">Historial de Contratos</div>
-      <button class="btn btn-primary" onclick="showView('nuevo')">+ Nuevo Contrato</button>
+    <div class="sec-hdr">
+      <div class="sec-title">Historial de Contratos</div>
+      <button class="btn btn-p" onclick="openEditor(null)">+ Nuevo Contrato</button>
     </div>
-    <div class="search-bar">
-      <input type="text" class="search-input" id="searchInput" placeholder="Buscar por nombre, teléfono, dirección…" oninput="renderHistorial()">
+    <div class="search-row">
+      <input class="search-inp" id="search-inp" placeholder="Buscar por nombre, teléfono, dirección…" oninput="renderHistorial()">
     </div>
-    <div id="historialTable"></div>
+    <div id="h-table"></div>
   </div>
 
-  <!-- ── NUEVO / EDITOR VIEW ────────────────────────────────────────── -->
-  <div id="view-nuevo" class="view">
-    <div class="form-toolbar content" style="padding-bottom:0;margin-bottom:0">
-      <button class="btn btn-ghost" onclick="cancelEdit()">← Volver</button>
-      <span id="editLabel" style="font-weight:600;font-size:14px;color:var(--mid)">Nuevo Contrato</span>
+  <!-- EDITOR -->
+  <div id="view-editor" class="view">
+    <div class="ftbar content" style="padding-bottom:0">
+      <button class="btn btn-g" onclick="showView('historial')">← Volver</button>
+      <span class="edit-lbl" id="edit-lbl">Nuevo Contrato</span>
       <div class="sep"></div>
-      <button class="btn btn-ghost btn-sm" onclick="resetContract()">🔄 Limpiar</button>
-      <button class="btn btn-green  btn-sm" onclick="saveContract()">💾 Guardar</button>
-      <button class="btn btn-primary btn-sm" onclick="openExportModal()">⬇ Exportar</button>
-      <button class="btn btn-ghost btn-sm" onclick="addToCalendar()">📅 Calendario</button>
+      <button class="btn btn-g btn-sm" onclick="resetEditor()">🔄 Limpiar</button>
+      <button class="btn btn-grn btn-sm" onclick="saveFromEditor()">💾 Guardar</button>
+      <button class="btn btn-p btn-sm" onclick="openExportModal()">⬇ Exportar</button>
+      <button class="btn btn-g btn-sm" onclick="doCalendar()">📅 Calendario</button>
     </div>
-
-    <!-- A4 CONTRACT -->
-    <div class="content" style="padding-top:16px;">
+    <div class="content" style="padding-top:16px">
       <div class="a4-wrap">
         <div class="a4-page" id="a4page">
-
-          <!-- HEADER -->
           <div class="c-hdr">
-            <img class="c-logo" id="contractLogo" src="" alt="CASVEL">
+            <img class="c-logo" id="c-logo" src="" alt="CASVEL">
             <div class="c-hdr-r">
               <div class="c-title">CONTRATO DE ALQUILER DE MOBILIARIO PARA EVENTOS</div>
-              <div class="c-daterow">
-                Chihuahua, Chihuahua. a&nbsp;<input type="date" id="cDate" class="c-fi" style="flex:none;width:auto">
+              <div class="c-daterow">Chihuahua, Chihuahua. a&nbsp;
+                <input type="date" id="c-cdate" class="c-fi" style="flex:none;width:auto">
               </div>
             </div>
           </div>
           <div class="c-contact">Contacto: 614 126 6784</div>
 
-          <!-- DATOS -->
           <div class="c-sh1">DATOS DEL ARRENDATARIO</div>
-          <table class="c-dt">
-            <colgroup><col style="width:63%"><col style="width:37%"></colgroup>
+          <table class="c-dt"><colgroup><col style="width:63%"><col style="width:37%"></colgroup>
             <tr>
               <td><div class="c-fl"><label>Nombre:</label><input type="text" class="c-fi" id="c-nombre"></div></td>
               <td><div class="c-fl"><label>Telefono:</label><input type="text" class="c-fi" id="c-tel"></div></td>
-            </tr>
-            <tr>
+            </tr><tr>
               <td><div class="c-fl"><label>Dirección del evento:</label><input type="text" class="c-fi" id="c-dir"></div></td>
-              <td><div class="c-fl"><label>Fecha del Evento:</label><input type="date" class="c-fi" style="flex:none;width:auto" id="c-fEvento"></div></td>
-            </tr>
-            <tr>
+              <td><div class="c-fl"><label>Fecha del Evento:</label>
+                <input type="date" class="c-fi" id="c-fevento" style="flex:none;width:auto"></div></td>
+            </tr><tr>
               <td><div class="c-fl"><label>Horario de entrega:</label>
-                <select class="c-fi" id="c-hEntrega" style="min-width:130px"></select>
-              </div></td>
+                <select class="c-fi" id="c-hentrega"></select></div></td>
               <td><div class="c-fl"><label>Horario de recolección:</label>
-                <select class="c-fi" id="c-hRecol" style="min-width:130px"></select>
-              </div></td>
+                <select class="c-fi" id="c-hrecol"></select></div></td>
             </tr>
           </table>
 
-          <!-- MOBILIARIO -->
           <div class="c-sh2">Mobiliario a arrendar:</div>
           <table class="c-mob">
-            <thead>
-              <tr>
-                <th style="width:37%;text-align:left">Descripción</th>
-                <th style="width:19%">Cantidad a Contratar</th>
-                <th style="width:22%">Precio Unitario</th>
-                <th style="width:22%">Importe a Pagar</th>
+            <thead><tr>
+              <th style="width:37%;text-align:left">Descripción</th>
+              <th style="width:19%">Cantidad</th>
+              <th style="width:22%">Precio Unitario</th>
+              <th style="width:22%">Importe</th>
+            </tr></thead>
+            <tbody id="c-items"></tbody>
+            <tfoot>
+              <tr class="wht">
+                <td colspan="2" style="border:1px solid #b8cce4"></td>
+                <td class="rlbl">Traslado:</td>
+                <td class="rval"><div class="inrow">$<input type="number" id="c-traslado" min="0" step="1" value="0" oninput="calcDesk()"></div></td>
               </tr>
-            </thead>
-            <tbody id="itemsBody"></tbody>
-            <tr class="foot wht">
-              <td colspan="2" style="border:1px solid #b8cce4"></td>
-              <td class="rlbl">Traslado:</td>
-              <td class="rval"><div class="c-inrow">$<input type="number" id="c-traslado" min="0" step="1" value="0" oninput="calcAll()"></div></td>
-            </tr>
-            <tr class="foot alt">
-              <td colspan="2" style="border:1px solid #b8cce4"></td>
-              <td class="rlbl">Precio Total:</td>
-              <td class="rval" id="c-total">$0.00</td>
-            </tr>
-            <tr class="foot bld">
-              <td style="padding:2px 5px">
-                <div class="anticipo-row">
-                  Anticipo:&nbsp;$<input type="number" id="c-anticipo" min="0" step="0.01" value="0" oninput="calcResta()">
-                </div>
-              </td>
-              <td colspan="3" id="c-resta" style="padding:2px 5px;font-weight:bold;font-size:8pt">Resta por Pagar: $0.00</td>
-            </tr>
+              <tr class="alt">
+                <td colspan="2" style="border:1px solid #b8cce4"></td>
+                <td class="rlbl">Precio Total:</td>
+                <td class="rval" id="c-total">$0.00</td>
+              </tr>
+              <tr class="bld">
+                <td style="padding:2px 5px"><div class="ant-row">Anticipo:&nbsp;$
+                  <input type="number" id="c-anticipo" min="0" step="0.01" value="0">
+                </div></td>
+                <td colspan="3" id="c-resta" style="padding:2px 5px;font-weight:bold;font-size:8pt">Resta por Pagar: $0.00</td>
+              </tr>
+            </tfoot>
           </table>
 
-          <!-- CLÁUSULAS -->
           <div class="c-sh1">CLAUSULAS PARA ALQUILER:</div>
           <div class="c-cl"><ol>
             <li>El mobiliario se alquila por día, se entrega el día del evento y se retira el mismo día o al día siguiente a más tardar las 12:00 pm.</li>
             <li>El costo del alquiler no incluye Traslado.</li>
             <li>El pago debe de hacerse al momento de la entrega del mobiliario.</li>
-            <li>El mobiliario solo debe ser trasladado por el arrendador, se entrega en el lugar del evento y no debe ser trasladado a otro sitio ya que puede sufrir daños con costo adicional.</li>
-            <li>El mobiliario debe entregarse en las mismas condiciones físicas recibidas, sin piezas faltantes ni quebraduras, roturas o quemaduras, ya que esto correrá por cuenta del arrendatario.</li>
+            <li>El mobiliario solo debe ser trasladado por el arrendador y no debe ser trasladado a otro sitio ya que puede sufrir daños con costo adicional.</li>
+            <li>El mobiliario debe entregarse en las mismas condiciones físicas recibidas, sin piezas faltantes ni quebraduras o quemaduras, ya que esto correrá por cuenta del arrendatario.</li>
             <li>En caso de daño al brinca brinca, el cliente deberá pagar el importe acordado.</li>
             <li><strong>EVENTOS CASVEL NO</strong> se hace responsable de algún accidente o incidente dentro o fuera del inflable.</li>
             <li>En caso de suspensión del evento por parte del cliente no hay devolución del anticipo.</li>
             <li>Cada contrato requiere un anticipo del <strong>25%</strong>.</li>
             <li>En caso de posponer el evento, el cliente deberá elegir otra fecha disponible y avisar a "EVENTOS CASVEL" al menos 7 días antes.</li>
-            <li>Al firmar el presente contrato se dan por aceptadas todas las condiciones antes mencionadas, así como las condiciones de uso listadas a continuación.</li>
+            <li>Al firmar el presente contrato se dan por aceptadas todas las condiciones antes mencionadas.</li>
           </ol></div>
-
-          <div class="c-sh2">Condiciones de uso por razones de higiene, seguridad de los niños y deterioro del juego inflable.</div>
+          <div class="c-sh2">Condiciones de uso por razones de higiene, seguridad y deterioro del inflable.</div>
           <div class="c-cu"><ol>
             <li>No usar dentro del juego: confeti, serpentinas, papel de china, espuma, luces de bengala, restos de piñata, alimentos y/o bebidas.</li>
             <li>No usar zapatos dentro del inflable.</li>
             <li>No se permite fumar o colocar inflables cerca de fogatas o parrillas calientes.</li>
           </ol></div>
 
-          <!-- FIRMAS -->
           <table class="c-sig">
             <tr>
               <td style="width:46%"><div class="c-sigl"></div></td>
               <td style="width:8%"></td>
               <td style="width:46%"><div class="c-sigl"></div></td>
-            </tr>
-            <tr>
-              <td class="c-sigt">NOMBRE Y FIRMA ARRENDATARIO</td>
-              <td></td>
+            </tr><tr>
+              <td class="c-sigt">NOMBRE Y FIRMA ARRENDATARIO</td><td></td>
               <td class="c-sigt">NOMBRE Y FIRMA ARRENDADOR</td>
             </tr>
           </table>
-          <div class="c-foot-line">@EventosCasVel, 2026</div>
-
-        </div><!-- /a4-page -->
-      </div><!-- /a4-wrap -->
+          <div class="c-foot">@EventosCasVel, 2026</div>
+        </div><!-- /a4page -->
+      </div>
     </div>
-  </div><!-- /view-nuevo -->
-
+  </div><!-- /view-editor -->
 </div><!-- /main -->
 
-<!-- ═══ EXPORT MODAL ════════════════════════════════════════════════════════ -->
-<div class="overlay" id="exportModal" onclick="if(event.target===this)closeExportModal()">
+<!-- EXPORT MODAL -->
+<div class="overlay" id="exp-modal">
   <div class="modal">
     <div class="modal-title">Exportar Contrato</div>
-    <div class="modal-sub">Elige el formato de descarga:</div>
+    <div class="modal-sub">Elige el formato:</div>
     <div class="modal-btns">
-      <button class="export-btn ebtn-docx" onclick="closeExportModal();genDOCX()">
-        <span class="icon">📝</span>Word
-      </button>
-      <button class="export-btn ebtn-pdf" onclick="closeExportModal();genPDF()">
-        <span class="icon">📄</span>PDF
-      </button>
-      <button class="export-btn ebtn-png" onclick="closeExportModal();genImage('png')">
-        <span class="icon">🖼️</span>PNG
-      </button>
-      <button class="export-btn ebtn-jpg" onclick="closeExportModal();genImage('jpg')">
-        <span class="icon">📷</span>JPG
-      </button>
+      <button class="exp-btn eb-docx" onclick="closeExportModal();doDocx()"><span class="ic">📝</span>Word</button>
+      <button class="exp-btn eb-pdf"  onclick="closeExportModal();window.print()"><span class="ic">📄</span>PDF</button>
+      <button class="exp-btn eb-png"  onclick="closeExportModal();doImage('png')"><span class="ic">🖼️</span>PNG</button>
+      <button class="exp-btn eb-jpg"  onclick="closeExportModal();doImage('jpg')"><span class="ic">📷</span>JPG</button>
     </div>
     <button class="modal-cancel" onclick="closeExportModal()">Cancelar</button>
   </div>
 </div>
 
-<!-- ═══ DELETE CONFIRM MODAL ════════════════════════════════════════════════ -->
-<div class="overlay" id="deleteModal" onclick="if(event.target===this)closeDeleteModal()">
-  <div class="modal modal-confirm">
+<!-- DELETE MODAL -->
+<div class="overlay" id="del-modal">
+  <div class="modal">
     <div class="modal-title">Eliminar contrato</div>
-    <div class="modal-sub" id="deleteModalMsg">¿Seguro que deseas eliminar este contrato? Esta acción no se puede deshacer.</div>
-    <div class="modal-actions">
-      <button class="btn btn-ghost" onclick="closeDeleteModal()">Cancelar</button>
-      <button class="btn btn-danger" onclick="confirmDelete()">Eliminar</button>
+    <div class="modal-sub" id="del-msg"></div>
+    <div class="modal-acts">
+      <button class="btn btn-g" onclick="closeDelModal()">Cancelar</button>
+      <button class="btn btn-d" onclick="confirmDel()">Eliminar</button>
     </div>
   </div>
 </div>
 
-<!-- ═══ LOADING ═════════════════════════════════════════════════════════════ -->
-<div class="loading-ov" id="loadingOv">
+<!-- LOADING -->
+<div class="lov" id="lov">
   <div class="spinner"></div>
-  <p id="loadingMsg">Generando...</p>
+  <p id="lov-msg">Generando...</p>
 </div>
 
-<!-- ═══ TOAST ═══════════════════════════════════════════════════════════════ -->
+<!-- TOAST -->
 <div id="toast"></div>
 
-<!-- ═══ SCRIPTS ═════════════════════════════════════════════════════════════ -->
+<script src="shared.js"></script>
 <script>
-// Auto-redirect to mobile version on small screens / touch devices
-(function(){
-  var isMobile = window.innerWidth < 768 || /Mobi|Android|iPhone|iPad/i.test(navigator.userAgent);
-  if (isMobile && !window.location.search.includes('force=desktop')) {
-    window.location.replace('mobile.html');
+"use strict";
+
+var D_editId = null;
+var D_delId  = null;
+
+/* ── Helpers ── */
+function el(id){ return document.getElementById(id); }
+function showToast(msg){
+  var t=el('toast'); t.textContent=msg; t.classList.add('show');
+  clearTimeout(t._t); t._t=setTimeout(function(){t.classList.remove('show');},3500);
+}
+function showLoad(msg){ el('lov-msg').textContent=msg||'Generando...'; el('lov').classList.add('show'); }
+function hideLoad(){ el('lov').classList.remove('show'); }
+function openExportModal() { el('exp-modal').classList.add('open'); }
+function closeExportModal(){ el('exp-modal').classList.remove('open'); }
+function closeDelModal()    { el('del-modal').classList.remove('open'); }
+
+/* ── Init ── */
+document.addEventListener('DOMContentLoaded', function(){
+  el('sb-logo').src = 'data:image/jpeg;base64,'+LOGO_B64;
+  el('c-logo').src  = 'data:image/jpeg;base64,'+LOGO_B64;
+
+  var opts = TIME_OPTIONS.map(function(t){
+    return '<option value="'+t.value+'">'+t.label+'</option>';
+  }).join('');
+  el('c-hentrega').innerHTML = opts;
+  el('c-hrecol').innerHTML   = opts;
+
+  buildItemsTable();
+  el('c-cdate').value = todayISO();
+
+  // anticipo manual tracking
+  el('c-anticipo').addEventListener('input', function(){
+    this.dataset.manual='1'; calcDesk();
+  });
+
+  renderDashboard();
+});
+
+/* ── Views ── */
+function showView(v){
+  ['dashboard','historial','editor'].forEach(function(id){
+    el('view-'+id).classList.toggle('on', id===v);
+    el('nav-'+id).classList.toggle('on', id===v);
+  });
+  var titles={dashboard:'Dashboard',historial:'Historial de Contratos',editor:'Contrato'};
+  el('pg-title').textContent=titles[v]||'';
+  if(v==='historial') renderHistorial();
+  if(v==='dashboard') renderDashboard();
+  window.scrollTo(0,0);
+}
+
+/* ── Items table ── */
+function buildItemsTable(){
+  el('c-items').innerHTML = ITEMS.map(function(it,i){
+    return '<tr class="'+(i%2===0?'odd':'even')+'">'+
+      '<td class="desc">'+it.desc+'</td>'+
+      '<td class="qty"><input class="c-qi" type="number" min="0" step="1" value="0" id="dq'+i+'" oninput="calcDesk()"></td>'+
+      '<td class="price">$<input class="c-pi" type="number" min="0" step="0.01" value="'+it.price.toFixed(2)+'" id="dp'+i+'" oninput="calcDesk()"></td>'+
+      '<td class="amt" id="da'+i+'">$</td>'+
+      '</tr>';
+  }).join('');
+}
+
+/* ── Calculate ── */
+function calcDesk(){
+  var sub=0;
+  ITEMS.forEach(function(_,i){
+    var q=parseFloat(el('dq'+i).value)||0;
+    var p=parseFloat(el('dp'+i).value)||0;
+    var a=q*p; sub+=a;
+    el('da'+i).textContent=q>0?f2(a):'$';
+  });
+  var tr=parseFloat(el('c-traslado').value)||0;
+  var g=sub+tr;
+  el('c-total').textContent=f2(g);
+  var ai=el('c-anticipo');
+  if(!ai.dataset.manual) ai.value=(g*.25).toFixed(2);
+  el('c-resta').textContent='Resta por Pagar: '+f2(g-(parseFloat(ai.value)||0));
+}
+
+/* ── Collect ── */
+function collectDesk(){
+  var items=ITEMS.map(function(it,i){
+    var q=parseFloat(el('dq'+i).value)||0;
+    var p=parseFloat(el('dp'+i).value)||it.price;
+    return {qty:q,price:p,amt:q*p};
+  });
+  var total=parseFloat((el('c-total').textContent||'$0').replace('$',''))||0;
+  var ant=parseFloat(el('c-anticipo').value)||0;
+  function selLbl(id){ var e=el(id); return (e&&e.options[e.selectedIndex])?e.options[e.selectedIndex].text:''; }
+  return {
+    cDate:el('c-cdate').value, nombre:el('c-nombre').value, tel:el('c-tel').value,
+    dir:el('c-dir').value, fEvento:el('c-fevento').value,
+    hEntrega:el('c-hentrega').value, hEntregaL:selLbl('c-hentrega'),
+    hRecol:el('c-hrecol').value, hRecolL:selLbl('c-hrecol'),
+    traslado:parseFloat(el('c-traslado').value)||0,
+    anticipo:ant, total:total, resta:total-ant,
+    items:items
+  };
+}
+
+/* ── Populate ── */
+function populateDesk(d){
+  el('c-cdate').value  =d.cDate||todayISO(); el('c-nombre').value=d.nombre||'';
+  el('c-tel').value    =d.tel||'';           el('c-dir').value   =d.dir||'';
+  el('c-fevento').value=d.fEvento||'';
+  el('c-hentrega').value=d.hEntrega||'';     el('c-hrecol').value=d.hRecol||'';
+  el('c-traslado').value=d.traslado||0;
+  var ai=el('c-anticipo'); ai.value='0'; ai.removeAttribute('data-manual');
+  if(d.items) d.items.forEach(function(r,i){
+    el('dq'+i).value=(r.qty||0);
+    el('dp'+i).value=(r.price||ITEMS[i].price).toFixed(2);
+  });
+  calcDesk();
+  ai.value=(d.anticipo||0).toFixed(2); ai.dataset.manual='1'; calcDesk();
+}
+
+/* ── Open editor ── */
+function openEditor(id){
+  D_editId=id;
+  if(id){ var c=getById(id); if(c){ populateDesk(c); el('edit-lbl').textContent='Editando: '+c.nombre; } }
+  else resetEditor();
+  showView('editor');
+}
+function resetEditor(){
+  D_editId=null;
+  el('c-cdate').value=todayISO(); el('c-nombre').value=''; el('c-tel').value='';
+  el('c-dir').value=''; el('c-fevento').value='';
+  el('c-hentrega').value=''; el('c-hrecol').value='';
+  el('c-traslado').value=0;
+  var ai=el('c-anticipo'); ai.value='0'; ai.removeAttribute('data-manual');
+  ITEMS.forEach(function(it,i){ el('dq'+i).value=0; el('dp'+i).value=it.price.toFixed(2); });
+  el('edit-lbl').textContent='Nuevo Contrato';
+  calcDesk();
+}
+
+/* ── Save ── */
+function saveFromEditor(){
+  var d=collectDesk();
+  if(!d.nombre.trim()){ showToast('⚠️ Ingresa el nombre del cliente'); return; }
+  var list=loadContracts(), now=new Date().toISOString();
+  if(D_editId){
+    var idx=list.findIndex(function(c){return c.id===D_editId;});
+    if(idx>=0) list[idx]=Object.assign(list[idx],d,{updatedAt:now});
+    showToast('✅ Contrato actualizado');
+  } else {
+    list.unshift(Object.assign(d,{id:newId(),createdAt:now,updatedAt:now}));
+    D_editId=list[0].id;
+    showToast('✅ Contrato guardado');
   }
-})();
+  saveContracts(list);
+  el('edit-lbl').textContent='Editando: '+d.nombre;
+}
+
+/* ── Dashboard ── */
+function renderDashboard(){
+  var list=loadContracts();
+  var total=list.reduce(function(s,c){return s+(c.total||0);},0);
+  var mo=new Date().toISOString().substring(0,7);
+  var mc=list.filter(function(c){return(c.fEvento||c.createdAt||'').startsWith(mo);});
+  var mt=mc.reduce(function(s,c){return s+(c.total||0);},0);
+  function sc(l,v){ return '<div class="stat-card"><div class="stat-lbl">'+l+'</div><div class="stat-val">'+v+'</div></div>'; }
+  el('db-stats').innerHTML=
+    sc('Contratos totales',list.length)+sc('Este mes',mc.length)+
+    sc('Total acumulado','$'+total.toLocaleString('es-MX',{minimumFractionDigits:2}))+
+    sc('Ingresos del mes','$'+mt.toLocaleString('es-MX',{minimumFractionDigits:2}));
+  el('db-recent').innerHTML=list.length?cTableHTML(list.slice(0,5)):emptyHTML('Sin contratos','Crea el primero arriba');
+}
+
+/* ── Historial ── */
+function renderHistorial(){
+  var q=(el('search-inp').value||'').toLowerCase();
+  var list=loadContracts().filter(function(c){
+    if(!q) return true;
+    return (c.nombre||'').toLowerCase().includes(q)||(c.tel||'').includes(q)||
+           (c.dir||'').toLowerCase().includes(q)||fmtDate(c.fEvento).includes(q);
+  });
+  el('h-table').innerHTML=list.length?cTableHTML(list):emptyHTML('Sin resultados',q?'Nada para: "'+q+'"':'Sin contratos');
+}
+
+function cTableHTML(list){
+  var rows=list.map(function(c){
+    var ni=(c.items||[]).filter(function(r){return r.qty>0;}).length;
+    return '<tr>'+
+      '<td><strong>'+(c.nombre||'—')+'</strong></td>'+
+      '<td>'+(c.tel||'—')+'</td>'+
+      '<td>'+fmtDate(c.fEvento)+'</td>'+
+      '<td>'+fmtDate(c.cDate)+'</td>'+
+      '<td><span class="badge">'+ni+' art.</span></td>'+
+      '<td>$'+(c.total||0).toLocaleString('es-MX',{minimumFractionDigits:2})+'</td>'+
+      '<td><div class="acts">'+
+        '<button class="btn btn-g btn-sm" onclick="openEditor(\''+c.id+'\')">✏️ Editar</button>'+
+        '<button class="btn btn-g btn-sm" onclick="qExport(\''+c.id+'\')">⬇️</button>'+
+        '<button class="btn btn-d btn-sm" onclick="askDel(\''+c.id+'\')">🗑</button>'+
+      '</div></td></tr>';
+  }).join('');
+  return '<div class="ctable"><table>'+
+    '<thead><tr><th>Cliente</th><th>Teléfono</th><th>Evento</th>'+
+    '<th>Contrato</th><th>Art.</th><th>Total</th><th></th></tr></thead>'+
+    '<tbody>'+rows+'</tbody></table></div>';
+}
+function emptyHTML(t,m){ return '<div class="empty"><div class="ei">📭</div><p><strong>'+t+'</strong></p><p style="font-size:13px;margin-top:6px">'+m+'</p></div>'; }
+function qExport(id){ openEditor(id); setTimeout(openExportModal,100); }
+
+/* ── Delete ── */
+function askDel(id){
+  D_delId=id; var c=getById(id);
+  el('del-msg').textContent='¿Eliminar el contrato de "'+(c?c.nombre:id)+'"? No se puede deshacer.';
+  el('del-modal').classList.add('open');
+}
+function confirmDel(){
+  saveContracts(loadContracts().filter(function(c){return c.id!==D_delId;}));
+  closeDelModal(); D_delId=null;
+  renderDashboard(); renderHistorial();
+  showToast('🗑️ Contrato eliminado');
+}
+
+/* ── Calendar ── */
+function doCalendar(){
+  var d=collectDesk();
+  if(!d.fEvento){ showToast('⚠️ Ingresa la Fecha del Evento'); return; }
+  dlBlob(new Blob([buildICS(d)],{type:'text/calendar;charset=utf-8'}),
+    'evento_casvel_'+d.fEvento+'.ics');
+  showToast('📅 Evento exportado');
+}
+
+/* ── DOCX ── */
+function doDocx(){
+  var d=collectDesk();
+  showToast('⏳ Generando Word...');
+  buildDOCX(d).then(function(blob){
+    dlBlob(blob,'CASVEL_'+(d.nombre||'contrato').replace(/\s+/g,'_')+'.docx');
+    showToast('✅ Word descargado');
+  }).catch(function(e){ showToast('❌ Error: '+e.message); });
+}
+
+/* ── Image ── */
+function doImage(fmt){
+  var d=collectDesk();
+  showLoad('Generando '+fmt.toUpperCase()+'...');
+  var page=el('a4page');
+  // swap inputs → spans so html2canvas captures values
+  var frozen=[];
+  page.querySelectorAll('input,select').forEach(function(inp){
+    var val=inp.tagName==='SELECT'
+      ?(inp.options[inp.selectedIndex]?inp.options[inp.selectedIndex].text:'')
+      :(inp.type==='date'?fmtDate(inp.value):(inp.value||''));
+    var sp=document.createElement('span');
+    var cs=window.getComputedStyle(inp);
+    sp.style.cssText='display:inline-block;font-family:Arial,sans-serif;font-size:'+cs.fontSize+
+      ';color:#000;background:transparent;padding:0 2px;vertical-align:bottom;'+
+      'border-bottom:1px solid #444;min-width:'+inp.offsetWidth+'px;';
+    sp.textContent=val;
+    inp.parentNode.replaceChild(sp,inp);
+    frozen.push({sp:sp,inp:inp});
+  });
+  html2canvas(page,{scale:2,useCORS:true,backgroundColor:'#ffffff',logging:false,
+    width:page.offsetWidth,windowWidth:page.offsetWidth+60
+  }).then(function(canvas){
+    frozen.forEach(function(x){x.sp.parentNode.replaceChild(x.inp,x.sp);}); hideLoad();
+    var mime=fmt==='jpg'?'image/jpeg':'image/png';
+    dlDataURL(canvas.toDataURL(mime,fmt==='jpg'?0.92:1),
+      'CASVEL_'+(d.nombre||'contrato').replace(/\s+/g,'_')+'.'+fmt);
+    showToast('✅ Imagen descargada');
+  }).catch(function(e){
+    frozen.forEach(function(x){x.sp.parentNode.replaceChild(x.inp,x.sp);}); hideLoad();
+    showToast('❌ Error: '+e.message);
+  });
+}
 </script>
-<script src="app.js"></script>
 </body>
 </html>

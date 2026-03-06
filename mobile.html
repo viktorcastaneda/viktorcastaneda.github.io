@@ -4,1197 +4,798 @@
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width,initial-scale=1,maximum-scale=1,user-scalable=no">
 <meta name="apple-mobile-web-app-capable" content="yes">
-<meta name="apple-mobile-web-app-status-bar-style" content="default">
 <meta name="theme-color" content="#1a1f2e">
 <title>CASVEL Contratos</title>
-<link rel="preconnect" href="https://fonts.googleapis.com">
 <link href="https://fonts.googleapis.com/css2?family=DM+Sans:wght@400;500;600;700&display=swap" rel="stylesheet">
 <script src="https://cdnjs.cloudflare.com/ajax/libs/jszip/3.10.1/jszip.min.js"></script>
 <script src="https://cdnjs.cloudflare.com/ajax/libs/html2canvas/1.4.1/html2canvas.min.js"></script>
 <style>
-/* ═══════════════════════ RESET & VARS ═══════════════════════ */
-*, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
-:root {
-  --blue:   #2563a8;
-  --blue-lt:#4F81BD;
-  --blue-bg:#dce6f1;
-  --dark:   #1a1f2e;
-  --mid:    #5a6580;
-  --light:  #f0f4f8;
-  --white:  #ffffff;
-  --red:    #c0392b;
-  --green:  #1a7a44;
-  --border: #d1dde8;
-  --radius: 14px;
-  --safe-bottom: env(safe-area-inset-bottom, 16px);
+*{box-sizing:border-box;margin:0;padding:0}
+:root{
+  --blue:#2563a8;--blt:#4F81BD;--bbg:#dce6f1;
+  --dark:#1a1f2e;--mid:#5a6580;--light:#f0f4f8;
+  --white:#fff;--red:#c0392b;--green:#1a7a44;--border:#d1dde8;
+  --r:14px;--sb:env(safe-area-inset-bottom,16px);--st:env(safe-area-inset-top,0px);
 }
-html { height: 100%; }
-body {
-  font-family: 'DM Sans', system-ui, sans-serif;
-  background: var(--light);
-  color: var(--dark);
-  min-height: 100%;
-  overscroll-behavior-y: none;
-  -webkit-text-size-adjust: 100%;
-}
-
-/* ═══════════════════════ SCREENS ═══════════════════════ */
-.screen { display: none; min-height: 100vh; flex-direction: column; }
-.screen.active { display: flex; }
-
-/* ═══════════════════════ TOP BAR ═══════════════════════ */
-.topbar {
-  background: var(--dark);
-  color: #fff;
-  display: flex; align-items: center; gap: 10px;
-  padding: 14px 16px;
-  position: sticky; top: 0; z-index: 100;
-  padding-top: calc(14px + env(safe-area-inset-top, 0px));
-}
-.topbar-back {
-  background: none; border: none; color: rgba(255,255,255,.7);
-  font-size: 20px; cursor: pointer; padding: 4px;
-  display: flex; align-items: center; min-width: 32px;
-}
-.topbar-logo { width: 32px; border-radius: 4px; }
-.topbar-title { flex: 1; font-size: 15px; font-weight: 700; color: #fff; }
-.topbar-action {
-  background: none; border: none; color: rgba(255,255,255,.85);
-  font-size: 13px; font-weight: 600; cursor: pointer;
-  padding: 6px 12px; border-radius: 20px;
-  background: rgba(255,255,255,.12);
-}
-
-/* ═══════════════════════ PROGRESS BAR ═══════════════════════ */
-.progress-wrap {
-  background: var(--dark);
-  padding: 0 16px 14px;
-}
-.progress-steps {
-  display: flex; gap: 4px; align-items: center;
-}
-.progress-step {
-  flex: 1; height: 4px; border-radius: 2px;
-  background: rgba(255,255,255,.18);
-  transition: background .3s;
-}
-.progress-step.done   { background: var(--blue-lt); }
-.progress-step.active { background: #fff; }
-.progress-label {
-  display: flex; justify-content: space-between;
-  margin-top: 8px;
-  font-size: 11px; color: rgba(255,255,255,.5);
-}
-.progress-label .cur { color: #fff; font-weight: 600; }
-
-/* ═══════════════════════ SCROLL AREA ═══════════════════════ */
-.scroll-area {
-  flex: 1; overflow-y: auto;
-  padding: 20px 16px calc(100px + var(--safe-bottom));
-  -webkit-overflow-scrolling: touch;
-}
-
-/* ═══════════════════════ CARDS / SECTIONS ═══════════════════════ */
-.card {
-  background: var(--white); border-radius: var(--radius);
-  padding: 20px; border: 1px solid var(--border);
-  margin-bottom: 14px;
-  box-shadow: 0 1px 6px rgba(0,0,0,.06);
-}
-.card-title {
-  font-size: 13px; font-weight: 700; color: var(--blue);
-  text-transform: uppercase; letter-spacing: .06em;
-  margin-bottom: 16px; padding-bottom: 8px;
-  border-bottom: 1.5px solid var(--blue-bg);
-}
-
-/* ═══════════════════════ FORM FIELDS ═══════════════════════ */
-.field-group { margin-bottom: 16px; }
-.field-group:last-child { margin-bottom: 0; }
-.field-label {
-  display: block; font-size: 12px; font-weight: 600;
-  color: var(--mid); margin-bottom: 6px; text-transform: uppercase;
-  letter-spacing: .05em;
-}
-.field-input {
-  width: 100%; padding: 13px 16px;
-  border: 1.5px solid var(--border); border-radius: 10px;
-  font-family: 'DM Sans', sans-serif; font-size: 16px; /* 16px prevents iOS zoom */
-  color: var(--dark); background: var(--white); outline: none;
-  -webkit-appearance: none; appearance: none;
-  transition: border-color .15s;
-}
-.field-input:focus { border-color: var(--blue); box-shadow: 0 0 0 3px rgba(37,99,168,.12); }
-.field-input.has-value { border-color: var(--blue-lt); }
-select.field-input { background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='12' height='8' viewBox='0 0 12 8'%3E%3Cpath d='M1 1l5 5 5-5' stroke='%235a6580' stroke-width='1.5' fill='none' stroke-linecap='round'/%3E%3C/svg%3E"); background-repeat: no-repeat; background-position: right 14px center; padding-right: 40px; }
-input[type=date].field-input { color-scheme: light; }
-
-/* ═══════════════════════ ITEM ROWS ═══════════════════════ */
-.item-row {
-  display: flex; align-items: center; gap: 10px;
-  padding: 12px 0; border-bottom: 1px solid var(--border);
-  transition: background .1s;
-}
-.item-row:last-child { border-bottom: none; padding-bottom: 0; }
-.item-row:first-child { padding-top: 0; }
-.item-desc {
-  flex: 1; font-size: 14px; font-weight: 500; line-height: 1.3;
-}
-.item-price {
-  font-size: 12px; color: var(--mid); font-weight: 500;
-  white-space: nowrap;
-}
-.item-controls {
-  display: flex; align-items: center; gap: 0;
-  background: var(--light); border-radius: 10px;
-  overflow: hidden; border: 1.5px solid var(--border);
-  flex-shrink: 0;
-}
-.qty-btn {
-  width: 38px; height: 38px; border: none; background: none;
-  font-size: 20px; font-weight: 400; color: var(--blue);
-  cursor: pointer; display: flex; align-items: center; justify-content: center;
-  transition: background .1s; -webkit-tap-highlight-color: transparent;
-  user-select: none; -webkit-user-select: none;
-  flex-shrink: 0;
-}
-.qty-btn:active { background: var(--blue-bg); }
-.qty-display {
-  min-width: 36px; text-align: center;
-  font-size: 15px; font-weight: 700; color: var(--dark);
-  padding: 0 4px;
-}
-.item-amt {
-  font-size: 13px; font-weight: 700; color: var(--dark);
-  min-width: 62px; text-align: right;
-}
-
-/* ── Price edit row ── */
-.price-edit-row {
-  display: flex; align-items: center; gap: 6px;
-  margin-top: 4px;
-}
-.price-edit-lbl { font-size: 11px; color: var(--mid); }
-.price-edit-inp {
-  width: 72px; padding: 4px 8px;
-  border: 1px solid var(--border); border-radius: 6px;
-  font-size: 14px; font-family: 'DM Sans', sans-serif;
-  color: var(--dark); background: var(--white); outline: none;
-  text-align: right;
-}
-.price-edit-inp:focus { border-color: var(--blue); }
-
-/* ═══════════════════════ TOTALS BLOCK ═══════════════════════ */
-.totals-block {
-  background: var(--white); border-radius: var(--radius);
-  border: 1px solid var(--border); overflow: hidden;
-  margin-bottom: 14px;
-}
-.totals-row {
-  display: flex; justify-content: space-between; align-items: center;
-  padding: 13px 18px; border-bottom: 1px solid var(--border);
-  font-size: 14px;
-}
-.totals-row:last-child { border-bottom: none; }
-.totals-row.total { background: var(--blue-bg); font-weight: 700; font-size: 16px; }
-.totals-row.anticipo { background: #e8f5ee; }
-.totals-row .lbl { color: var(--mid); font-weight: 500; }
-.totals-row .val { font-weight: 700; color: var(--dark); }
-.totals-row .val-input {
-  width: 100px; padding: 5px 10px; border-radius: 8px;
-  border: 1.5px solid var(--blue); font-size: 15px; font-weight: 700;
-  font-family: 'DM Sans', sans-serif; text-align: right;
-  color: var(--dark); background: #fff; outline: none;
-}
-
-/* ═══════════════════════ SUMMARY PREVIEW ═══════════════════════ */
-.summary-section { margin-bottom: 16px; }
-.summary-item {
-  display: flex; justify-content: space-between;
-  padding: 9px 0; border-bottom: 1px solid var(--border);
-  font-size: 14px;
-}
-.summary-item:last-child { border-bottom: none; }
-.summary-lbl { color: var(--mid); font-weight: 500; }
-.summary-val { font-weight: 600; color: var(--dark); }
-.summary-items-list { font-size: 13px; color: var(--dark); }
-.summary-items-list li {
-  padding: 5px 0; border-bottom: 1px solid #f0f4f8;
-  display: flex; justify-content: space-between; gap: 8px;
-}
-
-/* ═══════════════════════ BOTTOM BAR ═══════════════════════ */
-.bottom-bar {
-  position: fixed; bottom: 0; left: 0; right: 0;
-  background: var(--white);
-  border-top: 1px solid var(--border);
-  padding: 12px 16px calc(12px + var(--safe-bottom));
-  display: flex; gap: 10px;
-  box-shadow: 0 -4px 20px rgba(0,0,0,.08);
-  z-index: 90;
-}
-.bottom-bar .btn {
-  flex: 1; padding: 14px 10px; border-radius: 12px;
-  border: none; font-family: 'DM Sans', sans-serif;
-  font-size: 15px; font-weight: 700; cursor: pointer;
-  transition: all .15s; display: flex; align-items: center;
-  justify-content: center; gap: 6px;
-  -webkit-tap-highlight-color: transparent;
-}
-.btn-prev { background: var(--light); color: var(--mid); border: 1.5px solid var(--border); }
-.btn-next { background: var(--blue); color: #fff; }
-.btn-next:active, .btn-prev:active { transform: scale(.97); }
-.btn-save { background: var(--green); color: #fff; }
-.btn-export { background: var(--dark); color: #fff; }
-
-/* ═══════════════════════ BOTTOM NAV (home/historial) ═══════════════════════ */
-.bottom-nav {
-  position: fixed; bottom: 0; left: 0; right: 0;
-  background: var(--dark);
-  padding: 10px 0 calc(10px + var(--safe-bottom));
-  display: flex;
-  z-index: 90;
-  box-shadow: 0 -4px 20px rgba(0,0,0,.2);
-}
-.bnav-item {
-  flex: 1; display: flex; flex-direction: column;
-  align-items: center; gap: 3px;
-  padding: 6px 4px; cursor: pointer;
-  color: rgba(255,255,255,.45);
-  -webkit-tap-highlight-color: transparent;
-  transition: color .15s;
-  border: none; background: none; font-family: 'DM Sans', sans-serif;
-}
-.bnav-item.active { color: #fff; }
-.bnav-item .bni { font-size: 22px; }
-.bnav-item .bnl { font-size: 10px; font-weight: 600; }
-
-/* ═══════════════════════ HOME SCREEN ═══════════════════════ */
-.home-hero {
-  background: var(--dark); padding: 28px 20px 24px;
-  padding-top: calc(28px + env(safe-area-inset-top, 0px));
-  display: flex; align-items: center; gap: 14px;
-}
-.home-hero img { width: 54px; border-radius: 8px; }
-.home-hero-text .brand { font-size: 22px; font-weight: 700; color: #fff; }
-.home-hero-text .sub   { font-size: 13px; color: rgba(255,255,255,.45); margin-top:2px; }
-
-.home-stats {
-  display: grid; grid-template-columns: 1fr 1fr;
-  gap: 12px; padding: 20px 16px 0;
-}
-.home-stat {
-  background: var(--white); border-radius: 12px; padding: 16px;
-  border: 1px solid var(--border);
-}
-.home-stat .hs-lbl { font-size: 11px; font-weight: 600; color: var(--mid); text-transform: uppercase; }
-.home-stat .hs-val { font-size: 24px; font-weight: 700; color: var(--dark); margin-top: 4px; }
-
-.new-contract-btn {
-  margin: 20px 16px 0;
-  width: calc(100% - 32px);
-  padding: 17px; border: none; border-radius: 14px;
-  background: var(--blue); color: #fff;
-  font-family: 'DM Sans', sans-serif; font-size: 17px; font-weight: 700;
-  cursor: pointer; display: flex; align-items: center; justify-content: center; gap: 8px;
-  box-shadow: 0 4px 16px rgba(37,99,168,.3);
-  -webkit-tap-highlight-color: transparent;
-  transition: transform .1s;
-}
-.new-contract-btn:active { transform: scale(.98); }
-
-.recent-section {
-  padding: 20px 16px calc(90px + var(--safe-bottom));
-}
-.recent-title { font-size: 15px; font-weight: 700; margin-bottom: 12px; }
-
-/* ═══════════════════════ HISTORIAL SCREEN ═══════════════════════ */
-.hist-scroll {
-  flex: 1; overflow-y: auto;
-  padding: 16px 16px calc(90px + var(--safe-bottom));
-  -webkit-overflow-scrolling: touch;
-}
-.search-wrap { margin-bottom: 14px; }
-.search-field {
-  width: 100%; padding: 12px 16px;
-  border: 1.5px solid var(--border); border-radius: 12px;
-  font-family: 'DM Sans', sans-serif; font-size: 16px;
-  color: var(--dark); background: var(--white); outline: none;
-  -webkit-appearance: none;
-}
-.search-field:focus { border-color: var(--blue); }
-
-/* contract cards */
-.contract-card {
-  background: var(--white); border-radius: 14px;
-  border: 1px solid var(--border); padding: 16px;
-  margin-bottom: 10px;
-  box-shadow: 0 1px 4px rgba(0,0,0,.05);
-}
-.cc-header {
-  display: flex; align-items: flex-start; justify-content: space-between;
-  margin-bottom: 10px;
-}
-.cc-name { font-size: 16px; font-weight: 700; color: var(--dark); }
-.cc-total { font-size: 15px; font-weight: 700; color: var(--blue); }
-.cc-meta { font-size: 12px; color: var(--mid); display: flex; flex-direction: column; gap: 2px; }
-.cc-meta span { display: flex; gap: 4px; align-items: center; }
-.cc-actions {
-  display: flex; gap: 8px; margin-top: 12px;
-}
-.cc-btn {
-  flex: 1; padding: 10px; border-radius: 10px;
-  border: none; font-family: 'DM Sans', sans-serif;
-  font-size: 13px; font-weight: 600; cursor: pointer;
-  -webkit-tap-highlight-color: transparent; transition: all .1s;
-}
-.cc-btn:active { transform: scale(.97); }
-.cc-edit   { background: var(--blue-bg); color: var(--blue); }
-.cc-export { background: #f0f4f8; color: var(--dark); }
-.cc-del    { background: #fde8e8; color: var(--red); }
-
-/* ═══════════════════════ EXPORT SHEET ═══════════════════════ */
-.sheet-overlay {
-  display: none; position: fixed; inset: 0;
-  background: rgba(0,0,0,.5); z-index: 200;
-}
-.sheet-overlay.open { display: block; }
-.bottom-sheet {
-  position: fixed; left: 0; right: 0; bottom: 0; z-index: 201;
-  background: var(--white);
-  border-radius: 20px 20px 0 0;
-  padding: 0 20px calc(24px + var(--safe-bottom));
-  transform: translateY(100%);
-  transition: transform .3s cubic-bezier(.32,.72,0,1);
-}
-.bottom-sheet.open { transform: translateY(0); }
-.sheet-handle {
-  width: 40px; height: 4px; background: #ddd; border-radius: 2px;
-  margin: 12px auto 20px;
-}
-.sheet-title { font-size: 18px; font-weight: 700; margin-bottom: 6px; }
-.sheet-sub   { font-size: 13px; color: var(--mid); margin-bottom: 20px; }
-.export-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 12px; }
-.export-tile {
-  padding: 18px 14px; border-radius: 14px; border: none;
-  display: flex; flex-direction: column; align-items: center; gap: 8px;
-  cursor: pointer; font-family: 'DM Sans', sans-serif;
-  font-size: 14px; font-weight: 700;
-  -webkit-tap-highlight-color: transparent; transition: transform .1s;
-}
-.export-tile:active { transform: scale(.95); }
-.export-tile .ti { font-size: 28px; }
-.et-docx { background: #dbeafe; color: #1d4ed8; }
-.et-pdf  { background: #fee2e2; color: #b91c1c; }
-.et-png  { background: #ede9fe; color: #6d28d9; }
-.et-jpg  { background: #ffedd5; color: #c2410c; }
-.et-cal  { background: #dcfce7; color: #15803d; }
-
-/* ═══════════════════════ CONFIRM DIALOG ═══════════════════════ */
-.confirm-overlay {
-  display: none; position: fixed; inset: 0;
-  background: rgba(0,0,0,.5); z-index: 300;
-  align-items: flex-end; justify-content: center;
-}
-.confirm-overlay.open { display: flex; }
-.confirm-box {
-  background: var(--white); border-radius: 20px 20px 0 0;
-  padding: 24px 20px calc(24px + var(--safe-bottom));
-  width: 100%;
-}
-.confirm-title { font-size: 17px; font-weight: 700; margin-bottom: 8px; }
-.confirm-msg   { font-size: 14px; color: var(--mid); margin-bottom: 20px; }
-.confirm-btns  { display: flex; flex-direction: column; gap: 10px; }
-.confirm-btn {
-  width: 100%; padding: 15px; border-radius: 12px; border: none;
-  font-family: 'DM Sans', sans-serif; font-size: 16px; font-weight: 700;
-  cursor: pointer; -webkit-tap-highlight-color: transparent;
-}
-.confirm-del    { background: var(--red); color: #fff; }
-.confirm-cancel { background: var(--light); color: var(--mid); }
-
-/* ═══════════════════════ LOADING ═══════════════════════ */
-.loading-screen {
-  display: none; position: fixed; inset: 0;
-  background: rgba(255,255,255,.9); z-index: 400;
-  align-items: center; justify-content: center; flex-direction: column; gap: 14px;
-}
-.loading-screen.show { display: flex; }
-.m-spinner {
-  width: 44px; height: 44px; border: 4px solid var(--blue-bg);
-  border-top: 4px solid var(--blue); border-radius: 50%;
-  animation: spin .7s linear infinite;
-}
-@keyframes spin { to { transform: rotate(360deg); } }
-.loading-screen p { font-size: 15px; font-weight: 600; color: var(--blue); }
-
-/* ═══════════════════════ TOAST ═══════════════════════ */
-#m-toast {
-  position: fixed; bottom: calc(80px + var(--safe-bottom)); left: 16px; right: 16px;
-  background: var(--dark); color: #acd4f5;
-  padding: 13px 18px; border-radius: 12px;
-  font-size: 14px; font-weight: 500;
-  border-left: 4px solid var(--blue-lt);
-  transform: translateY(20px); opacity: 0;
-  transition: all .25s; z-index: 500; pointer-events: none;
-}
-#m-toast.show { transform: translateY(0); opacity: 1; }
-
-/* ═══════════════════════ STEP HEADER ═══════════════════════ */
-.step-hero {
-  padding: 20px 0 4px;
-  display: flex; align-items: center; gap: 12px;
-}
-.step-num {
-  width: 36px; height: 36px; border-radius: 50%;
-  background: var(--blue); color: #fff;
-  display: flex; align-items: center; justify-content: center;
-  font-size: 15px; font-weight: 700; flex-shrink: 0;
-}
-.step-info .step-title { font-size: 18px; font-weight: 700; color: var(--dark); }
-.step-info .step-sub   { font-size: 13px; color: var(--mid); margin-top: 2px; }
-
-/* ═══════════════════════ EMPTY STATE ═══════════════════════ */
-.m-empty {
-  text-align: center; padding: 60px 20px;
-  color: var(--mid);
-}
-.m-empty .ei { font-size: 52px; margin-bottom: 12px; }
-.m-empty .et { font-size: 16px; font-weight: 600; margin-bottom: 4px; }
-.m-empty .es { font-size: 14px; }
-
-/* ═══════════════════════ DESKTOP REDIRECT BANNER ═══════════════════════ */
-.desktop-tip {
-  background: var(--blue-bg); border-radius: 10px;
-  padding: 12px 14px; margin-bottom: 14px;
-  font-size: 13px; color: var(--blue);
-  display: flex; align-items: center; gap: 8px;
-}
+html,body{height:100%;font-family:'DM Sans',system-ui,sans-serif;background:var(--light);color:var(--dark)}
+body{-webkit-text-size-adjust:100%;overscroll-behavior-y:none}
+/* screens */
+.sc{display:none;min-height:100vh;flex-direction:column}.sc.on{display:flex}
+/* topbar */
+.tb{background:var(--dark);color:#fff;display:flex;align-items:center;gap:10px;
+  padding:14px 16px;padding-top:calc(14px + var(--st));position:sticky;top:0;z-index:100;flex-shrink:0}
+.tb-bk{background:none;border:none;color:rgba(255,255,255,.7);font-size:22px;
+  cursor:pointer;padding:4px 6px;min-width:36px;display:flex;align-items:center}
+.tb-logo{width:32px;border-radius:4px;flex-shrink:0}
+.tb-ttl{flex:1;font-size:15px;font-weight:700;color:#fff;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+.tb-act{background:rgba(255,255,255,.14);border:none;color:rgba(255,255,255,.9);
+  font-size:13px;font-weight:600;cursor:pointer;padding:7px 14px;border-radius:20px;
+  font-family:'DM Sans',sans-serif;white-space:nowrap}
+/* progress */
+.prog-wrap{background:var(--dark);padding:0 16px 14px;flex-shrink:0}
+.prog-bars{display:flex;gap:4px}
+.pb{flex:1;height:4px;border-radius:2px;background:rgba(255,255,255,.18);transition:background .3s}
+.pb.done{background:var(--blt)}.pb.cur{background:#fff}
+.prog-labels{display:flex;justify-content:space-between;margin-top:7px;font-size:11px;color:rgba(255,255,255,.45)}
+.prog-labels .cl{color:#fff;font-weight:600}
+/* scroll area */
+.sarea{flex:1;overflow-y:auto;-webkit-overflow-scrolling:touch;
+  padding:16px 16px calc(90px + var(--sb))}
+/* cards */
+.card{background:var(--white);border-radius:var(--r);padding:20px;
+  border:1px solid var(--border);margin-bottom:14px;box-shadow:0 1px 6px rgba(0,0,0,.05)}
+.card-ttl{font-size:12px;font-weight:700;color:var(--blue);text-transform:uppercase;
+  letter-spacing:.07em;margin-bottom:16px;padding-bottom:8px;border-bottom:1.5px solid var(--bbg)}
+/* fields */
+.fg{margin-bottom:16px}.fg:last-child{margin-bottom:0}
+.flb{display:block;font-size:11px;font-weight:700;color:var(--mid);
+  text-transform:uppercase;letter-spacing:.06em;margin-bottom:6px}
+.fi{width:100%;padding:13px 14px;border:1.5px solid var(--border);border-radius:10px;
+  font-family:'DM Sans',sans-serif;font-size:16px;color:var(--dark);background:var(--white);
+  outline:none;-webkit-appearance:none;appearance:none;transition:border-color .15s}
+.fi:focus{border-color:var(--blue);box-shadow:0 0 0 3px rgba(37,99,168,.1)}
+select.fi{background-image:url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='12' height='8'%3E%3Cpath d='M1 1l5 5 5-5' stroke='%235a6580' stroke-width='1.5' fill='none' stroke-linecap='round'/%3E%3C/svg%3E");
+  background-repeat:no-repeat;background-position:right 14px center;padding-right:40px}
+input[type=date].fi{color-scheme:light}
+/* item rows */
+.irow{display:flex;align-items:center;gap:10px;padding:12px 0;border-bottom:1px solid var(--border)}
+.irow:first-child{padding-top:0}.irow:last-child{border-bottom:none;padding-bottom:0}
+.iinfo{flex:1;min-width:0}
+.iname{font-size:14px;font-weight:500;line-height:1.3}
+.prow{display:flex;align-items:center;gap:5px;margin-top:4px}
+.plbl{font-size:11px;color:var(--mid)}
+.pinp{width:72px;padding:4px 8px;border:1.5px solid var(--border);border-radius:6px;
+  font-size:14px;font-family:'DM Sans',sans-serif;color:var(--dark);outline:none;text-align:right;background:var(--white)}
+.pinp:focus{border-color:var(--blue)}
+.qctrl{display:flex;align-items:center;background:var(--light);
+  border-radius:10px;border:1.5px solid var(--border);overflow:hidden;flex-shrink:0}
+.qbtn{width:40px;height:40px;border:none;background:none;font-size:22px;
+  color:var(--blue);cursor:pointer;display:flex;align-items:center;justify-content:center;
+  -webkit-tap-highlight-color:transparent;user-select:none;-webkit-user-select:none;transition:background .1s}
+.qbtn:active{background:var(--bbg)}
+.qnum{min-width:34px;text-align:center;font-size:15px;font-weight:700;padding:0 2px}
+.iamt{min-width:56px;text-align:right;font-size:13px;font-weight:700}
+/* totals */
+.tc{background:var(--white);border-radius:var(--r);border:1px solid var(--border);overflow:hidden;margin-bottom:14px}
+.tr{display:flex;justify-content:space-between;align-items:center;
+  padding:13px 18px;border-bottom:1px solid var(--border);font-size:14px}
+.tr:last-child{border-bottom:none}
+.tr.tot{background:var(--bbg);font-weight:700;font-size:16px}
+.tr.ant{background:#e8f5ee}
+.tlbl{color:var(--mid);font-weight:500}
+.tval{font-weight:700}
+.tinp{width:110px;padding:6px 10px;border-radius:8px;border:1.5px solid var(--blue);
+  font-size:15px;font-weight:700;font-family:'DM Sans',sans-serif;text-align:right;
+  color:var(--dark);background:#fff;outline:none}
+/* summary */
+.srow{display:flex;justify-content:space-between;padding:9px 0;
+  border-bottom:1px solid var(--border);font-size:14px}
+.srow:last-child{border-bottom:none}
+.slbl{color:var(--mid);font-weight:500}.sval{font-weight:600}
+.sitems{font-size:13px}.sitems li{padding:5px 0;border-bottom:1px solid #f0f4f8;
+  display:flex;justify-content:space-between;gap:8px}
+/* step header */
+.shdr{padding:16px 0 4px;display:flex;align-items:center;gap:12px;margin-bottom:4px}
+.snum{width:36px;height:36px;border-radius:50%;background:var(--blue);color:#fff;
+  display:flex;align-items:center;justify-content:center;font-size:15px;font-weight:700;flex-shrink:0}
+.sttl{font-size:18px;font-weight:700}.ssub{font-size:13px;color:var(--mid);margin-top:2px}
+/* bottom buttons */
+.bbar{position:fixed;bottom:0;left:0;right:0;background:var(--white);
+  border-top:1px solid var(--border);padding:12px 16px calc(12px + var(--sb));
+  display:flex;gap:10px;box-shadow:0 -4px 20px rgba(0,0,0,.08);z-index:90}
+.wbtn{flex:1;padding:14px 10px;border-radius:12px;border:none;font-family:'DM Sans',sans-serif;
+  font-size:15px;font-weight:700;cursor:pointer;display:flex;align-items:center;
+  justify-content:center;gap:6px;-webkit-tap-highlight-color:transparent;transition:transform .1s}
+.wbtn:active{transform:scale(.97)}
+.wbtn-prev{background:var(--light);color:var(--mid);border:1.5px solid var(--border)}
+.wbtn-next{background:var(--blue);color:#fff}
+.wbtn-exp{background:var(--dark);color:#fff}
+/* bottom nav */
+.bnav{position:fixed;bottom:0;left:0;right:0;background:var(--dark);
+  padding:10px 0 calc(10px + var(--sb));display:flex;z-index:90}
+.bn{flex:1;display:flex;flex-direction:column;align-items:center;gap:3px;
+  padding:6px 4px;cursor:pointer;color:rgba(255,255,255,.4);border:none;background:none;
+  font-family:'DM Sans',sans-serif;-webkit-tap-highlight-color:transparent}
+.bn.on{color:#fff}
+.bi{font-size:22px}.bl{font-size:10px;font-weight:600}
+/* home */
+.hhero{background:var(--dark);padding:24px 18px 20px;
+  padding-top:calc(24px + var(--st));display:flex;align-items:center;gap:14px;flex-shrink:0}
+.hhero img{width:52px;border-radius:8px}
+.hbrand{font-size:22px;font-weight:700;color:#fff}
+.hsub{font-size:13px;color:rgba(255,255,255,.4);margin-top:2px}
+.hlink{margin-left:auto;font-size:10px;color:rgba(255,255,255,.3);text-decoration:none}
+.hcontent{flex:1;overflow-y:auto;-webkit-overflow-scrolling:touch;
+  padding:16px 16px calc(90px + var(--sb))}
+.sgrid{display:grid;grid-template-columns:1fr 1fr;gap:12px;margin-bottom:16px}
+.scard{background:var(--white);border-radius:12px;padding:16px;border:1px solid var(--border)}
+.sclbl{font-size:11px;font-weight:600;color:var(--mid);text-transform:uppercase}
+.scval{font-size:22px;font-weight:700;margin-top:4px}
+.nbtn{width:100%;padding:17px;border:none;border-radius:14px;background:var(--blue);
+  color:#fff;font-family:'DM Sans',sans-serif;font-size:17px;font-weight:700;cursor:pointer;
+  display:flex;align-items:center;justify-content:center;gap:8px;margin-bottom:16px;
+  box-shadow:0 4px 16px rgba(37,99,168,.3);-webkit-tap-highlight-color:transparent}
+.nbtn:active{transform:scale(.98)}
+.rec-ttl{font-size:15px;font-weight:700;margin-bottom:10px}
+/* historial */
+.hcont{flex:1;overflow-y:auto;-webkit-overflow-scrolling:touch;
+  padding:14px 16px calc(90px + var(--sb))}
+.sinp{width:100%;padding:12px 16px;border:1.5px solid var(--border);border-radius:12px;
+  font-family:'DM Sans',sans-serif;font-size:16px;color:var(--dark);background:var(--white);
+  outline:none;-webkit-appearance:none;margin-bottom:14px}
+.sinp:focus{border-color:var(--blue)}
+/* contract card */
+.ccard{background:var(--white);border-radius:14px;border:1px solid var(--border);
+  padding:16px;margin-bottom:10px;box-shadow:0 1px 4px rgba(0,0,0,.05)}
+.cctop{display:flex;justify-content:space-between;align-items:flex-start;margin-bottom:10px}
+.ccname{font-size:16px;font-weight:700}
+.cctotal{font-size:15px;font-weight:700;color:var(--blue)}
+.ccmeta{font-size:12px;color:var(--mid);display:flex;flex-direction:column;gap:3px;margin-top:3px}
+.ccacts{display:flex;gap:8px}
+.ccbtn{flex:1;padding:10px;border-radius:10px;border:none;font-family:'DM Sans',sans-serif;
+  font-size:13px;font-weight:600;cursor:pointer;-webkit-tap-highlight-color:transparent}
+.ccbtn:active{transform:scale(.97)}
+.cce{background:var(--bbg);color:var(--blue)}
+.ccx{background:#f0f4f8;color:var(--dark)}
+.ccd{background:#fde8e8;color:var(--red)}
+/* export sheet */
+.sbg{display:none;position:fixed;inset:0;background:rgba(0,0,0,.5);z-index:200}
+.sbg.on{display:block}
+.sheet{position:fixed;left:0;right:0;bottom:0;z-index:201;background:var(--white);
+  border-radius:20px 20px 0 0;padding:0 20px calc(20px + var(--sb));
+  transform:translateY(100%);transition:transform .3s cubic-bezier(.32,.72,0,1)}
+.sheet.on{transform:translateY(0)}
+.shandle{width:40px;height:4px;background:#ddd;border-radius:2px;margin:12px auto 20px}
+.sttitle{font-size:18px;font-weight:700;margin-bottom:6px}
+.stsub{font-size:13px;color:var(--mid);margin-bottom:20px}
+.egrid{display:grid;grid-template-columns:1fr 1fr;gap:12px}
+.etile{padding:18px 10px;border-radius:14px;border:none;display:flex;flex-direction:column;
+  align-items:center;gap:8px;cursor:pointer;font-family:'DM Sans',sans-serif;
+  font-size:14px;font-weight:700;-webkit-tap-highlight-color:transparent}
+.etile:active{transform:scale(.95)}
+.eti{font-size:28px}
+.et-docx{background:#dbeafe;color:#1d4ed8}.et-pdf{background:#fee2e2;color:#b91c1c}
+.et-png{background:#ede9fe;color:#6d28d9}.et-jpg{background:#ffedd5;color:#c2410c}
+.et-cal{background:#dcfce7;color:#15803d;grid-column:span 2}
+/* confirm */
+.cbg{display:none;position:fixed;inset:0;background:rgba(0,0,0,.5);z-index:300;
+  align-items:flex-end;justify-content:center}
+.cbg.on{display:flex}
+.cbox{background:var(--white);border-radius:20px 20px 0 0;width:100%;
+  padding:24px 20px calc(24px + var(--sb))}
+.cttl{font-size:17px;font-weight:700;margin-bottom:8px}
+.cmsg{font-size:14px;color:var(--mid);margin-bottom:20px}
+.cbtns{display:flex;flex-direction:column;gap:10px}
+.cbtn{width:100%;padding:15px;border-radius:12px;border:none;
+  font-family:'DM Sans',sans-serif;font-size:16px;font-weight:700;cursor:pointer}
+.cbtn-d{background:var(--red);color:#fff}
+.cbtn-c{background:var(--light);color:var(--mid)}
+/* loading */
+.lbg{display:none;position:fixed;inset:0;background:rgba(255,255,255,.9);z-index:400;
+  align-items:center;justify-content:center;flex-direction:column;gap:14px}
+.lbg.show{display:flex}
+.lspin{width:44px;height:44px;border:4px solid var(--bbg);border-top:4px solid var(--blue);
+  border-radius:50%;animation:spin .7s linear infinite}
+@keyframes spin{to{transform:rotate(360deg)}}
+.lbg p{font-size:15px;font-weight:600;color:var(--blue)}
+/* toast */
+#mtoast{position:fixed;bottom:calc(82px + var(--sb));left:16px;right:16px;
+  background:var(--dark);color:#acd4f5;padding:13px 18px;border-radius:12px;
+  font-size:14px;font-weight:500;border-left:4px solid var(--blt);
+  transform:translateY(20px);opacity:0;transition:all .25s;z-index:500;pointer-events:none}
+#mtoast.show{transform:translateY(0);opacity:1}
+/* empty */
+.mempty{text-align:center;padding:52px 20px;color:var(--mid)}
+.mempty .ei{font-size:48px;margin-bottom:10px}
+.mempty .et{font-size:16px;font-weight:600;margin-bottom:4px}
+.mempty .es{font-size:14px}
 </style>
 </head>
 <body>
 
-<!-- ═══════════ SCREEN: HOME ═══════════════════════════════════════════ -->
-<div class="screen active" id="s-home">
-  <div class="home-hero">
-    <img id="m-logo" src="" alt="CASVEL">
-    <div class="home-hero-text">
-      <div class="brand">CASVEL</div>
-      <div class="sub">Gestor de Contratos</div>
-    </div>
-    <a href="index.html?force=desktop" style="font-size:10px;color:rgba(255,255,255,.3);text-decoration:none;margin-left:auto;white-space:nowrap">🖥 Escritorio</a>
-  </div>
-
-  <div class="home-stats" id="m-stats"></div>
-
-  <button class="new-contract-btn" onclick="startNewContract()">
-    ✏️ Nuevo Contrato
-  </button>
-
-  <div class="recent-section">
-    <div class="recent-title">Recientes</div>
-    <div id="m-recent"></div>
-  </div>
-
-  <nav class="bottom-nav">
-    <button class="bnav-item active" onclick="gotoScreen('s-home')">
-      <span class="bni">🏠</span><span class="bnl">Inicio</span>
-    </button>
-    <button class="bnav-item" onclick="gotoScreen('s-historial')">
-      <span class="bni">📋</span><span class="bnl">Historial</span>
-    </button>
-    <button class="bnav-item" onclick="startNewContract()">
-      <span class="bni">✏️</span><span class="bnl">Nuevo</span>
-    </button>
-  </nav>
-</div>
-
-<!-- ═══════════ SCREEN: HISTORIAL ══════════════════════════════════════ -->
-<div class="screen" id="s-historial">
-  <div class="topbar" style="padding-bottom:14px">
-    <span class="topbar-logo" style="width:auto;font-size:20px">📋</span>
-    <span class="topbar-title">Historial</span>
-    <button class="topbar-action" onclick="startNewContract()">+ Nuevo</button>
-  </div>
-  <div class="hist-scroll">
-    <div class="search-wrap">
-      <input type="search" class="search-field" id="m-search" placeholder="🔍  Buscar contratos…" oninput="renderMobileHistorial()">
-    </div>
-    <div id="m-historial-list"></div>
-  </div>
-  <nav class="bottom-nav">
-    <button class="bnav-item" onclick="gotoScreen('s-home')">
-      <span class="bni">🏠</span><span class="bnl">Inicio</span>
-    </button>
-    <button class="bnav-item active" onclick="gotoScreen('s-historial')">
-      <span class="bni">📋</span><span class="bnl">Historial</span>
-    </button>
-    <button class="bnav-item" onclick="startNewContract()">
-      <span class="bni">✏️</span><span class="bnl">Nuevo</span>
-    </button>
-  </nav>
-</div>
-
-<!-- ═══════════ SCREEN: WIZARD ════════════════════════════════════════ -->
-<div class="screen" id="s-wizard">
-
-  <!-- TOP BAR -->
-  <div class="topbar">
-    <button class="topbar-back" onclick="wizardBack()">←</button>
-    <img class="topbar-logo" id="wiz-logo" src="" alt="">
-    <span class="topbar-title" id="wiz-title">Nuevo Contrato</span>
-    <button class="topbar-action" id="wiz-save-btn" onclick="mSaveContract()">Guardar</button>
-  </div>
-
-  <!-- PROGRESS -->
-  <div class="progress-wrap">
-    <div class="progress-steps" id="prog-steps"></div>
-    <div class="progress-label">
-      <span id="prog-step-lbl" class="cur">Paso 1 de 5</span>
-      <span id="prog-step-name"></span>
-    </div>
-  </div>
-
-  <!-- STEP CONTENT -->
-  <div class="scroll-area" id="wiz-scroll">
-
-    <!-- STEP 1: Datos del cliente -->
-    <div class="wiz-step" id="step-1">
-      <div class="step-hero">
-        <div class="step-num">1</div>
-        <div class="step-info">
-          <div class="step-title">Datos del Cliente</div>
-          <div class="step-sub">Información del arrendatario</div>
-        </div>
-      </div>
-      <div class="card" style="margin-top:16px">
-        <div class="field-group">
-          <label class="field-label">Nombre completo *</label>
-          <input type="text" class="field-input" id="m-nombre" placeholder="Nombre del cliente" autocomplete="name" oninput="syncField('m-nombre','c-nombre')">
-        </div>
-        <div class="field-group">
-          <label class="field-label">Teléfono</label>
-          <input type="tel" class="field-input" id="m-tel" placeholder="614 123 4567" autocomplete="tel" oninput="syncField('m-tel','c-tel')">
-        </div>
-        <div class="field-group">
-          <label class="field-label">Dirección del evento</label>
-          <input type="text" class="field-input" id="m-dir" placeholder="Calle, colonia, ciudad" autocomplete="street-address" oninput="syncField('m-dir','c-dir')">
-        </div>
-      </div>
-    </div>
-
-    <!-- STEP 2: Fecha y horarios -->
-    <div class="wiz-step" id="step-2" style="display:none">
-      <div class="step-hero">
-        <div class="step-num">2</div>
-        <div class="step-info">
-          <div class="step-title">Fecha y Horarios</div>
-          <div class="step-sub">¿Cuándo es el evento?</div>
-        </div>
-      </div>
-      <div class="card" style="margin-top:16px">
-        <div class="field-group">
-          <label class="field-label">Fecha del contrato</label>
-          <input type="date" class="field-input" id="m-cDate" oninput="syncField('m-cDate','cDate')">
-        </div>
-        <div class="field-group">
-          <label class="field-label">Fecha del evento</label>
-          <input type="date" class="field-input" id="m-fEvento" oninput="syncField('m-fEvento','c-fEvento')">
-        </div>
-        <div class="field-group">
-          <label class="field-label">Horario de entrega</label>
-          <select class="field-input" id="m-hEntrega" onchange="syncSelect('m-hEntrega','c-hEntrega')"></select>
-        </div>
-        <div class="field-group">
-          <label class="field-label">Horario de recolección</label>
-          <select class="field-input" id="m-hRecol" onchange="syncSelect('m-hRecol','c-hRecol')"></select>
-        </div>
-      </div>
-    </div>
-
-    <!-- STEP 3: Mobiliario -->
-    <div class="wiz-step" id="step-3" style="display:none">
-      <div class="step-hero">
-        <div class="step-num">3</div>
-        <div class="step-info">
-          <div class="step-title">Mobiliario</div>
-          <div class="step-sub">Selecciona las cantidades</div>
-        </div>
-      </div>
-      <div class="card" style="margin-top:16px">
-        <div id="m-items-list"></div>
-      </div>
-    </div>
-
-    <!-- STEP 4: Totales -->
-    <div class="wiz-step" id="step-4" style="display:none">
-      <div class="step-hero">
-        <div class="step-num">4</div>
-        <div class="step-info">
-          <div class="step-title">Totales</div>
-          <div class="step-sub">Revisa y ajusta los montos</div>
-        </div>
-      </div>
-      <div class="totals-block" style="margin-top:16px" id="m-totals-block">
-        <div class="totals-row">
-          <span class="lbl">Subtotal artículos</span>
-          <span class="val" id="m-subtotal">$0.00</span>
-        </div>
-        <div class="totals-row">
-          <span class="lbl">Traslado</span>
-          <input type="number" class="val-input" id="m-traslado" min="0" step="50" value="0"
-            oninput="syncField('m-traslado','c-traslado');mCalcAll()">
-        </div>
-        <div class="totals-row total">
-          <span class="lbl">Total</span>
-          <span class="val" id="m-total">$0.00</span>
-        </div>
-        <div class="totals-row anticipo">
-          <span class="lbl">Anticipo (25%)</span>
-          <input type="number" class="val-input" id="m-anticipo" min="0" step="0.01" value="0"
-            oninput="syncField('m-anticipo','c-anticipo');mCalcResta()">
-        </div>
-        <div class="totals-row">
-          <span class="lbl">Resta por Pagar</span>
-          <span class="val" id="m-resta">$0.00</span>
-        </div>
-      </div>
-    </div>
-
-    <!-- STEP 5: Confirmar y exportar -->
-    <div class="wiz-step" id="step-5" style="display:none">
-      <div class="step-hero">
-        <div class="step-num">5</div>
-        <div class="step-info">
-          <div class="step-title">Resumen</div>
-          <div class="step-sub">Confirma y exporta</div>
-        </div>
-      </div>
-      <div style="margin-top:16px" id="m-summary"></div>
-    </div>
-
-  </div><!-- /scroll-area -->
-
-  <!-- BOTTOM BUTTONS -->
-  <div class="bottom-bar">
-    <button class="btn btn-prev" id="btn-prev" onclick="wizPrev()">← Anterior</button>
-    <button class="btn btn-next" id="btn-next" onclick="wizNext()">Siguiente →</button>
-  </div>
-
-</div><!-- /s-wizard -->
-
-<!-- ═══════════ EXPORT SHEET ═══════════════════════════════════════════ -->
-<div class="sheet-overlay" id="sheet-overlay" onclick="closeExportSheet()"></div>
-<div class="bottom-sheet" id="export-sheet">
-  <div class="sheet-handle"></div>
-  <div class="sheet-title">Exportar Contrato</div>
-  <div class="sheet-sub">Elige el formato de descarga</div>
-  <div class="export-grid">
-    <button class="export-tile et-docx" onclick="closeExportSheet();genDOCX()">
-      <span class="ti">📝</span>Word (.docx)
-    </button>
-    <button class="export-tile et-pdf" onclick="closeExportSheet();genPDF()">
-      <span class="ti">📄</span>PDF
-    </button>
-    <button class="export-tile et-png" onclick="closeExportSheet();genImage('png')">
-      <span class="ti">🖼️</span>PNG
-    </button>
-    <button class="export-tile et-jpg" onclick="closeExportSheet();genImage('jpg')">
-      <span class="ti">📷</span>JPG
-    </button>
-    <button class="export-tile et-cal" onclick="closeExportSheet();addToCalendar()" style="grid-column:span 2">
-      <span class="ti">📅</span>Agregar al Calendario
-    </button>
-  </div>
-</div>
-
-<!-- ═══════════ CONFIRM DELETE ═══════════════════════════════════════ -->
-<div class="confirm-overlay" id="m-confirm-overlay">
-  <div class="confirm-box">
-    <div class="confirm-title">Eliminar contrato</div>
-    <div class="confirm-msg" id="m-confirm-msg">¿Eliminar este contrato? Esta acción no se puede deshacer.</div>
-    <div class="confirm-btns">
-      <button class="confirm-btn confirm-del" onclick="mConfirmDelete()">Eliminar</button>
-      <button class="confirm-btn confirm-cancel" onclick="mCloseConfirm()">Cancelar</button>
-    </div>
-  </div>
-</div>
-
-<!-- ═══════════ LOADING ════════════════════════════════════════════════ -->
-<div class="loading-screen" id="m-loading">
-  <div class="m-spinner"></div>
-  <p id="m-loading-msg">Generando...</p>
-</div>
-
-<!-- ═══════════ TOAST ═════════════════════════════════════════════════ -->
-<div id="m-toast"></div>
-
-<script src="app.js"></script>
 <script>
-/* ═══════════════════════════════════════════════════════════════════════
-   MOBILE APP — all logic self-contained, no desktop DOM elements needed.
-   app.js functions genDOCX/genImage/addToCalendar use mCollectForm()
-   defined here, so exports work correctly.
-═══════════════════════════════════════════════════════════════════════ */
+// Redirect to desktop if not mobile (skip if ?m=1)
+if(!/[?&]m=1/.test(location.search) &&
+   !/Mobi|Android|iPhone|iPad/i.test(navigator.userAgent) && window.innerWidth>=768)
+  window.location.replace('index.html');
+</script>
 
-/* ── State ─────────────────────────────────────────────────────────── */
-var wizStep          = 1;
-var TOTAL_STEPS      = 5;
-var STEP_NAMES       = ['Cliente','Fecha','Mobiliario','Totales','Resumen'];
-var mPendingDeleteId = null;
-var mCurrentEditId   = null;
+<!-- ═══ HOME ══════════════════════════════════════════════════════════ -->
+<div class="sc on" id="sc-home">
+  <div class="hhero">
+    <img id="m-logo" src="" alt="">
+    <div><div class="hbrand">CASVEL</div><div class="hsub">Gestor de Contratos</div></div>
+    <a class="hlink" href="index.html?d=1">🖥 Escritorio</a>
+  </div>
+  <div class="hcontent">
+    <div class="sgrid" id="home-stats"></div>
+    <button class="nbtn" onclick="startNew()">✏️ Nuevo Contrato</button>
+    <div class="rec-ttl">Recientes</div>
+    <div id="home-recent"></div>
+  </div>
+  <nav class="bnav">
+    <button class="bn on" id="bn-home" onclick="goTo('sc-home')"><span class="bi">🏠</span><span class="bl">Inicio</span></button>
+    <button class="bn" id="bn-hist" onclick="goTo('sc-hist')"><span class="bi">📋</span><span class="bl">Historial</span></button>
+    <button class="bn" onclick="startNew()"><span class="bi">✏️</span><span class="bl">Nuevo</span></button>
+  </nav>
+</div>
 
-/* ── Override app.js UI functions for mobile elements ─────────────── */
-function toast(msg) {
-  var t = document.getElementById('m-toast');
-  if (!t) return;
-  t.textContent = msg;
-  t.classList.add('show');
-  clearTimeout(t._to);
-  t._to = setTimeout(function(){ t.classList.remove('show'); }, 3500);
+<!-- ═══ HISTORIAL ═════════════════════════════════════════════════════ -->
+<div class="sc" id="sc-hist">
+  <div class="tb" style="padding-bottom:14px">
+    <span style="font-size:20px">📋</span>
+    <span class="tb-ttl">Historial</span>
+    <button class="tb-act" onclick="startNew()">+ Nuevo</button>
+  </div>
+  <div class="hcont">
+    <input type="search" class="sinp" id="m-search" placeholder="🔍  Buscar contratos…" oninput="renderHist()">
+    <div id="hist-list"></div>
+  </div>
+  <nav class="bnav">
+    <button class="bn" id="bn-home2" onclick="goTo('sc-home')"><span class="bi">🏠</span><span class="bl">Inicio</span></button>
+    <button class="bn on" id="bn-hist2" onclick="goTo('sc-hist')"><span class="bi">📋</span><span class="bl">Historial</span></button>
+    <button class="bn" onclick="startNew()"><span class="bi">✏️</span><span class="bl">Nuevo</span></button>
+  </nav>
+</div>
+
+<!-- ═══ WIZARD ════════════════════════════════════════════════════════ -->
+<div class="sc" id="sc-wiz">
+  <div class="tb">
+    <button class="tb-bk" onclick="goTo('sc-home')">←</button>
+    <img class="tb-logo" id="wiz-logo" src="" alt="">
+    <span class="tb-ttl" id="wiz-ttl">Nuevo Contrato</span>
+    <button class="tb-act" onclick="mSave()">Guardar</button>
+  </div>
+  <div class="prog-wrap">
+    <div class="prog-bars" id="prog-bars"></div>
+    <div class="prog-labels"><span id="prog-cur" class="cl">Paso 1 de 5</span><span id="prog-name"></span></div>
+  </div>
+  <div class="sarea" id="wiz-scroll">
+
+    <!-- step 1 -->
+    <div id="ws1">
+      <div class="shdr"><div class="snum">1</div>
+        <div><div class="sttl">Datos del Cliente</div><div class="ssub">Información del arrendatario</div></div>
+      </div>
+      <div class="card">
+        <div class="fg"><label class="flb">Nombre completo *</label>
+          <input type="text" class="fi" id="m-nombre" autocomplete="name" placeholder="Nombre del cliente"></div>
+        <div class="fg"><label class="flb">Teléfono</label>
+          <input type="tel" class="fi" id="m-tel" autocomplete="tel" placeholder="614 123 4567"></div>
+        <div class="fg"><label class="flb">Dirección del evento</label>
+          <input type="text" class="fi" id="m-dir" placeholder="Calle, colonia, ciudad"></div>
+      </div>
+    </div>
+
+    <!-- step 2 -->
+    <div id="ws2" style="display:none">
+      <div class="shdr"><div class="snum">2</div>
+        <div><div class="sttl">Fecha y Horarios</div><div class="ssub">¿Cuándo es el evento?</div></div>
+      </div>
+      <div class="card">
+        <div class="fg"><label class="flb">Fecha del contrato</label>
+          <input type="date" class="fi" id="m-cdate"></div>
+        <div class="fg"><label class="flb">Fecha del evento</label>
+          <input type="date" class="fi" id="m-fevento"></div>
+        <div class="fg"><label class="flb">Horario de entrega</label>
+          <select class="fi" id="m-hentrega"></select></div>
+        <div class="fg"><label class="flb">Horario de recolección</label>
+          <select class="fi" id="m-hrecol"></select></div>
+      </div>
+    </div>
+
+    <!-- step 3 -->
+    <div id="ws3" style="display:none">
+      <div class="shdr"><div class="snum">3</div>
+        <div><div class="sttl">Mobiliario</div><div class="ssub">Selecciona las cantidades</div></div>
+      </div>
+      <div class="card"><div id="m-items"></div></div>
+    </div>
+
+    <!-- step 4 -->
+    <div id="ws4" style="display:none">
+      <div class="shdr"><div class="snum">4</div>
+        <div><div class="sttl">Totales</div><div class="ssub">Revisa y ajusta los montos</div></div>
+      </div>
+      <div class="tc">
+        <div class="tr"><span class="tlbl">Subtotal artículos</span><span class="tval" id="m-sub">$0.00</span></div>
+        <div class="tr"><span class="tlbl">Traslado</span>
+          <input type="number" class="tinp" id="m-traslado" min="0" step="50" value="0" oninput="mCalc()">
+        </div>
+        <div class="tr tot"><span class="tlbl">Total</span><span class="tval" id="m-total">$0.00</span></div>
+        <div class="tr ant"><span class="tlbl">Anticipo (25%)</span>
+          <input type="number" class="tinp" id="m-anticipo" min="0" step="0.01" value="0">
+        </div>
+        <div class="tr"><span class="tlbl">Resta por Pagar</span><span class="tval" id="m-resta">$0.00</span></div>
+      </div>
+    </div>
+
+    <!-- step 5 -->
+    <div id="ws5" style="display:none">
+      <div class="shdr"><div class="snum">5</div>
+        <div><div class="sttl">Resumen</div><div class="ssub">Confirma y exporta</div></div>
+      </div>
+      <div id="m-summary"></div>
+    </div>
+
+  </div><!-- /sarea -->
+
+  <div class="bbar">
+    <button class="wbtn wbtn-prev" id="wbtn-prev" onclick="wizPrev()" style="display:none">← Anterior</button>
+    <button class="wbtn wbtn-next" id="wbtn-next" onclick="wizNext()">Siguiente →</button>
+  </div>
+</div>
+
+<!-- ═══ EXPORT SHEET ══════════════════════════════════════════════════ -->
+<div class="sbg" id="sbg" onclick="closeSheet()"></div>
+<div class="sheet" id="sheet">
+  <div class="shandle"></div>
+  <div class="sttitle">Exportar Contrato</div>
+  <div class="stsub">Elige el formato de descarga</div>
+  <div class="egrid">
+    <button class="etile et-docx" onclick="closeSheet();mDoDocx()"><span class="eti">📝</span>Word (.docx)</button>
+    <button class="etile et-pdf"  onclick="closeSheet();mDoPDF()"><span class="eti">📄</span>PDF</button>
+    <button class="etile et-png"  onclick="closeSheet();mDoImage('png')"><span class="eti">🖼️</span>PNG</button>
+    <button class="etile et-jpg"  onclick="closeSheet();mDoImage('jpg')"><span class="eti">📷</span>JPG</button>
+    <button class="etile et-cal"  onclick="closeSheet();mDoCal()"><span class="eti">📅</span>Agregar al Calendario</button>
+  </div>
+</div>
+
+<!-- ═══ CONFIRM ════════════════════════════════════════════════════════ -->
+<div class="cbg" id="conf-bg">
+  <div class="cbox">
+    <div class="cttl">Eliminar contrato</div>
+    <div class="cmsg" id="conf-msg"></div>
+    <div class="cbtns">
+      <button class="cbtn cbtn-d" onclick="doDelete()">Eliminar</button>
+      <button class="cbtn cbtn-c" onclick="closeConfirm()">Cancelar</button>
+    </div>
+  </div>
+</div>
+
+<!-- ═══ LOADING ════════════════════════════════════════════════════════ -->
+<div class="lbg" id="m-loading">
+  <div class="lspin"></div>
+  <p id="m-load-msg">Generando...</p>
+</div>
+
+<!-- ═══ TOAST ══════════════════════════════════════════════════════════ -->
+<div id="mtoast"></div>
+
+<script src="shared.js"></script>
+<script>
+"use strict";
+
+/* ── State ── */
+var M_step   = 1;
+var M_steps  = 5;
+var M_names  = ['Cliente','Fechas','Mobiliario','Totales','Resumen'];
+var M_editId = null;
+var M_delId  = null;
+
+/* ── Helpers ── */
+function el(id){ return document.getElementById(id); }
+function gv(id){ var e=el(id); return e?e.value:''; }
+function sv(id,v){ var e=el(id); if(e) e.value=v; }
+function gt(id){ var e=el(id); return e?e.textContent:''; }
+function st(id,v){ var e=el(id); if(e) e.textContent=v; }
+
+function showToast(msg){
+  var t=el('mtoast'); t.textContent=msg; t.classList.add('show');
+  clearTimeout(t._t); t._t=setTimeout(function(){t.classList.remove('show');},3500);
 }
-function showLoading(msg) {
-  var p = document.getElementById('m-loading-msg');
-  var o = document.getElementById('m-loading');
-  if (p) p.textContent = msg || 'Generando...';
-  if (o) o.classList.add('show');
-}
-function hideLoading() {
-  var o = document.getElementById('m-loading');
-  if (o) o.classList.remove('show');
-}
+function showLoad(msg){ el('m-load-msg').textContent=msg||'Generando...'; el('m-loading').classList.add('show'); }
+function hideLoad(){ el('m-loading').classList.remove('show'); }
 
-/* ── mCollectForm — used by genDOCX, genImage, addToCalendar ──────── */
-function mCollectForm() {
-  var rows = ITEMS.map(function(it, i) {
-    var qty   = parseInt(document.getElementById('mqty-'   + i).textContent) || 0;
-    var price = parseFloat(document.getElementById('mprice-' + i).value)     || it.price;
-    return { qty: qty, price: price, amt: qty * price };
-  });
-  var totalTxt = (document.getElementById('m-total').textContent || '0').replace('$','');
-  var restaTxt = (document.getElementById('m-resta').textContent || '0').replace('$','');
-  function selLbl(id) {
-    var e = document.getElementById(id);
-    return (e && e.options && e.options[e.selectedIndex]) ? e.options[e.selectedIndex].text : '';
-  }
-  return {
-    cDate:     document.getElementById('m-cDate').value    || '',
-    nombre:    document.getElementById('m-nombre').value   || '',
-    tel:       document.getElementById('m-tel').value      || '',
-    dir:       document.getElementById('m-dir').value      || '',
-    fEvento:   document.getElementById('m-fEvento').value  || '',
-    hEntrega:  document.getElementById('m-hEntrega').value || '',
-    hEntregaL: selLbl('m-hEntrega'),
-    hRecol:    document.getElementById('m-hRecol').value   || '',
-    hRecolL:   selLbl('m-hRecol'),
-    traslado:  parseFloat(document.getElementById('m-traslado').value)  || 0,
-    anticipo:  parseFloat(document.getElementById('m-anticipo').value)  || 0,
-    total:     parseFloat(totalTxt) || 0,
-    resta:     parseFloat(restaTxt) || 0,
-    items:     rows
-  };
+/* ── Screen navigation ── */
+function goTo(id){
+  document.querySelectorAll('.sc').forEach(function(s){ s.classList.toggle('on', s.id===id); });
+  if(id==='sc-home') renderHome();
+  if(id==='sc-hist') renderHist();
+  window.scrollTo(0,0);
 }
 
-/* ── genPDF override: print page shows nothing useful on mobile.
-   Instead open a simple printable summary ─────────────────────────── */
-function genPDF() {
-  toast('💡 Para PDF, usa "Compartir → Imprimir" en tu navegador');
-}
+/* ── Init ── */
+document.addEventListener('DOMContentLoaded', function(){
+  var src='data:image/jpeg;base64,'+LOGO_B64;
+  el('m-logo').src=src; el('wiz-logo').src=src;
 
-/* ── Screen navigation ─────────────────────────────────────────────── */
-function gotoScreen(id) {
-  document.querySelectorAll('.screen').forEach(function(s) {
-    s.classList.toggle('active', s.id === id);
-  });
-  // Update bottom nav highlights
-  document.querySelectorAll('.bnav-item').forEach(function(btn) {
-    var oc = btn.getAttribute('onclick') || '';
-    btn.classList.toggle('active', oc.indexOf("'" + id + "'") !== -1);
-  });
-  if (id === 's-home')      renderMobileHome();
-  if (id === 's-historial') renderMobileHistorial();
-  window.scrollTo(0, 0);
-}
-
-/* ── DOMContentLoaded init ─────────────────────────────────────────── */
-window.addEventListener('DOMContentLoaded', function() {
-  // Logo
-  var src = 'data:image/jpeg;base64,' + LOGO_B64;
-  ['m-logo','wiz-logo'].forEach(function(id) {
-    var e = document.getElementById(id); if (e) e.src = src;
-  });
-
-  // Populate time selects
-  var opts = TIME_OPTIONS.map(function(t) {
-    return '<option value="' + t.value + '">' + t.label + '</option>';
+  var opts=TIME_OPTIONS.map(function(t){
+    return '<option value="'+t.value+'">'+t.label+'</option>';
   }).join('');
-  ['m-hEntrega','m-hRecol'].forEach(function(id) {
-    var e = document.getElementById(id); if (e) e.innerHTML = opts;
+  el('m-hentrega').innerHTML=opts;
+  el('m-hrecol').innerHTML=opts;
+
+  buildItems();
+  sv('m-cdate', todayISO());
+  buildProg();
+
+  // anticipo manual tracking
+  el('m-anticipo').addEventListener('input', function(){
+    this.dataset.manual='1'; mCalcResta();
   });
 
-  // Today's date
-  var e = document.getElementById('m-cDate'); if (e) e.value = todayISO();
-
-  // Build items + progress
-  buildMobileItems();
-  buildProgress();
-
-  // Render home
-  renderMobileHome();
+  renderHome();
 });
 
-/* ── Progress bar ──────────────────────────────────────────────────── */
-function buildProgress() {
-  var wrap = document.getElementById('prog-steps');
-  if (!wrap) return;
-  var h = '';
-  for (var i = 1; i <= TOTAL_STEPS; i++) h += '<div class="progress-step" id="pstep-' + i + '"></div>';
-  wrap.innerHTML = h;
-  updateProgress();
+/* ── Progress ── */
+function buildProg(){
+  var w=el('prog-bars'), h='';
+  for(var i=1;i<=M_steps;i++) h+='<div class="pb" id="pb'+i+'"></div>';
+  w.innerHTML=h; updateProg();
 }
-function updateProgress() {
-  for (var i = 1; i <= TOTAL_STEPS; i++) {
-    var el = document.getElementById('pstep-' + i);
-    if (!el) continue;
-    el.className = 'progress-step' + (i < wizStep ? ' done' : i === wizStep ? ' active' : '');
+function updateProg(){
+  for(var i=1;i<=M_steps;i++){
+    var e=el('pb'+i); if(!e) continue;
+    e.className='pb'+(i<M_step?' done':i===M_step?' cur':'');
   }
-  var lbl  = document.getElementById('prog-step-lbl');
-  var name = document.getElementById('prog-step-name');
-  if (lbl)  lbl.textContent  = 'Paso ' + wizStep + ' de ' + TOTAL_STEPS;
-  if (name) name.textContent = STEP_NAMES[wizStep - 1] || '';
-  var prev = document.getElementById('btn-prev');
-  var next = document.getElementById('btn-next');
-  if (prev) prev.style.display = wizStep === 1 ? 'none' : 'flex';
-  if (next) {
-    if (wizStep === TOTAL_STEPS) {
-      next.textContent = '⬇ Exportar'; next.className = 'btn btn-export';
-    } else {
-      next.textContent = 'Siguiente →'; next.className = 'btn btn-next';
-    }
+  st('prog-cur','Paso '+M_step+' de '+M_steps);
+  st('prog-name',M_names[M_step-1]||'');
+  var prev=el('wbtn-prev'), next=el('wbtn-next');
+  if(prev) prev.style.display=M_step===1?'none':'flex';
+  if(next){
+    if(M_step===M_steps){ next.textContent='⬇ Exportar'; next.className='wbtn wbtn-exp'; }
+    else               { next.textContent='Siguiente →'; next.className='wbtn wbtn-next'; }
   }
 }
 
-/* ── Wizard nav ─────────────────────────────────────────────────────── */
-function wizNext() {
-  if (wizStep === 1) {
-    var n = document.getElementById('m-nombre');
-    if (!n || !n.value.trim()) { toast('⚠️ Ingresa el nombre del cliente'); if (n) n.focus(); return; }
-  }
-  if (wizStep === TOTAL_STEPS) { openExportSheet(); return; }
-  showWizStep(wizStep + 1);
+/* ── Wizard nav ── */
+function goStep(n){
+  for(var i=1;i<=M_steps;i++){ var e=el('ws'+i); if(e) e.style.display='none'; }
+  M_step=n;
+  var c=el('ws'+n); if(c) c.style.display='block';
+  updateProg();
+  if(n===4) mCalc();
+  if(n===5) renderSummary();
+  var sa=el('wiz-scroll'); if(sa) sa.scrollTop=0;
 }
-function wizPrev() {
-  if (wizStep > 1) showWizStep(wizStep - 1);
-  else             gotoScreen('s-home');
+function wizNext(){
+  if(M_step===1 && !gv('m-nombre').trim()){ showToast('⚠️ Ingresa el nombre del cliente'); el('m-nombre').focus(); return; }
+  if(M_step===M_steps){ openSheet(); return; }
+  goStep(M_step+1);
 }
-function showWizStep(n) {
-  for (var i = 1; i <= TOTAL_STEPS; i++) {
-    var el = document.getElementById('step-' + i);
-    if (el) el.style.display = 'none';
-  }
-  wizStep = n;
-  var cur = document.getElementById('step-' + n);
-  if (cur) cur.style.display = 'block';
-  updateProgress();
-  if (n === 4) mUpdateTotals();
-  if (n === 5) renderSummary();
-  var sa = document.getElementById('wiz-scroll');
-  if (sa) sa.scrollTop = 0;
+function wizPrev(){
+  if(M_step>1) goStep(M_step-1); else goTo('sc-home');
 }
 
-/* ── Items list ─────────────────────────────────────────────────────── */
-function buildMobileItems() {
-  var c = document.getElementById('m-items-list'); if (!c) return;
-  c.innerHTML = ITEMS.map(function(it, i) {
-    return '<div class="item-row">' +
-      '<div style="flex:1">' +
-        '<div class="item-desc">' + it.desc + '</div>' +
-        '<div class="price-edit-row">' +
-          '<span class="price-edit-lbl">Precio $</span>' +
-          '<input class="price-edit-inp" type="number" min="0" step="0.01" ' +
-            'value="' + it.price.toFixed(2) + '" id="mprice-' + i + '" ' +
-            'oninput="mUpdateItemAmt(' + i + ')">' +
-        '</div>' +
-      '</div>' +
-      '<div class="item-controls">' +
-        '<button class="qty-btn" onclick="mQty(' + i + ',-1)">−</button>' +
-        '<div class="qty-display" id="mqty-' + i + '">0</div>' +
-        '<button class="qty-btn" onclick="mQty(' + i + ',1)">+</button>' +
-      '</div>' +
-      '<div class="item-amt" id="mamt-' + i + '">$0</div>' +
+/* ── Items list ── */
+function buildItems(){
+  var c=el('m-items'); if(!c) return;
+  c.innerHTML=ITEMS.map(function(it,i){
+    return '<div class="irow">'+
+      '<div class="iinfo">'+
+        '<div class="iname">'+it.desc+'</div>'+
+        '<div class="prow"><span class="plbl">Precio $</span>'+
+          '<input class="pinp" type="number" min="0" step="0.01" value="'+it.price.toFixed(2)+'" id="mp'+i+'" oninput="mUpdAmt('+i+')">'+
+        '</div>'+
+      '</div>'+
+      '<div class="qctrl">'+
+        '<button class="qbtn" onclick="mQty('+i+',-1)">−</button>'+
+        '<div class="qnum" id="mq'+i+'">0</div>'+
+        '<button class="qbtn" onclick="mQty('+i+',1)">+</button>'+
+      '</div>'+
+      '<div class="iamt" id="ma'+i+'">$0</div>'+
     '</div>';
   }).join('');
 }
-function mQty(i, delta) {
-  var d   = document.getElementById('mqty-' + i); if (!d) return;
-  var cur = parseInt(d.textContent) || 0;
-  d.textContent = Math.max(0, cur + delta);
-  mUpdateItemAmt(i);
-  if (navigator.vibrate) navigator.vibrate(8);
+function mQty(i,d){
+  var e=el('mq'+i); if(!e) return;
+  var n=Math.max(0,(parseInt(e.textContent)||0)+d);
+  e.textContent=n; mUpdAmt(i);
+  if(navigator.vibrate) navigator.vibrate(8);
 }
-function mUpdateItemAmt(i) {
-  var q = parseInt((document.getElementById('mqty-' + i)   || {textContent:'0'}).textContent) || 0;
-  var p = parseFloat((document.getElementById('mprice-' + i) || {value:'0'}).value)           || 0;
-  var a = document.getElementById('mamt-' + i);
-  if (a) a.textContent = q > 0 ? '$' + (q * p).toFixed(0) : '$0';
+function mUpdAmt(i){
+  var q=parseInt((el('mq'+i)||{textContent:'0'}).textContent)||0;
+  var p=parseFloat((el('mp'+i)||{value:'0'}).value)||0;
+  var a=el('ma'+i); if(a) a.textContent=q>0?'$'+(q*p).toFixed(0):'$0';
 }
 
-/* ── Totals (step 4) ────────────────────────────────────────────────── */
-function mUpdateTotals() {
-  var sub = 0;
-  ITEMS.forEach(function(it, i) {
-    var q = parseInt((document.getElementById('mqty-' + i) || {textContent:'0'}).textContent) || 0;
-    var p = parseFloat((document.getElementById('mprice-' + i) || {value:it.price}).value)   || it.price;
-    sub += q * p;
+/* ── Totals ── */
+function mCalc(){
+  var sub=0;
+  ITEMS.forEach(function(it,i){
+    var q=parseInt((el('mq'+i)||{textContent:'0'}).textContent)||0;
+    var p=parseFloat((el('mp'+i)||{value:it.price}).value)||it.price;
+    sub+=q*p;
   });
-  var tr = parseFloat((document.getElementById('m-traslado') || {value:'0'}).value) || 0;
-  var g  = sub + tr;
-  var st = document.getElementById('m-subtotal'); if (st) st.textContent = '$' + sub.toFixed(2);
-  var tt = document.getElementById('m-total');    if (tt) tt.textContent = '$' + g.toFixed(2);
-  var ai = document.getElementById('m-anticipo');
-  if (ai) ai.value = (g * 0.25).toFixed(2);
+  var tr=parseFloat(gv('m-traslado'))||0;
+  var g=sub+tr;
+  st('m-sub','$'+sub.toFixed(2));
+  st('m-total','$'+g.toFixed(2));
+  var ai=el('m-anticipo');
+  if(ai&&!ai.dataset.manual) ai.value=(g*.25).toFixed(2);
   mCalcResta();
 }
-function mCalcResta() {
-  var tt = document.getElementById('m-total');
-  var ai = document.getElementById('m-anticipo');
-  var re = document.getElementById('m-resta');
-  if (!tt || !ai || !re) return;
-  var total = parseFloat(tt.textContent.replace('$','')) || 0;
-  var ant   = parseFloat(ai.value) || 0;
-  re.textContent = '$' + (total - ant).toFixed(2);
+function mCalcResta(){
+  var total=parseFloat((gt('m-total')||'$0').replace('$',''))||0;
+  var ant=parseFloat(gv('m-anticipo'))||0;
+  st('m-resta','$'+(total-ant).toFixed(2));
 }
 
-/* ── Summary (step 5) ───────────────────────────────────────────────── */
-function renderSummary() {
-  var g = document.getElementById('m-summary'); if (!g) return;
-  var nom = (document.getElementById('m-nombre')  || {value:'—'}).value  || '—';
-  var tel = (document.getElementById('m-tel')     || {value:'—'}).value  || '—';
-  var dir = (document.getElementById('m-dir')     || {value:'—'}).value  || '—';
-  var fe  = (document.getElementById('m-fEvento') || {value:''}).value;
-  var cd  = (document.getElementById('m-cDate')   || {value:''}).value;
-  var sub = (document.getElementById('m-subtotal')|| {textContent:'$0'}).textContent;
-  var tr  = (document.getElementById('m-traslado')|| {value:'0'}).value || '0';
-  var tot = (document.getElementById('m-total')   || {textContent:'$0'}).textContent;
-  var ant = parseFloat((document.getElementById('m-anticipo') || {value:'0'}).value) || 0;
-  var res = (document.getElementById('m-resta')   || {textContent:'$0'}).textContent;
-  function selLbl(id) {
-    var e = document.getElementById(id);
-    return (e && e.options && e.options[e.selectedIndex]) ? e.options[e.selectedIndex].text : '—';
-  }
-  var heL = selLbl('m-hEntrega'), hrL = selLbl('m-hRecol');
-  var itemLines = ITEMS.map(function(it, i) {
-    var q = parseInt((document.getElementById('mqty-' + i) || {textContent:'0'}).textContent) || 0;
-    if (!q) return '';
-    var p = parseFloat((document.getElementById('mprice-' + i) || {value:it.price}).value) || it.price;
-    return '<li><span>' + it.desc + ' ×' + q + '</span><span>$' + (q*p).toFixed(2) + '</span></li>';
+/* ── Collect ── */
+function mCollect(){
+  var items=ITEMS.map(function(it,i){
+    var q=parseInt((el('mq'+i)||{textContent:'0'}).textContent)||0;
+    var p=parseFloat((el('mp'+i)||{value:it.price}).value)||it.price;
+    return {qty:q,price:p,amt:q*p};
+  });
+  var total=parseFloat((gt('m-total')||'$0').replace('$',''))||0;
+  var ant=parseFloat(gv('m-anticipo'))||0;
+  function sl(id){ var e=el(id); return (e&&e.options&&e.options[e.selectedIndex])?e.options[e.selectedIndex].text:''; }
+  return {
+    cDate:gv('m-cdate'), nombre:gv('m-nombre'), tel:gv('m-tel'), dir:gv('m-dir'),
+    fEvento:gv('m-fevento'), hEntrega:gv('m-hentrega'), hEntregaL:sl('m-hentrega'),
+    hRecol:gv('m-hrecol'), hRecolL:sl('m-hrecol'),
+    traslado:parseFloat(gv('m-traslado'))||0,
+    anticipo:ant, total:total, resta:total-ant, items:items
+  };
+}
+
+/* ── Populate ── */
+function mPopulate(d){
+  sv('m-nombre',d.nombre||'');  sv('m-tel',d.tel||'');
+  sv('m-dir',d.dir||'');        sv('m-cdate',d.cDate||todayISO());
+  sv('m-fevento',d.fEvento||'');sv('m-hentrega',d.hEntrega||'');
+  sv('m-hrecol',d.hRecol||'');  sv('m-traslado',d.traslado||0);
+  var ai=el('m-anticipo'); if(ai){ ai.value=(d.anticipo||0).toFixed(2); ai.removeAttribute('data-manual'); }
+  if(d.items) d.items.forEach(function(r,i){
+    var qe=el('mq'+i), pe=el('mp'+i);
+    if(qe) qe.textContent=r.qty||0;
+    if(pe) pe.value=(r.price||ITEMS[i].price).toFixed(2);
+    mUpdAmt(i);
+  });
+  mCalc();
+  if(ai){ ai.value=(d.anticipo||0).toFixed(2); ai.dataset.manual='1'; }
+  mCalcResta();
+}
+
+/* ── Summary ── */
+function renderSummary(){
+  var g=el('m-summary'); if(!g) return;
+  var d=mCollect();
+  function sl(id){ var e=el(id); return (e&&e.options&&e.options[e.selectedIndex])?e.options[e.selectedIndex].text:'—'; }
+  var il=ITEMS.map(function(it,i){
+    if(!d.items[i]||!d.items[i].qty) return '';
+    return '<li><span>'+it.desc+' ×'+d.items[i].qty+'</span><span>$'+d.items[i].amt.toFixed(2)+'</span></li>';
   }).filter(Boolean).join('');
-  function srow(l,v){ return '<div class="summary-item"><span class="summary-lbl">'+l+'</span><span class="summary-val">'+v+'</span></div>'; }
-  g.innerHTML =
-    '<div class="card"><div class="card-title">Cliente</div><div class="summary-section">' +
-      srow('Nombre',nom)+srow('Teléfono',tel)+srow('Dirección',dir)+
-      srow('Fecha evento',fmtDate(fe))+srow('Fecha contrato',fmtDate(cd))+
-      srow('Entrega',heL)+srow('Recolección',hrL)+
-    '</div></div>' +
-    '<div class="card"><div class="card-title">Mobiliario</div>' +
-      (itemLines ? '<ul class="summary-items-list">'+itemLines+'</ul>'
-                 : '<p style="color:var(--mid);font-size:14px">Sin artículos</p>') +
-    '</div>' +
-    '<div class="card"><div class="card-title">Resumen Financiero</div><div class="summary-section">' +
-      srow('Subtotal',sub)+srow('Traslado','$'+parseFloat(tr).toFixed(2))+
-      srow('Total',tot)+srow('Anticipo','$'+ant.toFixed(2))+srow('Resta',res)+
+  function sr(l,v){ return '<div class="srow"><span class="slbl">'+l+'</span><span class="sval">'+v+'</span></div>'; }
+  g.innerHTML=
+    '<div class="card"><div class="card-ttl">Cliente</div>'+
+      sr('Nombre',d.nombre||'—')+sr('Teléfono',d.tel||'—')+sr('Dirección',d.dir||'—')+
+      sr('Fecha evento',fmtDate(d.fEvento))+sr('Fecha contrato',fmtDate(d.cDate))+
+      sr('Entrega',sl('m-hentrega'))+sr('Recolección',sl('m-hrecol'))+
+    '</div>'+
+    '<div class="card"><div class="card-ttl">Mobiliario</div>'+
+      (il?'<ul class="sitems">'+il+'</ul>':'<p style="color:var(--mid);font-size:14px">Sin artículos</p>')+
+    '</div>'+
+    '<div class="card"><div class="card-ttl">Resumen Financiero</div>'+
+      sr('Subtotal',gt('m-sub')||'$0.00')+
+      sr('Traslado','$'+d.traslado.toFixed(2))+
+      sr('Total','$'+d.total.toFixed(2))+
+      sr('Anticipo','$'+d.anticipo.toFixed(2))+
+      sr('Resta','$'+d.resta.toFixed(2))+
+    '</div>';
+}
+
+/* ── Save ── */
+function mSave(){
+  var data=mCollect();
+  if(!data.nombre.trim()){ showToast('⚠️ Ingresa el nombre del cliente'); return; }
+  var list=loadContracts(), now=new Date().toISOString();
+  if(M_editId){
+    var idx=list.findIndex(function(c){return c.id===M_editId;});
+    if(idx>=0) list[idx]=Object.assign(list[idx],data,{updatedAt:now});
+    showToast('✅ Contrato actualizado');
+  } else {
+    list.unshift(Object.assign(data,{id:newId(),createdAt:now,updatedAt:now}));
+    M_editId=list[0].id;
+    showToast('✅ Contrato guardado');
+  }
+  saveContracts(list);
+  var wt=el('wiz-ttl'); if(wt) wt.textContent=data.nombre||'Contrato';
+}
+
+/* ── Start new ── */
+function startNew(){
+  M_editId=null;
+  sv('m-nombre',''); sv('m-tel',''); sv('m-dir','');
+  sv('m-cdate',todayISO()); sv('m-fevento','');
+  sv('m-hentrega',''); sv('m-hrecol',''); sv('m-traslado',0);
+  var ai=el('m-anticipo'); if(ai){ ai.value='0'; ai.removeAttribute('data-manual'); }
+  ITEMS.forEach(function(it,i){
+    var qe=el('mq'+i), pe=el('mp'+i), ae=el('ma'+i);
+    if(qe) qe.textContent='0'; if(pe) pe.value=it.price.toFixed(2); if(ae) ae.textContent='$0';
+  });
+  st('m-sub','$0.00'); st('m-total','$0.00'); st('m-resta','$0.00');
+  var wt=el('wiz-ttl'); if(wt) wt.textContent='Nuevo Contrato';
+  goStep(1);
+  goTo('sc-wiz');
+}
+
+/* ── Edit ── */
+function mEdit(id){
+  var c=getById(id); if(!c) return;
+  M_editId=id; mPopulate(c);
+  var wt=el('wiz-ttl'); if(wt) wt.textContent=c.nombre||'Contrato';
+  goStep(1); goTo('sc-wiz');
+}
+
+/* ── Home ── */
+function renderHome(){
+  var list=loadContracts();
+  var total=list.reduce(function(s,c){return s+(c.total||0);},0);
+  var mo=new Date().toISOString().substring(0,7);
+  var mc=list.filter(function(c){return(c.fEvento||c.createdAt||'').startsWith(mo);});
+  var mt=mc.reduce(function(s,c){return s+(c.total||0);},0);
+  function sc(l,v){ return '<div class="scard"><div class="sclbl">'+l+'</div><div class="scval">'+v+'</div></div>'; }
+  el('home-stats').innerHTML=sc('Contratos',list.length)+sc('Este mes',mc.length)+
+    sc('Total','$'+total.toLocaleString('es-MX',{minimumFractionDigits:0}))+
+    sc('Mes','$'+mt.toLocaleString('es-MX',{minimumFractionDigits:0}));
+  el('home-recent').innerHTML=list.length?list.slice(0,3).map(cardHTML).join(''):mempty('Sin contratos','Crea el primero');
+}
+
+/* ── Historial ── */
+function renderHist(){
+  var q=((el('m-search')||{}).value||'').toLowerCase();
+  var list=loadContracts().filter(function(c){
+    if(!q) return true;
+    return (c.nombre||'').toLowerCase().indexOf(q)!==-1||(c.tel||'').indexOf(q)!==-1||
+           (c.dir||'').toLowerCase().indexOf(q)!==-1||fmtDate(c.fEvento).indexOf(q)!==-1;
+  });
+  el('hist-list').innerHTML=list.length?list.map(cardHTML).join(''):
+    mempty('Sin resultados',q?'Nada para: "'+q+'"':'Sin contratos guardados');
+}
+function cardHTML(c){
+  var ni=(c.items||[]).filter(function(r){return r.qty>0;}).length;
+  return '<div class="ccard">'+
+    '<div class="cctop">'+
+      '<div><div class="ccname">'+(c.nombre||'Sin nombre')+'</div>'+
+        '<div class="ccmeta"><span>📅 '+fmtDate(c.fEvento)+'</span>'+
+          (c.tel?'<span>📞 '+c.tel+'</span>':'')+
+          '<span>📦 '+ni+' artículos</span></div></div>'+
+      '<div class="cctotal">$'+(c.total||0).toLocaleString('es-MX',{minimumFractionDigits:2})+'</div>'+
+    '</div>'+
+    '<div class="ccacts">'+
+      '<button class="ccbtn cce" onclick="mEdit(\''+c.id+'\')">✏️ Editar</button>'+
+      '<button class="ccbtn ccx" onclick="qExp(\''+c.id+'\')">⬇️ Exportar</button>'+
+      '<button class="ccbtn ccd" onclick="askDel(\''+c.id+'\')">🗑</button>'+
     '</div></div>';
 }
+function mempty(t,m){ return '<div class="mempty"><div class="ei">📭</div><div class="et">'+t+'</div><div class="es">'+m+'</div></div>'; }
+function qExp(id){ var c=getById(id); if(!c) return; M_editId=id; mPopulate(c); openSheet(); }
 
-/* ── Populate form from saved data ─────────────────────────────────── */
-function mPopulate(d) {
-  function sv(id,v){ var e=document.getElementById(id); if(e) e.value=v; }
-  sv('m-nombre',  d.nombre   || '');
-  sv('m-tel',     d.tel      || '');
-  sv('m-dir',     d.dir      || '');
-  sv('m-cDate',   d.cDate    || todayISO());
-  sv('m-fEvento', d.fEvento  || '');
-  sv('m-hEntrega',d.hEntrega || '');
-  sv('m-hRecol',  d.hRecol   || '');
-  sv('m-traslado',d.traslado || 0);
-  if (d.items) {
-    d.items.forEach(function(r, i) {
-      var qe = document.getElementById('mqty-' + i);
-      var pe = document.getElementById('mprice-' + i);
-      if (qe) qe.textContent = r.qty || 0;
-      if (pe) pe.value = (r.price || ITEMS[i].price).toFixed(2);
-      mUpdateItemAmt(i);
-    });
-  }
-  mUpdateTotals();
-  var ai = document.getElementById('m-anticipo');
-  if (ai) ai.value = (d.anticipo || 0).toFixed(2);
-  mCalcResta();
+/* ── Delete ── */
+function askDel(id){
+  M_delId=id; var c=getById(id);
+  el('conf-msg').textContent='¿Eliminar el contrato de "'+(c?c.nombre:'?')+'"? No se puede deshacer.';
+  el('conf-bg').classList.add('on');
+}
+function closeConfirm(){ el('conf-bg').classList.remove('on'); M_delId=null; }
+function doDelete(){
+  if(!M_delId) return;
+  saveContracts(loadContracts().filter(function(c){return c.id!==M_delId;}));
+  closeConfirm(); renderHome(); renderHist(); showToast('🗑️ Eliminado');
 }
 
-/* ── Save from mobile ─────────────────────────────────────────────── */
-function mSaveContract() {
-  var data = mCollectForm();
-  if (!data.nombre.trim()) { toast('⚠️ Ingresa el nombre del cliente'); return; }
-  var contracts = loadContracts();
-  var now = new Date().toISOString();
-  if (mCurrentEditId) {
-    var idx = contracts.findIndex(function(c){ return c.id === mCurrentEditId; });
-    if (idx >= 0) contracts[idx] = Object.assign(contracts[idx], data, {updatedAt: now});
-    toast('✅ Contrato actualizado');
-  } else {
-    contracts.unshift(Object.assign(data, {id:'cv_'+Date.now(), createdAt:now, updatedAt:now}));
-    mCurrentEditId = contracts[0].id;
-    toast('✅ Contrato guardado');
-  }
-  saveContracts(contracts);
-  var wt = document.getElementById('wiz-title');
-  if (wt) wt.textContent = data.nombre || 'Contrato';
+/* ── Export sheet ── */
+function openSheet(){ el('sbg').classList.add('on'); el('sheet').classList.add('on'); }
+function closeSheet(){ el('sbg').classList.remove('on'); el('sheet').classList.remove('on'); }
+
+/* ── DOCX ── */
+function mDoDocx(){
+  var d=mCollect();
+  showToast('⏳ Generando Word...');
+  buildDOCX(d).then(function(blob){
+    dlBlob(blob,'CASVEL_'+(d.nombre||'contrato').replace(/\s+/g,'_')+'.docx');
+    showToast('✅ Word descargado');
+  }).catch(function(e){ showToast('❌ Error: '+e.message); });
 }
 
-/* ── New / edit contract ────────────────────────────────────────────── */
-function startNewContract() {
-  mCurrentEditId = null;
-  currentEditId  = null;
-  function sv(id,v){ var e=document.getElementById(id); if(e) e.value=v; }
-  sv('m-nombre','');  sv('m-tel','');    sv('m-dir','');
-  sv('m-cDate', todayISO());            sv('m-fEvento','');
-  sv('m-hEntrega',''); sv('m-hRecol',''); sv('m-traslado',0); sv('m-anticipo',0);
-  ITEMS.forEach(function(it, i) {
-    var qe = document.getElementById('mqty-' + i);
-    var pe = document.getElementById('mprice-' + i);
-    var ae = document.getElementById('mamt-' + i);
-    if (qe) qe.textContent = '0';
-    if (pe) pe.value = it.price.toFixed(2);
-    if (ae) ae.textContent = '$0';
-  });
-  mUpdateTotals();
-  var wt = document.getElementById('wiz-title');
-  if (wt) wt.textContent = 'Nuevo Contrato';
-  showWizStep(1);
-  gotoScreen('s-wizard');
+/* ── PDF ── */
+function mDoPDF(){ showToast('💡 En Safari: botón Compartir → Imprimir → Guardar como PDF'); }
+
+/* ── Calendar ── */
+function mDoCal(){
+  var d=mCollect();
+  if(!d.fEvento){ showToast('⚠️ Ingresa la Fecha del Evento primero'); return; }
+  dlBlob(new Blob([buildICS(d)],{type:'text/calendar;charset=utf-8'}),
+    'evento_casvel_'+d.fEvento+'.ics');
+  showToast('📅 Evento exportado');
 }
 
-function mEditContract(id) {
-  var c = getById(id); if (!c) return;
-  mCurrentEditId = id;
-  currentEditId  = id;
-  mPopulate(c);
-  var wt = document.getElementById('wiz-title');
-  if (wt) wt.textContent = c.nombre || 'Contrato';
-  showWizStep(1);
-  gotoScreen('s-wizard');
-}
-
-/* ── Home screen ─────────────────────────────────────────────────────── */
-function renderMobileHome() {
-  var contracts = loadContracts();
-  var total     = contracts.reduce(function(s,c){ return s+(c.total||0); }, 0);
-  var thisMonth = new Date().toISOString().substring(0,7);
-  var mc        = contracts.filter(function(c){ return (c.fEvento||c.createdAt||'').startsWith(thisMonth); });
-  var mt        = mc.reduce(function(s,c){ return s+(c.total||0); }, 0);
-  var sg = document.getElementById('m-stats');
-  if (sg) sg.innerHTML =
-    mStat('Contratos', contracts.length) +
-    mStat('Este mes',  mc.length) +
-    mStat('Total', '$'+total.toLocaleString('es-MX',{minimumFractionDigits:0})) +
-    mStat('Mes en curso', '$'+mt.toLocaleString('es-MX',{minimumFractionDigits:0}));
-  var rec = document.getElementById('m-recent');
-  if (rec) rec.innerHTML = contracts.length
-    ? contracts.slice(0,3).map(mCardHTML).join('')
-    : mEmpty('Sin contratos aún','Crea tu primer contrato');
-}
-function mStat(lbl, val) {
-  return '<div class="home-stat"><div class="hs-lbl">'+lbl+'</div><div class="hs-val">'+val+'</div></div>';
-}
-
-/* ── Historial ───────────────────────────────────────────────────────── */
-function renderMobileHistorial() {
-  var q  = ((document.getElementById('m-search')||{}).value||'').toLowerCase();
-  var cs = loadContracts().filter(function(c){
-    if (!q) return true;
-    return (c.nombre||'').toLowerCase().indexOf(q)!==-1
-        || (c.tel||'').indexOf(q)!==-1
-        || (c.dir||'').toLowerCase().indexOf(q)!==-1
-        || fmtDate(c.fEvento).indexOf(q)!==-1;
-  });
-  var el = document.getElementById('m-historial-list');
-  if (el) el.innerHTML = cs.length
-    ? cs.map(mCardHTML).join('')
-    : mEmpty('Sin resultados', q ? 'No hay contratos para: "'+q+'"' : 'No hay contratos guardados');
-}
-
-function mCardHTML(c) {
-  var items = (c.items||[]).filter(function(r){ return r.qty>0; }).length;
-  return '<div class="contract-card">'+
-    '<div class="cc-header">'+
-      '<div>'+
-        '<div class="cc-name">'+(c.nombre||'Sin nombre')+'</div>'+
-        '<div class="cc-meta">'+
-          '<span>📅 '+fmtDate(c.fEvento)+'</span>'+
-          (c.tel?'<span>📞 '+c.tel+'</span>':'')+
-          '<span>📦 '+items+' artículos</span>'+
-        '</div>'+
-      '</div>'+
-      '<div class="cc-total">$'+(c.total||0).toLocaleString('es-MX',{minimumFractionDigits:2})+'</div>'+
-    '</div>'+
-    '<div class="cc-actions">'+
-      '<button class="cc-btn cc-edit"   onclick="mEditContract(\''+c.id+'\')">✏️ Editar</button>'+
-      '<button class="cc-btn cc-export" onclick="mQuickExport(\''+c.id+'\')">⬇️ Exportar</button>'+
-      '<button class="cc-btn cc-del"    onclick="mDeleteContract(\''+c.id+'\')">🗑</button>'+
-    '</div>'+
+/* ── Image (builds off-screen A4 HTML) ── */
+function mDoImage(fmt){
+  var d=mCollect();
+  var logoSrc='data:image/jpeg;base64,'+LOGO_B64;
+  function sl(id){ var e=el(id); return (e&&e.options&&e.options[e.selectedIndex])?e.options[e.selectedIndex].text:''; }
+  var irows=ITEMS.map(function(it,i){
+    var r=d.items[i]; if(!r||!r.qty) return '';
+    var bg=i%2===0?'#dce6f1':'#fff';
+    return '<tr style="background:'+bg+'">'+
+      '<td style="padding:3px 5px;border:1px solid #b8cce4;font-weight:bold;font-size:8pt">'+it.desc+'</td>'+
+      '<td style="padding:3px 5px;border:1px solid #b8cce4;text-align:center;font-size:8pt">'+r.qty+'</td>'+
+      '<td style="padding:3px 5px;border:1px solid #b8cce4;text-align:center;font-size:8pt">$'+r.price.toFixed(2)+'</td>'+
+      '<td style="padding:3px 5px;border:1px solid #b8cce4;text-align:center;font-size:8pt">'+f2(r.amt)+'</td></tr>';
+  }).join('');
+  var html='<div style="font-family:Arial,sans-serif;width:754px;padding:28px 38px;background:#fff">'+
+    '<div style="display:flex;align-items:flex-start;gap:10px;margin-bottom:4px">'+
+      '<img src="'+logoSrc+'" style="width:72px" crossorigin="anonymous">'+
+      '<div><div style="font-size:13pt;font-weight:bold;color:#2563a8">CONTRATO DE ALQUILER DE MOBILIARIO PARA EVENTOS</div>'+
+        '<div style="font-size:8.5pt;text-align:right;margin-top:4px">Chihuahua, Chihuahua. a '+fmtDate(d.cDate)+'</div>'+
+      '</div></div>'+
+    '<div style="color:#2563a8;font-size:8.5pt;margin:3px 0 5px">Contacto: 614 126 6784</div>'+
+    '<div style="color:#2563a8;font-weight:bold;font-size:9pt;border-bottom:1.5px solid #2563a8;padding-bottom:1px;margin:4px 0 3px">DATOS DEL ARRENDATARIO</div>'+
+    '<table style="width:100%;font-size:8.5pt;border-collapse:collapse;margin-bottom:4px">'+
+      '<tr><td><b>Nombre:</b> '+d.nombre+'</td><td><b>Telefono:</b> '+d.tel+'</td></tr>'+
+      '<tr><td><b>Dirección:</b> '+d.dir+'</td><td><b>Fecha Evento:</b> '+fmtDate(d.fEvento)+'</td></tr>'+
+      '<tr><td><b>Entrega:</b> '+sl('m-hentrega')+'</td><td><b>Recolección:</b> '+sl('m-hrecol')+'</td></tr>'+
+    '</table>'+
+    '<div style="color:#2563a8;font-weight:bold;margin:4px 0 3px">Mobiliario a arrendar:</div>'+
+    '<table style="width:100%;border-collapse:collapse">'+
+      '<thead><tr style="background:#2563a8;color:#fff">'+
+        '<th style="padding:3px 5px;text-align:left;border:1px solid #2563a8;font-size:7.5pt">Descripción</th>'+
+        '<th style="padding:3px 5px;border:1px solid #2563a8;font-size:7.5pt">Cantidad</th>'+
+        '<th style="padding:3px 5px;border:1px solid #2563a8;font-size:7.5pt">Precio Unit.</th>'+
+        '<th style="padding:3px 5px;border:1px solid #2563a8;font-size:7.5pt">Importe</th></tr></thead>'+
+      '<tbody>'+irows+'</tbody>'+
+      '<tr style="background:#fff"><td colspan="2" style="border:1px solid #b8cce4"></td>'+
+        '<td style="border:1px solid #b8cce4;text-align:right;font-weight:bold;padding:3px 5px;font-size:8pt">Traslado:</td>'+
+        '<td style="border:1px solid #b8cce4;padding:3px 5px;font-size:8pt">'+f2(d.traslado)+'</td></tr>'+
+      '<tr style="background:#dce6f1"><td colspan="2" style="border:1px solid #b8cce4"></td>'+
+        '<td style="border:1px solid #b8cce4;text-align:right;font-weight:bold;padding:3px 5px;font-size:8pt">Precio Total:</td>'+
+        '<td style="border:1px solid #b8cce4;padding:3px 5px;font-size:8pt">'+f2(d.total)+'</td></tr>'+
+      '<tr style="background:#dce6f1"><td colspan="4" style="border:1px solid #b8cce4;padding:3px 5px;font-weight:bold;font-size:8pt">'+
+        'Anticipo: '+f2(d.anticipo)+'&nbsp;&nbsp;&nbsp;Resta por Pagar: '+f2(d.resta)+'</td></tr>'+
+    '</table>'+
+    '<table style="width:100%;margin-top:20px">'+
+      '<tr><td style="width:46%;border-bottom:1px solid #000;height:24px"></td>'+
+        '<td style="width:8%"></td>'+
+        '<td style="width:46%;border-bottom:1px solid #000;height:24px"></td></tr>'+
+      '<tr><td style="text-align:center;font-size:8pt">NOMBRE Y FIRMA ARRENDATARIO</td>'+
+        '<td></td><td style="text-align:center;font-size:8pt">NOMBRE Y FIRMA ARRENDADOR</td></tr>'+
+    '</table>'+
+    '<div style="text-align:right;font-size:8pt;color:#555;margin-top:5px">@EventosCasVel, 2026</div>'+
   '</div>';
-}
-function mEmpty(t,m) {
-  return '<div class="m-empty"><div class="ei">📭</div><div class="et">'+t+'</div><div class="es">'+m+'</div></div>';
-}
 
-/* ── Quick export from historial ────────────────────────────────────── */
-function mQuickExport(id) {
-  var c = getById(id); if (!c) return;
-  mCurrentEditId = id;
-  currentEditId  = id;
-  mPopulate(c);
-  openExportSheet();
+  var wrap=document.createElement('div');
+  wrap.innerHTML=html;
+  wrap.style.cssText='position:fixed;left:-9999px;top:0;width:830px;pointer-events:none';
+  document.body.appendChild(wrap);
+  var node=wrap.firstChild;
+  showLoad('Generando '+fmt.toUpperCase()+'...');
+  html2canvas(node,{scale:2,useCORS:true,allowTaint:true,backgroundColor:'#ffffff',
+    logging:false,width:830,windowWidth:900
+  }).then(function(canvas){
+    document.body.removeChild(wrap); hideLoad();
+    var mime=fmt==='jpg'?'image/jpeg':'image/png';
+    dlDataURL(canvas.toDataURL(mime,fmt==='jpg'?0.92:1),
+      'CASVEL_'+(d.nombre||'contrato').replace(/\s+/g,'_')+'.'+fmt);
+    showToast('✅ Imagen descargada');
+  }).catch(function(e){
+    document.body.removeChild(wrap); hideLoad();
+    showToast('❌ Error: '+e.message);
+  });
 }
-
-/* ── Delete ──────────────────────────────────────────────────────────── */
-function mDeleteContract(id) {
-  mPendingDeleteId = id;
-  var c = getById(id);
-  var msg = document.getElementById('m-confirm-msg');
-  if (msg) msg.textContent = '¿Eliminar el contrato de "'+(c?c.nombre:'este cliente')+'"? Esta acción no se puede deshacer.';
-  var ov = document.getElementById('m-confirm-overlay');
-  if (ov) ov.classList.add('open');
-}
-function mCloseConfirm() {
-  var ov = document.getElementById('m-confirm-overlay');
-  if (ov) ov.classList.remove('open');
-  mPendingDeleteId = null;
-}
-function mConfirmDelete() {
-  if (!mPendingDeleteId) return;
-  saveContracts(loadContracts().filter(function(c){ return c.id !== mPendingDeleteId; }));
-  mCloseConfirm();
-  renderMobileHome();
-  renderMobileHistorial();
-  toast('🗑️ Contrato eliminado');
-}
-
-/* ── Export sheet ────────────────────────────────────────────────────── */
-function openExportSheet() {
-  var ov = document.getElementById('sheet-overlay');
-  var sh = document.getElementById('export-sheet');
-  if (ov) ov.classList.add('open');
-  if (sh) sh.classList.add('open');
-}
-function closeExportSheet() {
-  var ov = document.getElementById('sheet-overlay');
-  var sh = document.getElementById('export-sheet');
-  if (ov) ov.classList.remove('open');
-  if (sh) sh.classList.remove('open');
-}
-
 </script>
 </body>
 </html>
