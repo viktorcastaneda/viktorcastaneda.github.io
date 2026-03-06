@@ -731,42 +731,74 @@ input[type=date].field-input { color-scheme: light; }
 
 <script src="app.js"></script>
 <script>
-// Auto-redirect to desktop on large screens
-(function(){
-  if (window.innerWidth >= 768 && !/Mobi|Android|iPhone|iPad/i.test(navigator.userAgent)) {
-    window.location.replace('index.html');
-  }
-})();
-</script>
-<script>
 /* ═══════════════════════════════════════════════════════════════════════
-   MOBILE APP  —  mobile.js (inline, shares app.js globals)
+   MOBILE APP — all logic self-contained, no desktop DOM elements needed.
+   app.js functions genDOCX/genImage/addToCalendar use mCollectForm()
+   defined here, so exports work correctly.
 ═══════════════════════════════════════════════════════════════════════ */
 
 /* ── State ─────────────────────────────────────────────────────────── */
-var wizStep = 1;
-var TOTAL_STEPS = 5;
-var STEP_NAMES = ['Cliente', 'Fecha', 'Mobiliario', 'Totales', 'Resumen'];
+var wizStep          = 1;
+var TOTAL_STEPS      = 5;
+var STEP_NAMES       = ['Cliente','Fecha','Mobiliario','Totales','Resumen'];
 var mPendingDeleteId = null;
 var mCurrentEditId   = null;
 
-/* ── Override app.js toast for mobile ──────────────────────────────── */
+/* ── Override app.js UI functions for mobile elements ─────────────── */
 function toast(msg) {
-  var t = document.getElementById('m-toast') || document.getElementById('toast');
+  var t = document.getElementById('m-toast');
   if (!t) return;
   t.textContent = msg;
   t.classList.add('show');
   clearTimeout(t._to);
-  t._to = setTimeout(function(){ t.classList.remove('show'); }, 3000);
+  t._to = setTimeout(function(){ t.classList.remove('show'); }, 3500);
 }
-
-/* ── Override loading for mobile ───────────────────────────────────── */
 function showLoading(msg) {
-  document.getElementById('m-loading-msg').textContent = msg || 'Generando...';
-  document.getElementById('m-loading').classList.add('show');
+  var p = document.getElementById('m-loading-msg');
+  var o = document.getElementById('m-loading');
+  if (p) p.textContent = msg || 'Generando...';
+  if (o) o.classList.add('show');
 }
 function hideLoading() {
-  document.getElementById('m-loading').classList.remove('show');
+  var o = document.getElementById('m-loading');
+  if (o) o.classList.remove('show');
+}
+
+/* ── mCollectForm — used by genDOCX, genImage, addToCalendar ──────── */
+function mCollectForm() {
+  var rows = ITEMS.map(function(it, i) {
+    var qty   = parseInt(document.getElementById('mqty-'   + i).textContent) || 0;
+    var price = parseFloat(document.getElementById('mprice-' + i).value)     || it.price;
+    return { qty: qty, price: price, amt: qty * price };
+  });
+  var totalTxt = (document.getElementById('m-total').textContent || '0').replace('$','');
+  var restaTxt = (document.getElementById('m-resta').textContent || '0').replace('$','');
+  function selLbl(id) {
+    var e = document.getElementById(id);
+    return (e && e.options && e.options[e.selectedIndex]) ? e.options[e.selectedIndex].text : '';
+  }
+  return {
+    cDate:     document.getElementById('m-cDate').value    || '',
+    nombre:    document.getElementById('m-nombre').value   || '',
+    tel:       document.getElementById('m-tel').value      || '',
+    dir:       document.getElementById('m-dir').value      || '',
+    fEvento:   document.getElementById('m-fEvento').value  || '',
+    hEntrega:  document.getElementById('m-hEntrega').value || '',
+    hEntregaL: selLbl('m-hEntrega'),
+    hRecol:    document.getElementById('m-hRecol').value   || '',
+    hRecolL:   selLbl('m-hRecol'),
+    traslado:  parseFloat(document.getElementById('m-traslado').value)  || 0,
+    anticipo:  parseFloat(document.getElementById('m-anticipo').value)  || 0,
+    total:     parseFloat(totalTxt) || 0,
+    resta:     parseFloat(restaTxt) || 0,
+    items:     rows
+  };
+}
+
+/* ── genPDF override: print page shows nothing useful on mobile.
+   Instead open a simple printable summary ─────────────────────────── */
+function genPDF() {
+  toast('💡 Para PDF, usa "Compartir → Imprimir" en tu navegador');
 }
 
 /* ── Screen navigation ─────────────────────────────────────────────── */
@@ -774,106 +806,88 @@ function gotoScreen(id) {
   document.querySelectorAll('.screen').forEach(function(s) {
     s.classList.toggle('active', s.id === id);
   });
-  document.querySelectorAll('.bnav-item').forEach(function(b) {
-    var target = b.getAttribute('onclick') || '';
-    b.classList.toggle('active', target.includes("'" + id + "'"));
+  // Update bottom nav highlights
+  document.querySelectorAll('.bnav-item').forEach(function(btn) {
+    var oc = btn.getAttribute('onclick') || '';
+    btn.classList.toggle('active', oc.indexOf("'" + id + "'") !== -1);
   });
   if (id === 's-home')      renderMobileHome();
   if (id === 's-historial') renderMobileHistorial();
   window.scrollTo(0, 0);
 }
 
-/* ── Init ──────────────────────────────────────────────────────────── */
+/* ── DOMContentLoaded init ─────────────────────────────────────────── */
 window.addEventListener('DOMContentLoaded', function() {
   // Logo
-  var logoB64 = 'data:image/jpeg;base64,' + LOGO_B64;
+  var src = 'data:image/jpeg;base64,' + LOGO_B64;
   ['m-logo','wiz-logo'].forEach(function(id) {
-    var el = document.getElementById(id);
-    if (el) el.src = logoB64;
+    var e = document.getElementById(id); if (e) e.src = src;
   });
 
-  // Build mobile time selects
+  // Populate time selects
+  var opts = TIME_OPTIONS.map(function(t) {
+    return '<option value="' + t.value + '">' + t.label + '</option>';
+  }).join('');
   ['m-hEntrega','m-hRecol'].forEach(function(id) {
-    var sel = document.getElementById(id);
-    if (!sel) return;
-    sel.innerHTML = TIME_OPTIONS.map(function(t) {
-      return '<option value="' + t.value + '">' + t.label + '</option>';
-    }).join('');
+    var e = document.getElementById(id); if (e) e.innerHTML = opts;
   });
 
-  // Build items list
+  // Today's date
+  var e = document.getElementById('m-cDate'); if (e) e.value = todayISO();
+
+  // Build items + progress
   buildMobileItems();
-
-  // Set dates
-  document.getElementById('m-cDate').value   = todayISO();
-
-  // Build progress bar
   buildProgress();
 
+  // Render home
   renderMobileHome();
 });
 
 /* ── Progress bar ──────────────────────────────────────────────────── */
 function buildProgress() {
   var wrap = document.getElementById('prog-steps');
-  var html = '';
-  for (var i = 1; i <= TOTAL_STEPS; i++) {
-    html += '<div class="progress-step" id="pstep-' + i + '"></div>';
-  }
-  wrap.innerHTML = html;
+  if (!wrap) return;
+  var h = '';
+  for (var i = 1; i <= TOTAL_STEPS; i++) h += '<div class="progress-step" id="pstep-' + i + '"></div>';
+  wrap.innerHTML = h;
   updateProgress();
 }
-
 function updateProgress() {
   for (var i = 1; i <= TOTAL_STEPS; i++) {
     var el = document.getElementById('pstep-' + i);
     if (!el) continue;
-    el.classList.remove('done','active');
-    if (i < wizStep)  el.classList.add('done');
-    if (i === wizStep) el.classList.add('active');
+    el.className = 'progress-step' + (i < wizStep ? ' done' : i === wizStep ? ' active' : '');
   }
-  document.getElementById('prog-step-lbl').textContent  = 'Paso ' + wizStep + ' de ' + TOTAL_STEPS;
-  document.getElementById('prog-step-name').textContent = STEP_NAMES[wizStep-1] || '';
-
-  // Update bottom buttons
-  var prevBtn = document.getElementById('btn-prev');
-  var nextBtn = document.getElementById('btn-next');
-  prevBtn.style.display = wizStep === 1 ? 'none' : 'flex';
-  if (wizStep === TOTAL_STEPS) {
-    nextBtn.textContent = '⬇ Exportar';
-    nextBtn.className = 'btn btn-export';
-  } else {
-    nextBtn.textContent = 'Siguiente →';
-    nextBtn.className = 'btn btn-next';
+  var lbl  = document.getElementById('prog-step-lbl');
+  var name = document.getElementById('prog-step-name');
+  if (lbl)  lbl.textContent  = 'Paso ' + wizStep + ' de ' + TOTAL_STEPS;
+  if (name) name.textContent = STEP_NAMES[wizStep - 1] || '';
+  var prev = document.getElementById('btn-prev');
+  var next = document.getElementById('btn-next');
+  if (prev) prev.style.display = wizStep === 1 ? 'none' : 'flex';
+  if (next) {
+    if (wizStep === TOTAL_STEPS) {
+      next.textContent = '⬇ Exportar'; next.className = 'btn btn-export';
+    } else {
+      next.textContent = 'Siguiente →'; next.className = 'btn btn-next';
+    }
   }
 }
 
-/* ── Wizard navigation ─────────────────────────────────────────────── */
+/* ── Wizard nav ─────────────────────────────────────────────────────── */
 function wizNext() {
-  if (wizStep === 1 && !document.getElementById('m-nombre').value.trim()) {
-    toast('⚠️ Ingresa el nombre del cliente');
-    document.getElementById('m-nombre').focus();
-    return;
+  if (wizStep === 1) {
+    var n = document.getElementById('m-nombre');
+    if (!n || !n.value.trim()) { toast('⚠️ Ingresa el nombre del cliente'); if (n) n.focus(); return; }
   }
-  if (wizStep === TOTAL_STEPS) {
-    openExportSheet();
-    return;
-  }
+  if (wizStep === TOTAL_STEPS) { openExportSheet(); return; }
   showWizStep(wizStep + 1);
 }
-
 function wizPrev() {
   if (wizStep > 1) showWizStep(wizStep - 1);
-  else wizardBack();
+  else             gotoScreen('s-home');
 }
-
-function wizardBack() {
-  var prev = document.referrer && document.referrer.includes('historial') ? 's-historial' : 's-home';
-  gotoScreen(prev);
-}
-
 function showWizStep(n) {
-  // Hide all steps
   for (var i = 1; i <= TOTAL_STEPS; i++) {
     var el = document.getElementById('step-' + i);
     if (el) el.style.display = 'none';
@@ -884,38 +898,22 @@ function showWizStep(n) {
   updateProgress();
   if (n === 4) mUpdateTotals();
   if (n === 5) renderSummary();
-  // Scroll to top of scroll area
   var sa = document.getElementById('wiz-scroll');
   if (sa) sa.scrollTop = 0;
 }
 
-/* ── Sync fields with desktop A4 inputs ────────────────────────────── */
-function syncField(mId, dId) {
-  var mEl = document.getElementById(mId);
-  var dEl = document.getElementById(dId);
-  if (mEl && dEl) dEl.value = mEl.value;
-  if (dId === 'c-traslado') calcAll();
-  if (dId === 'c-anticipo') calcResta();
-}
-
-function syncSelect(mId, dId) {
-  var mEl = document.getElementById(mId);
-  var dEl = document.getElementById(dId);
-  if (mEl && dEl) dEl.value = mEl.value;
-}
-
-/* ── Build mobile items stepper ────────────────────────────────────── */
+/* ── Items list ─────────────────────────────────────────────────────── */
 function buildMobileItems() {
-  var container = document.getElementById('m-items-list');
-  container.innerHTML = ITEMS.map(function(it, i) {
-    return '<div class="item-row" id="mrow-' + i + '">' +
+  var c = document.getElementById('m-items-list'); if (!c) return;
+  c.innerHTML = ITEMS.map(function(it, i) {
+    return '<div class="item-row">' +
       '<div style="flex:1">' +
         '<div class="item-desc">' + it.desc + '</div>' +
         '<div class="price-edit-row">' +
-          '<span class="price-edit-lbl">Precio unit. $</span>' +
+          '<span class="price-edit-lbl">Precio $</span>' +
           '<input class="price-edit-inp" type="number" min="0" step="0.01" ' +
             'value="' + it.price.toFixed(2) + '" id="mprice-' + i + '" ' +
-            'oninput="mSyncPrice(' + i + ');">' +
+            'oninput="mUpdateItemAmt(' + i + ')">' +
         '</div>' +
       '</div>' +
       '<div class="item-controls">' +
@@ -927,206 +925,114 @@ function buildMobileItems() {
     '</div>';
   }).join('');
 }
-
 function mQty(i, delta) {
-  var display = document.getElementById('mqty-' + i);
-  var cur = parseInt(display.textContent) || 0;
-  var next = Math.max(0, cur + delta);
-  display.textContent = next;
-  // Sync to desktop input
-  var desktopQty = document.getElementById('qty_' + i);
-  if (desktopQty) desktopQty.value = next;
+  var d   = document.getElementById('mqty-' + i); if (!d) return;
+  var cur = parseInt(d.textContent) || 0;
+  d.textContent = Math.max(0, cur + delta);
   mUpdateItemAmt(i);
-  // Haptic feedback on iOS
-  if (window.navigator && navigator.vibrate) navigator.vibrate(10);
+  if (navigator.vibrate) navigator.vibrate(8);
 }
-
-function mSyncPrice(i) {
-  var mPriceEl = document.getElementById('mprice-' + i);
-  var dPriceEl = document.getElementById('price_' + i);
-  if (mPriceEl && dPriceEl) dPriceEl.value = mPriceEl.value;
-  mUpdateItemAmt(i);
-}
-
 function mUpdateItemAmt(i) {
-  var qty   = parseInt(document.getElementById('mqty-' + i).textContent) || 0;
-  var price = parseFloat(document.getElementById('mprice-' + i).value) || 0;
-  var amt   = qty * price;
-  document.getElementById('mamt-' + i).textContent = qty > 0 ? ('$' + amt.toFixed(0)) : '$0';
+  var q = parseInt((document.getElementById('mqty-' + i)   || {textContent:'0'}).textContent) || 0;
+  var p = parseFloat((document.getElementById('mprice-' + i) || {value:'0'}).value)           || 0;
+  var a = document.getElementById('mamt-' + i);
+  if (a) a.textContent = q > 0 ? '$' + (q * p).toFixed(0) : '$0';
 }
 
-function mCalcAll() {
-  // Recalc from mobile inputs
-  var sub = 0;
-  ITEMS.forEach(function(it, i) {
-    var qty   = parseInt(document.getElementById('mqty-' + i).textContent) || 0;
-    var price = parseFloat(document.getElementById('mprice-' + i).value) || it.price;
-    sub += qty * price;
-  });
-  var tr = parseFloat(document.getElementById('m-traslado').value) || 0;
-  var g  = sub + tr;
-  document.getElementById('m-subtotal').textContent = '$' + sub.toFixed(2);
-  document.getElementById('m-total').textContent    = '$' + g.toFixed(2);
-  document.getElementById('m-anticipo').value = (g * 0.25).toFixed(2);
-  // Sync to desktop
-  document.getElementById('c-traslado').value = tr;
-  calcAll();
-  // Override anticipo with desktop value synced to mobile
-  var ant = parseFloat(document.getElementById('c-anticipo').value) || 0;
-  document.getElementById('m-anticipo').value = ant.toFixed(2);
-  mCalcResta();
-}
-
-function mCalcResta() {
-  var total = parseFloat(document.getElementById('m-total').textContent.replace('$','')) || 0;
-  var ant   = parseFloat(document.getElementById('m-anticipo').value) || 0;
-  document.getElementById('m-resta').textContent = '$' + (total - ant).toFixed(2);
-  // Sync anticipo to desktop
-  document.getElementById('c-anticipo').value = ant;
-  calcResta();
-}
-
+/* ── Totals (step 4) ────────────────────────────────────────────────── */
 function mUpdateTotals() {
-  // Rebuild totals from current items
   var sub = 0;
   ITEMS.forEach(function(it, i) {
-    var qty   = parseInt(document.getElementById('mqty-' + i).textContent) || 0;
-    var price = parseFloat(document.getElementById('mprice-' + i).value) || it.price;
-    sub += qty * price;
+    var q = parseInt((document.getElementById('mqty-' + i) || {textContent:'0'}).textContent) || 0;
+    var p = parseFloat((document.getElementById('mprice-' + i) || {value:it.price}).value)   || it.price;
+    sub += q * p;
   });
-  var tr = parseFloat(document.getElementById('m-traslado').value) || 0;
+  var tr = parseFloat((document.getElementById('m-traslado') || {value:'0'}).value) || 0;
   var g  = sub + tr;
-  document.getElementById('m-subtotal').textContent = '$' + sub.toFixed(2);
-  document.getElementById('m-total').textContent    = '$' + g.toFixed(2);
-  document.getElementById('m-anticipo').value = (g * 0.25).toFixed(2);
+  var st = document.getElementById('m-subtotal'); if (st) st.textContent = '$' + sub.toFixed(2);
+  var tt = document.getElementById('m-total');    if (tt) tt.textContent = '$' + g.toFixed(2);
+  var ai = document.getElementById('m-anticipo');
+  if (ai) ai.value = (g * 0.25).toFixed(2);
   mCalcResta();
 }
+function mCalcResta() {
+  var tt = document.getElementById('m-total');
+  var ai = document.getElementById('m-anticipo');
+  var re = document.getElementById('m-resta');
+  if (!tt || !ai || !re) return;
+  var total = parseFloat(tt.textContent.replace('$','')) || 0;
+  var ant   = parseFloat(ai.value) || 0;
+  re.textContent = '$' + (total - ant).toFixed(2);
+}
 
-/* ── Render summary (step 5) ────────────────────────────────────────── */
+/* ── Summary (step 5) ───────────────────────────────────────────────── */
 function renderSummary() {
-  var nom  = document.getElementById('m-nombre').value  || '—';
-  var tel  = document.getElementById('m-tel').value     || '—';
-  var dir  = document.getElementById('m-dir').value     || '—';
-  var fe   = document.getElementById('m-fEvento').value;
-  var cd   = document.getElementById('m-cDate').value;
-  var heL  = selLbl('m-hEntrega');
-  var hrL  = selLbl('m-hRecol');
-  var sub  = document.getElementById('m-subtotal').textContent;
-  var tr   = document.getElementById('m-traslado').value || '0';
-  var tot  = document.getElementById('m-total').textContent;
-  var ant  = document.getElementById('m-anticipo').value || '0';
-  var res  = document.getElementById('m-resta').textContent;
-
+  var g = document.getElementById('m-summary'); if (!g) return;
+  var nom = (document.getElementById('m-nombre')  || {value:'—'}).value  || '—';
+  var tel = (document.getElementById('m-tel')     || {value:'—'}).value  || '—';
+  var dir = (document.getElementById('m-dir')     || {value:'—'}).value  || '—';
+  var fe  = (document.getElementById('m-fEvento') || {value:''}).value;
+  var cd  = (document.getElementById('m-cDate')   || {value:''}).value;
+  var sub = (document.getElementById('m-subtotal')|| {textContent:'$0'}).textContent;
+  var tr  = (document.getElementById('m-traslado')|| {value:'0'}).value || '0';
+  var tot = (document.getElementById('m-total')   || {textContent:'$0'}).textContent;
+  var ant = parseFloat((document.getElementById('m-anticipo') || {value:'0'}).value) || 0;
+  var res = (document.getElementById('m-resta')   || {textContent:'$0'}).textContent;
+  function selLbl(id) {
+    var e = document.getElementById(id);
+    return (e && e.options && e.options[e.selectedIndex]) ? e.options[e.selectedIndex].text : '—';
+  }
+  var heL = selLbl('m-hEntrega'), hrL = selLbl('m-hRecol');
   var itemLines = ITEMS.map(function(it, i) {
-    var qty = parseInt(document.getElementById('mqty-' + i).textContent) || 0;
-    if (qty === 0) return '';
-    var price = parseFloat(document.getElementById('mprice-' + i).value) || it.price;
-    return '<li><span>' + it.desc + ' &times;' + qty + '</span><span>$' + (qty*price).toFixed(2) + '</span></li>';
+    var q = parseInt((document.getElementById('mqty-' + i) || {textContent:'0'}).textContent) || 0;
+    if (!q) return '';
+    var p = parseFloat((document.getElementById('mprice-' + i) || {value:it.price}).value) || it.price;
+    return '<li><span>' + it.desc + ' ×' + q + '</span><span>$' + (q*p).toFixed(2) + '</span></li>';
   }).filter(Boolean).join('');
-
-  var html =
-    '<div class="card">' +
-      '<div class="card-title">Cliente</div>' +
-      '<div class="summary-section">' +
-        row('Nombre', nom) + row('Teléfono', tel) + row('Dirección', dir) +
-        row('Fecha evento', fmtDate(fe)) + row('Fecha contrato', fmtDate(cd)) +
-        row('Entrega', heL) + row('Recolección', hrL) +
-      '</div>' +
+  function srow(l,v){ return '<div class="summary-item"><span class="summary-lbl">'+l+'</span><span class="summary-val">'+v+'</span></div>'; }
+  g.innerHTML =
+    '<div class="card"><div class="card-title">Cliente</div><div class="summary-section">' +
+      srow('Nombre',nom)+srow('Teléfono',tel)+srow('Dirección',dir)+
+      srow('Fecha evento',fmtDate(fe))+srow('Fecha contrato',fmtDate(cd))+
+      srow('Entrega',heL)+srow('Recolección',hrL)+
+    '</div></div>' +
+    '<div class="card"><div class="card-title">Mobiliario</div>' +
+      (itemLines ? '<ul class="summary-items-list">'+itemLines+'</ul>'
+                 : '<p style="color:var(--mid);font-size:14px">Sin artículos</p>') +
     '</div>' +
-    '<div class="card">' +
-      '<div class="card-title">Mobiliario</div>' +
-      (itemLines
-        ? '<ul class="summary-items-list">' + itemLines + '</ul>'
-        : '<p style="color:var(--mid);font-size:14px">Sin artículos seleccionados</p>') +
-    '</div>' +
-    '<div class="card">' +
-      '<div class="card-title">Resumen Financiero</div>' +
-      '<div class="summary-section">' +
-        row('Subtotal', sub) + row('Traslado', '$' + tr) +
-        row('Total', tot) + row('Anticipo', '$' + parseFloat(ant).toFixed(2)) +
-        row('Resta', res) +
-      '</div>' +
-    '</div>';
-
-  document.getElementById('m-summary').innerHTML = html;
+    '<div class="card"><div class="card-title">Resumen Financiero</div><div class="summary-section">' +
+      srow('Subtotal',sub)+srow('Traslado','$'+parseFloat(tr).toFixed(2))+
+      srow('Total',tot)+srow('Anticipo','$'+ant.toFixed(2))+srow('Resta',res)+
+    '</div></div>';
 }
 
-function row(lbl, val) {
-  return '<div class="summary-item"><span class="summary-lbl">' + lbl + '</span><span class="summary-val">' + val + '</span></div>';
-}
-function selLbl(id) {
-  var el = document.getElementById(id);
-  return (el && el.options[el.selectedIndex]) ? el.options[el.selectedIndex].text : '—';
-}
-
-/* ── Populate mobile form from saved contract ───────────────────────── */
+/* ── Populate form from saved data ─────────────────────────────────── */
 function mPopulate(d) {
-  // Text fields
-  document.getElementById('m-nombre').value  = d.nombre  || '';
-  document.getElementById('m-tel').value     = d.tel     || '';
-  document.getElementById('m-dir').value     = d.dir     || '';
-  document.getElementById('m-cDate').value   = d.cDate   || todayISO();
-  document.getElementById('m-fEvento').value = d.fEvento || '';
-  document.getElementById('m-hEntrega').value= d.hEntrega || '';
-  document.getElementById('m-hRecol').value  = d.hRecol  || '';
-  document.getElementById('m-traslado').value= d.traslado|| 0;
-
-  // Items
+  function sv(id,v){ var e=document.getElementById(id); if(e) e.value=v; }
+  sv('m-nombre',  d.nombre   || '');
+  sv('m-tel',     d.tel      || '');
+  sv('m-dir',     d.dir      || '');
+  sv('m-cDate',   d.cDate    || todayISO());
+  sv('m-fEvento', d.fEvento  || '');
+  sv('m-hEntrega',d.hEntrega || '');
+  sv('m-hRecol',  d.hRecol   || '');
+  sv('m-traslado',d.traslado || 0);
   if (d.items) {
     d.items.forEach(function(r, i) {
-      var qd = document.getElementById('mqty-' + i);
-      var pd = document.getElementById('mprice-' + i);
-      if (qd) qd.textContent = r.qty || 0;
-      if (pd) pd.value = (r.price || ITEMS[i].price).toFixed(2);
+      var qe = document.getElementById('mqty-' + i);
+      var pe = document.getElementById('mprice-' + i);
+      if (qe) qe.textContent = r.qty || 0;
+      if (pe) pe.value = (r.price || ITEMS[i].price).toFixed(2);
       mUpdateItemAmt(i);
-      // Sync desktop
-      var dqty   = document.getElementById('qty_'   + i);
-      var dprice = document.getElementById('price_' + i);
-      if (dqty)   dqty.value   = r.qty   || 0;
-      if (dprice) dprice.value = (r.price || ITEMS[i].price).toFixed(2);
     });
   }
   mUpdateTotals();
-  document.getElementById('m-anticipo').value = (d.anticipo || 0).toFixed(2);
+  var ai = document.getElementById('m-anticipo');
+  if (ai) ai.value = (d.anticipo || 0).toFixed(2);
   mCalcResta();
-
-  // Also sync all to desktop form
-  syncField('m-nombre', 'c-nombre');
-  syncField('m-tel',    'c-tel');
-  syncField('m-dir',    'c-dir');
-  syncField('m-cDate',  'cDate');
-  syncField('m-fEvento','c-fEvento');
-  syncSelect('m-hEntrega','c-hEntrega');
-  syncSelect('m-hRecol',  'c-hRecol');
 }
 
-/* ── Save from mobile ────────────────────────────────────────────────── */
-function mCollectForm() {
-  var rows = ITEMS.map(function(it, i) {
-    var qty   = parseInt(document.getElementById('mqty-' + i).textContent) || 0;
-    var price = parseFloat(document.getElementById('mprice-' + i).value) || it.price;
-    return { qty: qty, price: price, amt: qty * price };
-  });
-  var totalStr = document.getElementById('m-total').textContent.replace('$','');
-  var restaStr = document.getElementById('m-resta').textContent.replace('$','');
-  return {
-    cDate:     document.getElementById('m-cDate').value,
-    nombre:    document.getElementById('m-nombre').value,
-    tel:       document.getElementById('m-tel').value,
-    dir:       document.getElementById('m-dir').value,
-    fEvento:   document.getElementById('m-fEvento').value,
-    hEntrega:  document.getElementById('m-hEntrega').value,
-    hEntregaL: selLbl('m-hEntrega'),
-    hRecol:    document.getElementById('m-hRecol').value,
-    hRecolL:   selLbl('m-hRecol'),
-    traslado:  parseFloat(document.getElementById('m-traslado').value)  || 0,
-    anticipo:  parseFloat(document.getElementById('m-anticipo').value)  || 0,
-    total:     parseFloat(totalStr) || 0,
-    resta:     parseFloat(restaStr) || 0,
-    items:     rows
-  };
-}
-
+/* ── Save from mobile ─────────────────────────────────────────────── */
 function mSaveContract() {
   var data = mCollectForm();
   if (!data.nombre.trim()) { toast('⚠️ Ingresa el nombre del cliente'); return; }
@@ -1134,57 +1040,48 @@ function mSaveContract() {
   var now = new Date().toISOString();
   if (mCurrentEditId) {
     var idx = contracts.findIndex(function(c){ return c.id === mCurrentEditId; });
-    if (idx >= 0) contracts[idx] = Object.assign(contracts[idx], data, { updatedAt: now });
+    if (idx >= 0) contracts[idx] = Object.assign(contracts[idx], data, {updatedAt: now});
     toast('✅ Contrato actualizado');
   } else {
-    contracts.unshift(Object.assign(data, {
-      id: 'cv_' + Date.now(), createdAt: now, updatedAt: now
-    }));
+    contracts.unshift(Object.assign(data, {id:'cv_'+Date.now(), createdAt:now, updatedAt:now}));
     mCurrentEditId = contracts[0].id;
     toast('✅ Contrato guardado');
   }
   saveContracts(contracts);
-  // Update wizard title
-  document.getElementById('wiz-title').textContent = data.nombre || 'Contrato';
+  var wt = document.getElementById('wiz-title');
+  if (wt) wt.textContent = data.nombre || 'Contrato';
 }
 
-/* ── Start new / edit ────────────────────────────────────────────────── */
+/* ── New / edit contract ────────────────────────────────────────────── */
 function startNewContract() {
   mCurrentEditId = null;
   currentEditId  = null;
-  // Reset mobile fields
-  document.getElementById('m-nombre').value  = '';
-  document.getElementById('m-tel').value     = '';
-  document.getElementById('m-dir').value     = '';
-  document.getElementById('m-cDate').value   = todayISO();
-  document.getElementById('m-fEvento').value = '';
-  document.getElementById('m-hEntrega').value= '';
-  document.getElementById('m-hRecol').value  = '';
-  document.getElementById('m-traslado').value= 0;
-  document.getElementById('m-anticipo').value= 0;
+  function sv(id,v){ var e=document.getElementById(id); if(e) e.value=v; }
+  sv('m-nombre','');  sv('m-tel','');    sv('m-dir','');
+  sv('m-cDate', todayISO());            sv('m-fEvento','');
+  sv('m-hEntrega',''); sv('m-hRecol',''); sv('m-traslado',0); sv('m-anticipo',0);
   ITEMS.forEach(function(it, i) {
-    document.getElementById('mqty-' + i).textContent = '0';
-    document.getElementById('mprice-' + i).value = it.price.toFixed(2);
-    document.getElementById('mamt-' + i).textContent = '$0';
-    // Sync desktop
-    var dqty   = document.getElementById('qty_'   + i);
-    var dprice = document.getElementById('price_' + i);
-    if (dqty)   dqty.value   = 0;
-    if (dprice) dprice.value = it.price.toFixed(2);
+    var qe = document.getElementById('mqty-' + i);
+    var pe = document.getElementById('mprice-' + i);
+    var ae = document.getElementById('mamt-' + i);
+    if (qe) qe.textContent = '0';
+    if (pe) pe.value = it.price.toFixed(2);
+    if (ae) ae.textContent = '$0';
   });
   mUpdateTotals();
-  document.getElementById('wiz-title').textContent = 'Nuevo Contrato';
+  var wt = document.getElementById('wiz-title');
+  if (wt) wt.textContent = 'Nuevo Contrato';
   showWizStep(1);
   gotoScreen('s-wizard');
 }
 
 function mEditContract(id) {
-  var c = getById(id);
-  if (!c) return;
+  var c = getById(id); if (!c) return;
   mCurrentEditId = id;
   currentEditId  = id;
   mPopulate(c);
-  document.getElementById('wiz-title').textContent = c.nombre || 'Contrato';
+  var wt = document.getElementById('wiz-title');
+  if (wt) wt.textContent = c.nombre || 'Contrato';
   showWizStep(1);
   gotoScreen('s-wizard');
 }
@@ -1192,94 +1089,92 @@ function mEditContract(id) {
 /* ── Home screen ─────────────────────────────────────────────────────── */
 function renderMobileHome() {
   var contracts = loadContracts();
-  var total = contracts.reduce(function(s,c){ return s+(c.total||0); },0);
+  var total     = contracts.reduce(function(s,c){ return s+(c.total||0); }, 0);
   var thisMonth = new Date().toISOString().substring(0,7);
-  var monthC = contracts.filter(function(c){ return (c.fEvento||c.createdAt||'').startsWith(thisMonth); });
-
-  document.getElementById('m-stats').innerHTML =
-    '<div class="home-stat"><div class="hs-lbl">Contratos</div><div class="hs-val">' + contracts.length + '</div></div>' +
-    '<div class="home-stat"><div class="hs-lbl">Este mes</div><div class="hs-val">' + monthC.length + '</div></div>' +
-    '<div class="home-stat"><div class="hs-lbl">Total acumulado</div><div class="hs-val" style="font-size:17px">$' + total.toLocaleString('es-MX',{minimumFractionDigits:0}) + '</div></div>' +
-    '<div class="home-stat"><div class="hs-lbl">Mes en curso</div><div class="hs-val" style="font-size:17px">$' + monthC.reduce(function(s,c){return s+(c.total||0);},0).toLocaleString('es-MX',{minimumFractionDigits:0}) + '</div></div>';
-
-  var recent = contracts.slice(0, 3);
-  document.getElementById('m-recent').innerHTML = recent.length
-    ? recent.map(mCardHTML).join('')
-    : '<div class="m-empty"><div class="ei">📝</div><div class="et">Sin contratos aún</div><div class="es">Crea tu primer contrato</div></div>';
+  var mc        = contracts.filter(function(c){ return (c.fEvento||c.createdAt||'').startsWith(thisMonth); });
+  var mt        = mc.reduce(function(s,c){ return s+(c.total||0); }, 0);
+  var sg = document.getElementById('m-stats');
+  if (sg) sg.innerHTML =
+    mStat('Contratos', contracts.length) +
+    mStat('Este mes',  mc.length) +
+    mStat('Total', '$'+total.toLocaleString('es-MX',{minimumFractionDigits:0})) +
+    mStat('Mes en curso', '$'+mt.toLocaleString('es-MX',{minimumFractionDigits:0}));
+  var rec = document.getElementById('m-recent');
+  if (rec) rec.innerHTML = contracts.length
+    ? contracts.slice(0,3).map(mCardHTML).join('')
+    : mEmpty('Sin contratos aún','Crea tu primer contrato');
+}
+function mStat(lbl, val) {
+  return '<div class="home-stat"><div class="hs-lbl">'+lbl+'</div><div class="hs-val">'+val+'</div></div>';
 }
 
 /* ── Historial ───────────────────────────────────────────────────────── */
 function renderMobileHistorial() {
-  var q = (document.getElementById('m-search').value || '').toLowerCase();
-  var contracts = loadContracts().filter(function(c) {
+  var q  = ((document.getElementById('m-search')||{}).value||'').toLowerCase();
+  var cs = loadContracts().filter(function(c){
     if (!q) return true;
-    return (c.nombre||'').toLowerCase().includes(q)
-        || (c.tel||'').includes(q)
-        || (c.dir||'').toLowerCase().includes(q)
-        || fmtDate(c.fEvento).includes(q);
+    return (c.nombre||'').toLowerCase().indexOf(q)!==-1
+        || (c.tel||'').indexOf(q)!==-1
+        || (c.dir||'').toLowerCase().indexOf(q)!==-1
+        || fmtDate(c.fEvento).indexOf(q)!==-1;
   });
-  document.getElementById('m-historial-list').innerHTML = contracts.length
-    ? contracts.map(mCardHTML).join('')
-    : '<div class="m-empty"><div class="ei">🔍</div><div class="et">Sin resultados</div><div class="es">' + (q ? 'No hay contratos para: "' + q + '"' : 'No hay contratos guardados') + '</div></div>';
+  var el = document.getElementById('m-historial-list');
+  if (el) el.innerHTML = cs.length
+    ? cs.map(mCardHTML).join('')
+    : mEmpty('Sin resultados', q ? 'No hay contratos para: "'+q+'"' : 'No hay contratos guardados');
 }
 
 function mCardHTML(c) {
-  var items = (c.items||[]).filter(function(r){return r.qty>0;}).length;
-  return '<div class="contract-card">' +
-    '<div class="cc-header">' +
-      '<div><div class="cc-name">' + (c.nombre||'Sin nombre') + '</div>' +
-        '<div class="cc-meta">' +
-          '<span>📅 Evento: ' + fmtDate(c.fEvento) + '</span>' +
-          '<span>📋 Contrato: ' + fmtDate(c.cDate) + '</span>' +
-          (c.tel ? '<span>📞 ' + c.tel + '</span>' : '') +
-          '<span>📦 ' + items + ' artículos</span>' +
-        '</div>' +
-      '</div>' +
-      '<div class="cc-total">$' + (c.total||0).toLocaleString('es-MX',{minimumFractionDigits:2}) + '</div>' +
-    '</div>' +
-    '<div class="cc-actions">' +
-      '<button class="cc-btn cc-edit"   onclick="mEditContract(\'' + c.id + '\')">✏️ Editar</button>' +
-      '<button class="cc-btn cc-export" onclick="mQuickExport(\'' + c.id + '\')">⬇️ Exportar</button>' +
-      '<button class="cc-btn cc-del"    onclick="mDeleteContract(\'' + c.id + '\')">🗑</button>' +
-    '</div>' +
+  var items = (c.items||[]).filter(function(r){ return r.qty>0; }).length;
+  return '<div class="contract-card">'+
+    '<div class="cc-header">'+
+      '<div>'+
+        '<div class="cc-name">'+(c.nombre||'Sin nombre')+'</div>'+
+        '<div class="cc-meta">'+
+          '<span>📅 '+fmtDate(c.fEvento)+'</span>'+
+          (c.tel?'<span>📞 '+c.tel+'</span>':'')+
+          '<span>📦 '+items+' artículos</span>'+
+        '</div>'+
+      '</div>'+
+      '<div class="cc-total">$'+(c.total||0).toLocaleString('es-MX',{minimumFractionDigits:2})+'</div>'+
+    '</div>'+
+    '<div class="cc-actions">'+
+      '<button class="cc-btn cc-edit"   onclick="mEditContract(\''+c.id+'\')">✏️ Editar</button>'+
+      '<button class="cc-btn cc-export" onclick="mQuickExport(\''+c.id+'\')">⬇️ Exportar</button>'+
+      '<button class="cc-btn cc-del"    onclick="mDeleteContract(\''+c.id+'\')">🗑</button>'+
+    '</div>'+
   '</div>';
+}
+function mEmpty(t,m) {
+  return '<div class="m-empty"><div class="ei">📭</div><div class="et">'+t+'</div><div class="es">'+m+'</div></div>';
 }
 
 /* ── Quick export from historial ────────────────────────────────────── */
 function mQuickExport(id) {
-  mEditContract(id);
-  // Small delay to let the form populate before export
-  setTimeout(function() {
-    // Sync to desktop form for export functions
-    ITEMS.forEach(function(it, i) {
-      var dqty   = document.getElementById('qty_'   + i);
-      var dprice = document.getElementById('price_' + i);
-      var mqty   = document.getElementById('mqty-' + i);
-      var mprice = document.getElementById('mprice-' + i);
-      if (dqty   && mqty)   dqty.value   = parseInt(mqty.textContent)   || 0;
-      if (dprice && mprice) dprice.value = parseFloat(mprice.value) || it.price;
-    });
-    calcAll();
-    openExportSheet();
-  }, 200);
+  var c = getById(id); if (!c) return;
+  mCurrentEditId = id;
+  currentEditId  = id;
+  mPopulate(c);
+  openExportSheet();
 }
 
 /* ── Delete ──────────────────────────────────────────────────────────── */
 function mDeleteContract(id) {
   mPendingDeleteId = id;
   var c = getById(id);
-  document.getElementById('m-confirm-msg').textContent =
-    '¿Eliminar el contrato de "' + (c ? c.nombre : 'este cliente') + '"? Esta acción no se puede deshacer.';
-  document.getElementById('m-confirm-overlay').classList.add('open');
+  var msg = document.getElementById('m-confirm-msg');
+  if (msg) msg.textContent = '¿Eliminar el contrato de "'+(c?c.nombre:'este cliente')+'"? Esta acción no se puede deshacer.';
+  var ov = document.getElementById('m-confirm-overlay');
+  if (ov) ov.classList.add('open');
 }
 function mCloseConfirm() {
-  document.getElementById('m-confirm-overlay').classList.remove('open');
+  var ov = document.getElementById('m-confirm-overlay');
+  if (ov) ov.classList.remove('open');
   mPendingDeleteId = null;
 }
 function mConfirmDelete() {
   if (!mPendingDeleteId) return;
-  var contracts = loadContracts().filter(function(c){ return c.id !== mPendingDeleteId; });
-  saveContracts(contracts);
+  saveContracts(loadContracts().filter(function(c){ return c.id !== mPendingDeleteId; }));
   mCloseConfirm();
   renderMobileHome();
   renderMobileHistorial();
@@ -1288,47 +1183,18 @@ function mConfirmDelete() {
 
 /* ── Export sheet ────────────────────────────────────────────────────── */
 function openExportSheet() {
-  // Before opening, make sure desktop form is synced (needed by export fns)
-  syncField('m-nombre', 'c-nombre');
-  syncField('m-tel',    'c-tel');
-  syncField('m-dir',    'c-dir');
-  syncField('m-cDate',  'cDate');
-  syncField('m-fEvento','c-fEvento');
-  syncSelect('m-hEntrega','c-hEntrega');
-  syncSelect('m-hRecol',  'c-hRecol');
-  syncField('m-traslado','c-traslado');
-  syncField('m-anticipo','c-anticipo');
-  ITEMS.forEach(function(it, i) {
-    var dqty   = document.getElementById('qty_'   + i);
-    var dprice = document.getElementById('price_' + i);
-    var mqty   = document.getElementById('mqty-' + i);
-    var mprice = document.getElementById('mprice-' + i);
-    if (dqty   && mqty)   dqty.value   = parseInt(mqty.textContent)   || 0;
-    if (dprice && mprice) dprice.value = parseFloat(mprice.value) || it.price;
-  });
-  calcAll();
-  document.getElementById('sheet-overlay').classList.add('open');
-  document.getElementById('export-sheet').classList.add('open');
+  var ov = document.getElementById('sheet-overlay');
+  var sh = document.getElementById('export-sheet');
+  if (ov) ov.classList.add('open');
+  if (sh) sh.classList.add('open');
 }
 function closeExportSheet() {
-  document.getElementById('sheet-overlay').classList.remove('open');
-  document.getElementById('export-sheet').classList.remove('open');
+  var ov = document.getElementById('sheet-overlay');
+  var sh = document.getElementById('export-sheet');
+  if (ov) ov.classList.remove('open');
+  if (sh) sh.classList.remove('open');
 }
 
-/* ── PDF: use hidden desktop page ────────────────────────────────────── */
-function genPDF() {
-  // Ensure desktop form is synced then print
-  openExportSheet = function(){}; // prevent re-open
-  window.print();
-  openExportSheet = function() {
-    document.getElementById('sheet-overlay').classList.add('open');
-    document.getElementById('export-sheet').classList.add('open');
-  };
-}
-
-/* ── Calendar (override to use mobile data) ─────────────────────────── */
-// addToCalendar() from app.js will use collectForm() which reads desktop inputs
-// We've already synced above in openExportSheet, so it should work directly.
 </script>
 </body>
 </html>
