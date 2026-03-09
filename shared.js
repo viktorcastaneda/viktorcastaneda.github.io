@@ -315,29 +315,31 @@ async function buildDOCX(d){
 
 /* ═══════════════════════════════════════════════════════════════════════
    buildA4Node(d)  —  construye el nodo DOM del contrato A4.
+   El div.a4p tiene height:1123px y layout flex-column para llenar
+   exactamente una hoja A4 sin espacio vacío.
    Devuelve: { wrap, node }
 ═══════════════════════════════════════════════════════════════════════ */
-var A4_CSS = "*{box-sizing:border-box;margin:0;padding:0}\nbody,html{margin:0;padding:0}\n.a4p{width:794px;min-height:1123px;background:#fff;padding:28px 38px;font-family:Arial,sans-serif;position:relative;font-size:10pt}\n.chdr{display:flex;align-items:flex-start;gap:10px;margin-bottom:2px}\n.clogo{width:72px;flex-shrink:0}\n.chdrr{flex:1}\n.ctitle{font-size:13pt;font-weight:bold;color:#2563a8;line-height:1.2;margin-bottom:3px}\n.cdate{font-size:8.5pt;text-align:right;margin-top:3px}\n.ccontact{color:#2563a8;font-size:8.5pt;margin:3px 0 5px}\n.csh1{color:#2563a8;font-weight:bold;font-size:9pt;text-transform:uppercase;border-bottom:1.5px solid #2563a8;padding-bottom:1px;margin:5px 0 3px}\n.csh2{color:#2563a8;font-weight:bold;font-size:9.5pt;margin:5px 0 3px}\n.cdt{width:100%;border-collapse:collapse;margin-bottom:3px}\n.cdt td{padding:2px 0;font-size:8.5pt;vertical-align:bottom}\n.cfl{display:flex;align-items:flex-end;gap:3px;padding-right:6px}\n.clbl{white-space:nowrap;font-size:8.5pt;font-family:Arial}\n.cval{flex:1;border:none;border-bottom:1px solid #444;font-family:Arial;font-size:8.5pt;color:#000;padding:0 2px 1px;min-width:30px}\n.cmob{width:100%;border-collapse:collapse;font-size:8pt}\n.cmob thead tr{background:#2563a8;color:#fff}\n.cmob thead th{padding:3px 5px;font-weight:bold;text-align:center;border:1px solid #2563a8;font-size:7.5pt}\n.cmob thead th.thl{text-align:left}\n.cmob tbody tr.odd{background:#dce6f1}\n.cmob tbody tr.even{background:#fff}\n.cmob tbody td{padding:2px 5px;border:1px solid #b8cce4;vertical-align:middle;font-size:8pt}\n.cmob tbody td.tdesc{font-weight:bold}\n.cmob tbody td.tnum{text-align:center}\n.cmob tfoot td{border:1px solid #b8cce4;padding:2px 5px}\n.cmob tfoot tr.fwht td{background:#fff}\n.cmob tfoot tr.falt td{background:#dce6f1}\n.cmob tfoot tr.fbld td{background:#dce6f1;font-weight:bold;font-size:8pt}\n.rlbl{text-align:right;font-weight:bold}\n.ccl,.ccu{margin:2px 0 4px;font-size:7.5pt}\n.ccl ol,.ccu ol{padding-left:18px}\n.ccl li,.ccu li{margin-bottom:1px;line-height:1.25;text-align:justify}\n.csig{width:100%;border-collapse:collapse;margin-top:10px}\n.csigl{border-bottom:1px solid #000;height:24px}\n.csigt{text-align:center;font-size:8pt;padding-top:2px}\n.cfoot{text-align:right;font-size:8pt;color:#555;margin-top:5px}\n@media print{@page{size:A4;margin:8mm 10mm}.a4p{box-shadow:none!important;width:100%!important}}";
+var A4_CSS = "*{box-sizing:border-box;margin:0;padding:0}\nbody,html{margin:0;padding:0}\n.a4p{width:794px;height:1123px;background:#fff;padding:22px 36px;font-family:Arial,sans-serif;font-size:10pt;display:flex;flex-direction:column;overflow:hidden}\n.chdr{display:flex;align-items:flex-start;gap:10px;margin-bottom:2px;flex-shrink:0}\n.clogo{width:68px;flex-shrink:0}\n.chdrr{flex:1}\n.ctitle{font-size:12.5pt;font-weight:bold;color:#2563a8;line-height:1.2;margin-bottom:2px}\n.cdate{font-size:8pt;text-align:right;margin-top:2px}\n.ccontact{color:#2563a8;font-size:8pt;margin:2px 0 3px;flex-shrink:0}\n.csh1{color:#2563a8;font-weight:bold;font-size:8.5pt;text-transform:uppercase;border-bottom:1.5px solid #2563a8;padding-bottom:1px;margin:4px 0 2px;flex-shrink:0}\n.csh2{color:#2563a8;font-weight:bold;font-size:9pt;margin:3px 0 2px;flex-shrink:0}\n.cdt{width:100%;border-collapse:collapse;margin-bottom:3px;flex-shrink:0}\n.cdt td{padding:1px 0;font-size:8pt;vertical-align:bottom}\n.cfl{display:flex;align-items:flex-end;gap:3px;padding-right:6px}\n.clbl{white-space:nowrap;font-size:8pt;font-family:Arial}\n.cval{flex:1;border:none;border-bottom:1px solid #444;font-family:Arial;font-size:8pt;color:#000;padding:0 2px 1px;min-width:20px}\n.cmob-wrap{flex:1;display:flex;flex-direction:column;min-height:0}\n.cmob{width:100%;border-collapse:collapse;font-size:7.5pt;height:100%}\n.cmob thead tr{background:#2563a8;color:#fff}\n.cmob thead th{padding:3px 5px;font-weight:bold;text-align:center;border:1px solid #2563a8;font-size:7pt}\n.cmob thead th.thl{text-align:left}\n.cmob tbody{height:100%}\n.cmob tbody tr.odd{background:#dce6f1}\n.cmob tbody tr.even{background:#fff}\n.cmob tbody tr{height:auto}\n.cmob tbody td{padding:2px 5px;border:1px solid #b8cce4;vertical-align:middle;font-size:7.5pt}\n.cmob tbody td.tdesc{font-weight:bold}\n.cmob tbody td.tnum{text-align:center}\n.cmob tfoot td{border:1px solid #b8cce4;padding:2px 5px}\n.cmob tfoot tr.fwht td{background:#fff}\n.cmob tfoot tr.falt td{background:#dce6f1}\n.cmob tfoot tr.fbld td{background:#dce6f1;font-weight:bold;font-size:7.5pt}\n.rlbl{text-align:right;font-weight:bold}\n.clauses-wrap{flex-shrink:0}\n.ccl,.ccu{margin:1px 0 3px;font-size:7pt}\n.ccl ol,.ccu ol{padding-left:16px}\n.ccl li,.ccu li{margin-bottom:0;line-height:1.28;text-align:justify}\n.csig{width:100%;border-collapse:collapse;margin-top:6px;flex-shrink:0}\n.csigl{border-bottom:1px solid #000;height:20px}\n.csigt{text-align:center;font-size:7.5pt;padding-top:2px}\n.cfoot{text-align:right;font-size:7.5pt;color:#555;margin-top:3px;flex-shrink:0}";
 
 function buildA4Node(d){
   var logo="data:image/jpeg;base64,"+LOGO_B64;
 
-  /* Todos los artículos: los seleccionados con qty/precio/importe,
-     los no seleccionados solo muestran descripción y precio unitario */
   var irows=ITEMS.map(function(it,i){
     var r=d.items[i];
     var cls=i%2===0?"odd":"even";
     var hasQty=r&&r.qty>0;
-    var price=hasQty?r.price:it.price;  // usar precio del item si no hay selección
+    var price=hasQty?r.price:it.price;
     return '<tr class="'+cls+'">'
       +'<td class="tdesc">'+it.desc+'</td>'
-      +'<td class="tnum">'+( hasQty?r.qty:'' )+'</td>'
+      +'<td class="tnum">'+(hasQty?r.qty:'')+'</td>'
       +'<td class="tnum">$'+price.toFixed(2)+'</td>'
-      +'<td class="tnum">'+( hasQty?f2(r.amt):'' )+'</td></tr>';
+      +'<td class="tnum">'+(hasQty?f2(r.amt):'')+'</td></tr>';
   }).join("");
 
   var html=
     '<div class="a4p">'
+
+    // ── Header ──────────────────────────────────────────
     +'<div class="chdr">'
       +'<img class="clogo" src="'+logo+'" crossorigin="anonymous">'
       +'<div class="chdrr">'
@@ -346,6 +348,8 @@ function buildA4Node(d){
       +'</div>'
     +'</div>'
     +'<div class="ccontact">Contacto: 614 126 6784</div>'
+
+    // ── Client data ─────────────────────────────────────
     +'<div class="csh1">DATOS DEL ARRENDATARIO</div>'
     +'<table class="cdt"><colgroup><col style="width:63%"><col style="width:37%"></colgroup>'
       +'<tr>'
@@ -359,8 +363,11 @@ function buildA4Node(d){
         +'<td><div class="cfl"><span class="clbl">Horario de recolección:</span><span class="cval">'+xe(d.hRecolL)+'</span></div></td>'
       +'</tr>'
     +'</table>'
+
+    // ── Items table (flex:1 — fills remaining space) ────
     +'<div class="csh2">Mobiliario a arrendar:</div>'
-    +'<table class="cmob">'
+    +'<div class="cmob-wrap">'
+    +'<table class="cmob" style="table-layout:fixed">'
       +'<thead><tr>'
         +'<th class="thl" style="width:37%">Descripción</th>'
         +'<th style="width:19%">Cantidad</th>'
@@ -381,6 +388,10 @@ function buildA4Node(d){
         +'</tr>'
       +'</tfoot>'
     +'</table>'
+    +'</div>'  // /cmob-wrap
+
+    // ── Clauses ─────────────────────────────────────────
+    +'<div class="clauses-wrap">'
     +'<div class="csh1">CLAUSULAS PARA ALQUILER:</div>'
     +'<div class="ccl"><ol>'
       +'<li>El mobiliario se alquila por día, se entrega el día del evento y se retira el mismo día o al día siguiente a más tardar las 12:00 pm.</li>'
@@ -401,6 +412,9 @@ function buildA4Node(d){
       +'<li>No usar zapatos dentro del inflable.</li>'
       +'<li>No se permite fumar o colocar inflables cerca de fogatas o parrillas calientes.</li>'
     +'</ol></div>'
+    +'</div>'  // /clauses-wrap
+
+    // ── Signatures ──────────────────────────────────────
     +'<table class="csig"><tr>'
       +'<td style="width:46%"><div class="csigl"></div></td>'
       +'<td style="width:8%"></td>'
@@ -419,15 +433,16 @@ function buildA4Node(d){
   return {wrap:wrap, node:node};
 }
 
+/* ── captureA4(d, fmt, onDone) — PNG/JPG directo ── */
 function captureA4(d, fmt, onDone){
   var r=buildA4Node(d);
-  r.wrap.style.cssText="position:fixed;left:-9999px;top:0;width:854px;pointer-events:none;z-index:-999";
+  r.wrap.style.cssText="position:fixed;left:-9999px;top:0;width:794px;pointer-events:none;z-index:-999";
   document.body.appendChild(r.wrap);
   setTimeout(function(){
     html2canvas(r.node,{
       scale:2, useCORS:true, allowTaint:true,
       backgroundColor:"#ffffff", logging:false,
-      width:794, windowWidth:854
+      width:794, height:1123, windowWidth:794
     }).then(function(canvas){
       document.body.removeChild(r.wrap);
       var mime=fmt==="jpg"?"image/jpeg":"image/png";
@@ -436,21 +451,49 @@ function captureA4(d, fmt, onDone){
       document.body.removeChild(r.wrap);
       onDone(e, null);
     });
-  }, 80);
+  }, 100);
 }
 
-function printA4(d){
-  var r=buildA4Node(d);
-  var printCSS=A4_CSS+"\nbody{margin:0;padding:0}@media print{@page{size:A4;margin:8mm 10mm}}";
-  var bodyHTML=r.node.outerHTML;
-  var win=window.open("","_blank");
-  if(!win){ alert("Permite las ventanas emergentes para usar esta función."); return; }
-  win.document.write(
-    "<!DOCTYPE html><html><head><meta charset=\"UTF-8\">"+
-    "<title>CASVEL - "+xe(d.nombre||"contrato")+"</title>"+
-    "<style>"+printCSS+"</style>"+
-    "</head><body>"+bodyHTML+"</body></html>"
-  );
-  win.document.close();
-  win.onload=function(){ win.focus(); win.print(); };
+/* ── savePDF(d, filename) — guarda PDF directamente (sin diálogo de impresión) ──
+   Usa html2canvas para renderizar el A4 exacto, luego jsPDF para empaquetarlo.
+   jsPDF se carga del CDN la primera vez que se necesita. */
+function savePDF(d, filename){
+  return new Promise(function(resolve, reject){
+    function doSave(){
+      var r=buildA4Node(d);
+      r.wrap.style.cssText="position:fixed;left:-9999px;top:0;width:794px;pointer-events:none;z-index:-999";
+      document.body.appendChild(r.wrap);
+      setTimeout(function(){
+        html2canvas(r.node,{
+          scale:2, useCORS:true, allowTaint:true,
+          backgroundColor:"#ffffff", logging:false,
+          width:794, height:1123, windowWidth:794
+        }).then(function(canvas){
+          document.body.removeChild(r.wrap);
+          // A4 en mm: 210×297
+          var pdf=new window.jspdf.jsPDF({
+            orientation:"portrait", unit:"mm", format:"a4"
+          });
+          var imgData=canvas.toDataURL("image/jpeg",0.92);
+          pdf.addImage(imgData,"JPEG",0,0,210,297,undefined,"FAST");
+          pdf.save(filename||"CASVEL_contrato.pdf");
+          resolve();
+        }).catch(function(e){
+          document.body.removeChild(r.wrap);
+          reject(e);
+        });
+      }, 100);
+    }
+
+    // Cargar jsPDF del CDN si no está disponible
+    if(window.jspdf){
+      doSave();
+    } else {
+      var s=document.createElement("script");
+      s.src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js";
+      s.onload=function(){ doSave(); };
+      s.onerror=function(){ reject(new Error("No se pudo cargar jsPDF")); };
+      document.head.appendChild(s);
+    }
+  });
 }

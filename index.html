@@ -757,10 +757,13 @@ function doImage(fmt){
   });
 }
 
-/* ── PDF — usa printA4 de shared.js (mismo layout que móvil) ── */
+/* ── PDF — descarga directa sin diálogo de impresión ── */
 function doPDF(){
   var d=collectDesk();
-  printA4(d);
+  showLoad('Generando PDF...');
+  savePDF(d,'CASVEL_'+(d.nombre||'contrato').replace(/\s+/g,'_')+'.pdf')
+    .then(function(){ hideLoad(); showToast('\u2705 PDF descargado'); })
+    .catch(function(e){ hideLoad(); showToast('\u274c Error: '+e.message); });
 }
 </script>
 </body>

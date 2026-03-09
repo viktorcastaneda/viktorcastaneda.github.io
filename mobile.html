@@ -828,10 +828,13 @@ function mDoDocx(){
   }).catch(function(e){ showToast('❌ Error: '+e.message); });
 }
 
-/* ── PDF — misma función compartida que el desktop ── */
+/* ── PDF — descarga directa sin diálogo de impresión ── */
 function mDoPDF(){
   var d=mCollect();
-  printA4(d);
+  showLoad('Generando PDF...');
+  savePDF(d,'CASVEL_'+(d.nombre||'contrato').replace(/\s+/g,'_')+'.pdf')
+    .then(function(){ hideLoad(); showToast('\u2705 PDF descargado'); })
+    .catch(function(e){ hideLoad(); showToast('\u274c Error: '+e.message); });
 }
 
 /* ── Calendario ── */
