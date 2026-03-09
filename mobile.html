@@ -205,6 +205,39 @@ input[type=date].fi{color-scheme:light}
   transform:translateY(20px);opacity:0;transition:all .25s;z-index:500;pointer-events:none}
 #mtoast.show{transform:translateY(0);opacity:1}
 /* empty */
+
+/* Firebase sync indicator */
+.fb-sync{display:inline-flex;align-items:center;gap:5px;font-size:11px;font-weight:600;
+  padding:3px 9px;border-radius:10px;cursor:pointer;border:none;font-family:inherit;
+  margin-left:auto;-webkit-tap-highlight-color:transparent}
+.fb-sync.local{background:rgba(255,255,255,.08);color:rgba(255,255,255,.4)}
+.fb-sync.live{background:rgba(26,122,68,.25);color:#6ee7b7}
+.fb-sync.live::before{content:"●";margin-right:2px;animation:fbpulse 2s infinite}
+@keyframes fbpulse{0%,100%{opacity:1}50%{opacity:.4}}
+/* Firebase bottom sheet */
+.fb-sheet{position:fixed;left:0;right:0;bottom:0;z-index:500;background:var(--white);
+  border-radius:20px 20px 0 0;padding:0 20px calc(20px + var(--sb));
+  transform:translateY(100%);transition:transform .3s cubic-bezier(.32,.72,0,1)}
+.fb-sheet.on{transform:translateY(0)}
+.fb-sbg{display:none;position:fixed;inset:0;background:rgba(0,0,0,.5);z-index:499}
+.fb-sbg.on{display:block}
+.fb-field{margin-bottom:14px}
+.fb-field label{display:block;font-size:12px;font-weight:700;color:var(--mid);
+  text-transform:uppercase;letter-spacing:.05em;margin-bottom:6px}
+.fb-field input{width:100%;padding:12px 14px;border:1.5px solid var(--border);border-radius:10px;
+  font-family:inherit;font-size:16px;outline:none;-webkit-appearance:none}
+.fb-field input:focus{border-color:var(--blue)}
+.fb-steps{font-size:12px;color:var(--mid);line-height:1.7;background:var(--light);
+  border-radius:12px;padding:12px 14px;margin-bottom:16px}
+.fb-steps a{color:var(--blue)}
+.fb-steps code{background:#e2e8f0;padding:1px 5px;border-radius:3px;font-size:11px}
+.fb-btns{display:flex;flex-direction:column;gap:10px;margin-top:16px}
+.fb-btn{width:100%;padding:15px;border-radius:12px;border:none;font-family:inherit;
+  font-size:16px;font-weight:700;cursor:pointer;-webkit-tap-highlight-color:transparent}
+.fb-btn-p{background:var(--blue);color:#fff}
+.fb-btn-d{background:#fde8e8;color:var(--red)}
+.fb-btn-c{background:var(--light);color:var(--mid)}
+
 .mempty{text-align:center;padding:52px 20px;color:var(--mid)}
 .mempty .ei{font-size:48px;margin-bottom:10px}
 .mempty .et{font-size:16px;font-weight:600;margin-bottom:4px}
@@ -225,7 +258,8 @@ if(!/[?&]m=1/.test(location.search) &&
   <div class="hhero">
     <img id="m-logo" src="" alt="">
     <div><div class="hbrand">CASVEL</div><div class="hsub">Gestor de Contratos</div></div>
-    <a class="hlink" href="index.html?d=1">🖥 Escritorio</a>
+    <button class="fb-sync local" id="m-fb-status" onclick="openFbSheet()">⬡ Local</button>
+    <a class="hlink" href="index.html?d=1" style="margin-left:8px">🖥</a>
   </div>
   <div class="hcontent">
     <div class="sgrid" id="home-stats"></div>
@@ -361,6 +395,31 @@ if(!/[?&]m=1/.test(location.search) &&
   </div>
 </div>
 
+<!-- ═══ FIREBASE SHEET ══════════════════════════════════════════════════ -->
+<div class="fb-sbg" id="fb-sbg" onclick="closeFbSheet()"></div>
+<div class="fb-sheet" id="fb-sheet">
+  <div class="shandle"></div>
+  <div class="sttitle">☁️ Sincronización en la nube</div>
+  <div class="stsub" id="fb-msub">Comparte el historial entre dispositivos con Firebase (gratis).</div>
+  <div class="fb-steps">
+    1. <a href="https://console.firebase.google.com" target="_blank">console.firebase.google.com</a> → nuevo proyecto<br>
+    2. Realtime Database → <em>Modo de prueba</em><br>
+    3. Copia la URL de la DB (ej: <code>https://mi-app-rtdb.firebaseio.com</code>)<br>
+    4. Configuración del proyecto → copia <code>apiKey</code> y <code>projectId</code>
+  </div>
+  <div class="fb-field"><label>API Key</label>
+    <input type="text" id="m-fb-apikey" placeholder="AIzaSy..." autocomplete="off"></div>
+  <div class="fb-field"><label>Database URL</label>
+    <input type="text" id="m-fb-dburl" placeholder="https://tu-proyecto-rtdb.firebaseio.com" autocomplete="off"></div>
+  <div class="fb-field"><label>Project ID</label>
+    <input type="text" id="m-fb-projid" placeholder="tu-proyecto-12345" autocomplete="off"></div>
+  <div class="fb-btns">
+    <button class="fb-btn fb-btn-p" onclick="mFbConnect()">Conectar Firebase</button>
+    <button class="fb-btn fb-btn-d" id="m-fb-disc" onclick="mFbDisconnect()" style="display:none">Desconectar</button>
+    <button class="fb-btn fb-btn-c" onclick="closeFbSheet()">Cancelar</button>
+  </div>
+</div>
+
 <!-- ═══ CONFIRM ════════════════════════════════════════════════════════ -->
 <div class="cbg" id="conf-bg">
   <div class="cbox">
@@ -430,13 +489,67 @@ document.addEventListener('DOMContentLoaded', function(){
   sv('m-cdate', todayISO());
   buildProg();
 
-  // anticipo manual tracking
   el('m-anticipo').addEventListener('input', function(){
     this.dataset.manual='1'; mCalcResta();
   });
 
-  renderHome();
+  // Suscribir a cambios en tiempo real
+  onContractsChange(function(){ renderHome(); renderHist(); });
+
+  // Intentar conectar Firebase si hay config guardada
+  var cfg=fbGetConfig();
+  if(cfg){ fbInit(cfg, function(err){
+    if(err){ showToast('⚠️ Firebase: '+err.message); mUpdateFbBadge(false); }
+    else mUpdateFbBadge(true);
+  }); } else { mUpdateFbBadge(false); renderHome(); }
 });
+
+/* ── Firebase UI (mobile) ── */
+function mUpdateFbBadge(live){
+  var b=el('m-fb-status'); if(!b) return;
+  if(live){ b.className='fb-sync live'; b.textContent='● Firebase'; }
+  else     { b.className='fb-sync local'; b.textContent='⬡ Local'; }
+}
+function openFbSheet(){
+  var cfg=fbGetConfig()||{};
+  el('m-fb-apikey').value=cfg.apiKey||'';
+  el('m-fb-dburl').value=cfg.databaseURL||'';
+  el('m-fb-projid').value=cfg.projectId||'';
+  el('m-fb-disc').style.display=isFbMode()?'':'none';
+  el('fb-msub').textContent=isFbMode()
+    ?'✅ Conectado. El historial se sincroniza en tiempo real.'
+    :'Comparte el historial entre dispositivos con Firebase (gratis).';
+  el('fb-sbg').classList.add('on');
+  el('fb-sheet').classList.add('on');
+}
+function closeFbSheet(){
+  el('fb-sbg').classList.remove('on');
+  el('fb-sheet').classList.remove('on');
+}
+function mFbConnect(){
+  var cfg={
+    apiKey:      el('m-fb-apikey').value.trim(),
+    databaseURL: el('m-fb-dburl').value.trim(),
+    projectId:   el('m-fb-projid').value.trim(),
+    authDomain:  el('m-fb-projid').value.trim()+'.firebaseapp.com',
+    storageBucket: el('m-fb-projid').value.trim()+'.appspot.com',
+    messagingSenderId:'000000000000', appId:'1:000000000000:web:000000'
+  };
+  if(!cfg.apiKey||!cfg.databaseURL||!cfg.projectId){
+    showToast('⚠️ Completa los tres campos'); return;
+  }
+  showToast('⏳ Conectando...');
+  fbSaveConfig(cfg);
+  fbInit(cfg, function(err){
+    if(err){ fbClearConfig(); showToast('❌ Error: '+err.message); mUpdateFbBadge(false); }
+    else { mUpdateFbBadge(true); closeFbSheet(); showToast('✅ Firebase conectado'); }
+  });
+}
+function mFbDisconnect(){
+  fbClearConfig(); mUpdateFbBadge(false); closeFbSheet();
+  showToast('⬡ Desconectado — usando almacenamiento local');
+  renderHome(); renderHist();
+}
 
 /* ── Progress ── */
 function buildProg(){
@@ -601,17 +714,19 @@ function renderSummary(){
 function mSave(){
   var data=mCollect();
   if(!data.nombre.trim()){ showToast('⚠️ Ingresa el nombre del cliente'); return; }
-  var list=loadContracts(), now=new Date().toISOString();
+  var now=new Date().toISOString();
   if(M_editId){
-    var idx=list.findIndex(function(c){return c.id===M_editId;});
-    if(idx>=0) list[idx]=Object.assign(list[idx],data,{updatedAt:now});
+    var existing=getById(M_editId);
+    var updated=Object.assign({}, existing||{}, data, {id:M_editId, updatedAt:now});
+    if(!updated.createdAt) updated.createdAt=now;
+    saveContract(updated);
     showToast('✅ Contrato actualizado');
   } else {
-    list.unshift(Object.assign(data,{id:newId(),createdAt:now,updatedAt:now}));
-    M_editId=list[0].id;
+    M_editId=newId();
+    var c=Object.assign({}, data, {id:M_editId, createdAt:now, updatedAt:now});
+    saveContract(c);
     showToast('✅ Contrato guardado');
   }
-  saveContracts(list);
   var wt=el('wiz-ttl'); if(wt) wt.textContent=data.nombre||'Contrato';
 }
 
@@ -693,8 +808,10 @@ function askDel(id){
 function closeConfirm(){ el('conf-bg').classList.remove('on'); M_delId=null; }
 function doDelete(){
   if(!M_delId) return;
-  saveContracts(loadContracts().filter(function(c){return c.id!==M_delId;}));
-  closeConfirm(); renderHome(); renderHist(); showToast('🗑️ Eliminado');
+  deleteContract(M_delId);
+  closeConfirm(); M_delId=null;
+  if(!isFbMode()){ renderHome(); renderHist(); }
+  showToast('🗑️ Eliminado');
 }
 
 /* ── Export sheet ── */
@@ -711,10 +828,13 @@ function mDoDocx(){
   }).catch(function(e){ showToast('❌ Error: '+e.message); });
 }
 
-/* ── PDF ── */
-function mDoPDF(){ showToast('💡 En Safari: botón Compartir → Imprimir → Guardar como PDF'); }
+/* ── PDF — misma función compartida que el desktop ── */
+function mDoPDF(){
+  var d=mCollect();
+  printA4(d);
+}
 
-/* ── Calendar ── */
+/* ── Calendario ── */
 function mDoCal(){
   var d=mCollect();
   if(!d.fEvento){ showToast('⚠️ Ingresa la Fecha del Evento primero'); return; }
@@ -723,77 +843,15 @@ function mDoCal(){
   showToast('📅 Evento exportado');
 }
 
-/* ── Image (builds off-screen A4 HTML) ── */
+/* ── PNG / JPG — usa captureA4 compartido: mismo formato que desktop ── */
 function mDoImage(fmt){
   var d=mCollect();
-  var logoSrc='data:image/jpeg;base64,'+LOGO_B64;
-  function sl(id){ var e=el(id); return (e&&e.options&&e.options[e.selectedIndex])?e.options[e.selectedIndex].text:''; }
-  var irows=ITEMS.map(function(it,i){
-    var r=d.items[i]; if(!r||!r.qty) return '';
-    var bg=i%2===0?'#dce6f1':'#fff';
-    return '<tr style="background:'+bg+'">'+
-      '<td style="padding:3px 5px;border:1px solid #b8cce4;font-weight:bold;font-size:8pt">'+it.desc+'</td>'+
-      '<td style="padding:3px 5px;border:1px solid #b8cce4;text-align:center;font-size:8pt">'+r.qty+'</td>'+
-      '<td style="padding:3px 5px;border:1px solid #b8cce4;text-align:center;font-size:8pt">$'+r.price.toFixed(2)+'</td>'+
-      '<td style="padding:3px 5px;border:1px solid #b8cce4;text-align:center;font-size:8pt">'+f2(r.amt)+'</td></tr>';
-  }).join('');
-  var html='<div style="font-family:Arial,sans-serif;width:754px;padding:28px 38px;background:#fff">'+
-    '<div style="display:flex;align-items:flex-start;gap:10px;margin-bottom:4px">'+
-      '<img src="'+logoSrc+'" style="width:72px" crossorigin="anonymous">'+
-      '<div><div style="font-size:13pt;font-weight:bold;color:#2563a8">CONTRATO DE ALQUILER DE MOBILIARIO PARA EVENTOS</div>'+
-        '<div style="font-size:8.5pt;text-align:right;margin-top:4px">Chihuahua, Chihuahua. a '+fmtDate(d.cDate)+'</div>'+
-      '</div></div>'+
-    '<div style="color:#2563a8;font-size:8.5pt;margin:3px 0 5px">Contacto: 614 126 6784</div>'+
-    '<div style="color:#2563a8;font-weight:bold;font-size:9pt;border-bottom:1.5px solid #2563a8;padding-bottom:1px;margin:4px 0 3px">DATOS DEL ARRENDATARIO</div>'+
-    '<table style="width:100%;font-size:8.5pt;border-collapse:collapse;margin-bottom:4px">'+
-      '<tr><td><b>Nombre:</b> '+d.nombre+'</td><td><b>Telefono:</b> '+d.tel+'</td></tr>'+
-      '<tr><td><b>Dirección:</b> '+d.dir+'</td><td><b>Fecha Evento:</b> '+fmtDate(d.fEvento)+'</td></tr>'+
-      '<tr><td><b>Entrega:</b> '+sl('m-hentrega')+'</td><td><b>Recolección:</b> '+sl('m-hrecol')+'</td></tr>'+
-    '</table>'+
-    '<div style="color:#2563a8;font-weight:bold;margin:4px 0 3px">Mobiliario a arrendar:</div>'+
-    '<table style="width:100%;border-collapse:collapse">'+
-      '<thead><tr style="background:#2563a8;color:#fff">'+
-        '<th style="padding:3px 5px;text-align:left;border:1px solid #2563a8;font-size:7.5pt">Descripción</th>'+
-        '<th style="padding:3px 5px;border:1px solid #2563a8;font-size:7.5pt">Cantidad</th>'+
-        '<th style="padding:3px 5px;border:1px solid #2563a8;font-size:7.5pt">Precio Unit.</th>'+
-        '<th style="padding:3px 5px;border:1px solid #2563a8;font-size:7.5pt">Importe</th></tr></thead>'+
-      '<tbody>'+irows+'</tbody>'+
-      '<tr style="background:#fff"><td colspan="2" style="border:1px solid #b8cce4"></td>'+
-        '<td style="border:1px solid #b8cce4;text-align:right;font-weight:bold;padding:3px 5px;font-size:8pt">Traslado:</td>'+
-        '<td style="border:1px solid #b8cce4;padding:3px 5px;font-size:8pt">'+f2(d.traslado)+'</td></tr>'+
-      '<tr style="background:#dce6f1"><td colspan="2" style="border:1px solid #b8cce4"></td>'+
-        '<td style="border:1px solid #b8cce4;text-align:right;font-weight:bold;padding:3px 5px;font-size:8pt">Precio Total:</td>'+
-        '<td style="border:1px solid #b8cce4;padding:3px 5px;font-size:8pt">'+f2(d.total)+'</td></tr>'+
-      '<tr style="background:#dce6f1"><td colspan="4" style="border:1px solid #b8cce4;padding:3px 5px;font-weight:bold;font-size:8pt">'+
-        'Anticipo: '+f2(d.anticipo)+'&nbsp;&nbsp;&nbsp;Resta por Pagar: '+f2(d.resta)+'</td></tr>'+
-    '</table>'+
-    '<table style="width:100%;margin-top:20px">'+
-      '<tr><td style="width:46%;border-bottom:1px solid #000;height:24px"></td>'+
-        '<td style="width:8%"></td>'+
-        '<td style="width:46%;border-bottom:1px solid #000;height:24px"></td></tr>'+
-      '<tr><td style="text-align:center;font-size:8pt">NOMBRE Y FIRMA ARRENDATARIO</td>'+
-        '<td></td><td style="text-align:center;font-size:8pt">NOMBRE Y FIRMA ARRENDADOR</td></tr>'+
-    '</table>'+
-    '<div style="text-align:right;font-size:8pt;color:#555;margin-top:5px">@EventosCasVel, 2026</div>'+
-  '</div>';
-
-  var wrap=document.createElement('div');
-  wrap.innerHTML=html;
-  wrap.style.cssText='position:fixed;left:-9999px;top:0;width:830px;pointer-events:none';
-  document.body.appendChild(wrap);
-  var node=wrap.firstChild;
   showLoad('Generando '+fmt.toUpperCase()+'...');
-  html2canvas(node,{scale:2,useCORS:true,allowTaint:true,backgroundColor:'#ffffff',
-    logging:false,width:830,windowWidth:900
-  }).then(function(canvas){
-    document.body.removeChild(wrap); hideLoad();
-    var mime=fmt==='jpg'?'image/jpeg':'image/png';
-    dlDataURL(canvas.toDataURL(mime,fmt==='jpg'?0.92:1),
-      'CASVEL_'+(d.nombre||'contrato').replace(/\s+/g,'_')+'.'+fmt);
+  captureA4(d, fmt, function(err, dataURL){
+    hideLoad();
+    if(err){ showToast('❌ Error: '+err.message); return; }
+    dlDataURL(dataURL, 'CASVEL_'+(d.nombre||'contrato').replace(/\s+/g,'_')+'.'+fmt);
     showToast('✅ Imagen descargada');
-  }).catch(function(e){
-    document.body.removeChild(wrap); hideLoad();
-    showToast('❌ Error: '+e.message);
   });
 }
 </script>

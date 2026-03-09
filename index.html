@@ -170,6 +170,26 @@ select.c-fi{flex:none;width:auto;min-width:130px;cursor:pointer;border:none;
   padding:10px 18px;border-radius:6px;font-size:13px;border-left:4px solid var(--blt);
   transform:translateY(60px);opacity:0;transition:all .28s;z-index:9999;pointer-events:none}
 #toast.show{transform:translateY(0);opacity:1}
+
+/* Firebase status badge */
+.fb-badge{display:inline-flex;align-items:center;gap:5px;padding:3px 9px;border-radius:12px;
+  font-size:11px;font-weight:600;cursor:pointer;border:none;font-family:var(--ff);transition:all .15s}
+.fb-badge.local{background:rgba(255,255,255,.1);color:rgba(255,255,255,.5)}
+.fb-badge.live{background:rgba(26,122,68,.3);color:#6ee7b7}
+.fb-badge.live::before{content:"●";margin-right:2px;animation:pulse 2s infinite}
+@keyframes pulse{0%,100%{opacity:1}50%{opacity:.4}}
+/* Firebase modal */
+.fb-modal{max-width:520px}
+.fb-field{margin-bottom:14px}
+.fb-field label{display:block;font-size:12px;font-weight:600;color:var(--mid);margin-bottom:5px}
+.fb-field input{width:100%;padding:8px 12px;border:1.5px solid var(--border);border-radius:var(--r);
+  font-family:var(--ff);font-size:13px;outline:none}
+.fb-field input:focus{border-color:var(--blt)}
+.fb-steps{font-size:12px;color:var(--mid);line-height:1.7;background:var(--light);
+  border-radius:var(--r);padding:12px 16px;margin-bottom:16px}
+.fb-steps a{color:var(--blue)}
+.fb-steps code{background:#e2e8f0;padding:1px 5px;border-radius:3px;font-size:11px}
+
 /* print */
 @media print{
   .sb,.topbar,.ftbar,.overlay,.lov,#toast{display:none!important}
@@ -207,8 +227,16 @@ if(!/[?&]d=1/.test(location.search) &&
     <a class="nav-item" id="nav-editor" href="#" onclick="openEditor(null);return false">
       <span class="ic">✏️</span> Nuevo Contrato</a>
   </div>
-  <div class="sb-foot">EVENTOS CASVEL © 2026<br>
-    <a href="mobile.html">📱 Versión móvil</a></div>
+  <div class="nav-sec">
+    <div class="nav-lbl">Configuración</div>
+    <a class="nav-item" id="nav-ajustes" href="#" onclick="openFbModal();return false">
+      <span class="ic">☁️</span> Sincronización</a>
+  </div>
+  <div class="sb-foot">
+    <button class="fb-badge local" id="fb-status" onclick="openFbModal()">⬡ Solo local</button><br><br>
+    EVENTOS CASVEL © 2026<br>
+    <a href="mobile.html">📱 Versión móvil</a>
+  </div>
 </nav>
 
 <!-- MAIN -->
@@ -348,6 +376,33 @@ if(!/[?&]d=1/.test(location.search) &&
   </div><!-- /view-editor -->
 </div><!-- /main -->
 
+<!-- FIREBASE CONFIG MODAL -->
+<div class="overlay" id="fb-modal">
+  <div class="modal fb-modal">
+    <div class="modal-title">☁️ Sincronización en la nube</div>
+    <div class="modal-sub" id="fb-modal-sub">Comparte el historial entre todos los dispositivos usando Firebase (gratis).</div>
+    <div class="fb-steps">
+      <strong>Cómo activarlo (5 minutos, gratis):</strong><br>
+      1. Ve a <a href="https://console.firebase.google.com" target="_blank">console.firebase.google.com</a><br>
+      2. Crea un proyecto → <em>Realtime Database</em> → <strong>Crear base de datos</strong><br>
+      3. Elige <em>Comenzar en modo de prueba</em> (reglas: read/write true)<br>
+      4. Copia la URL de la DB (ej: <code>https://mi-proyecto-default-rtdb.firebaseio.com</code>)<br>
+      5. En <em>Configuración del proyecto → General</em> copia el <code>apiKey</code> y <code>projectId</code>
+    </div>
+    <div class="fb-field"><label>API Key</label>
+      <input type="text" id="fb-apikey" placeholder="AIzaSy..."></div>
+    <div class="fb-field"><label>Database URL</label>
+      <input type="text" id="fb-dburl" placeholder="https://tu-proyecto-default-rtdb.firebaseio.com"></div>
+    <div class="fb-field"><label>Project ID</label>
+      <input type="text" id="fb-projid" placeholder="tu-proyecto-12345"></div>
+    <div class="modal-acts">
+      <button class="btn btn-d btn-sm" id="fb-disconnect-btn" onclick="fbDisconnect()" style="display:none">Desconectar</button>
+      <button class="btn btn-g" onclick="closeFbModal()">Cancelar</button>
+      <button class="btn btn-p" onclick="fbConnect()">Conectar</button>
+    </div>
+  </div>
+</div>
+
 <!-- EXPORT MODAL -->
 <div class="overlay" id="exp-modal">
   <div class="modal">
@@ -355,7 +410,7 @@ if(!/[?&]d=1/.test(location.search) &&
     <div class="modal-sub">Elige el formato:</div>
     <div class="modal-btns">
       <button class="exp-btn eb-docx" onclick="closeExportModal();doDocx()"><span class="ic">📝</span>Word</button>
-      <button class="exp-btn eb-pdf"  onclick="closeExportModal();window.print()"><span class="ic">📄</span>PDF</button>
+      <button class="exp-btn eb-pdf"  onclick="closeExportModal();doPDF()"><span class="ic">📄</span>PDF</button>
       <button class="exp-btn eb-png"  onclick="closeExportModal();doImage('png')"><span class="ic">🖼️</span>PNG</button>
       <button class="exp-btn eb-jpg"  onclick="closeExportModal();doImage('jpg')"><span class="ic">📷</span>JPG</button>
     </div>
@@ -417,13 +472,78 @@ document.addEventListener('DOMContentLoaded', function(){
   buildItemsTable();
   el('c-cdate').value = todayISO();
 
-  // anticipo manual tracking
   el('c-anticipo').addEventListener('input', function(){
     this.dataset.manual='1'; calcDesk();
   });
 
-  renderDashboard();
+  // Suscribir a cambios en tiempo real (funciona con localStorage Y Firebase)
+  onContractsChange(function(){
+    renderDashboard();
+    renderHistorial();
+  });
+
+  // Intentar conectar Firebase si hay config guardada
+  var cfg=fbGetConfig();
+  if(cfg){ fbInit(cfg, function(err){
+    if(err){ showToast('⚠️ Firebase: '+err.message); updateFbBadge(false); }
+    else updateFbBadge(true);
+  }); } else { updateFbBadge(false); renderDashboard(); }
 });
+
+/* ── Firebase UI ── */
+function updateFbBadge(live){
+  var b=el('fb-status');
+  if(live){
+    b.className='fb-badge live'; b.textContent='● Firebase activo';
+  } else {
+    b.className='fb-badge local'; b.textContent='⬡ Solo local';
+  }
+}
+function openFbModal(){
+  var cfg=fbGetConfig()||{};
+  el('fb-apikey').value=cfg.apiKey||'';
+  el('fb-dburl').value=cfg.databaseURL||'';
+  el('fb-projid').value=cfg.projectId||'';
+  el('fb-disconnect-btn').style.display=isFbMode()?'':'none';
+  el('fb-modal-sub').textContent=isFbMode()
+    ?'✅ Conectado a Firebase. El historial se sincroniza en tiempo real.'
+    :'Comparte el historial entre todos los dispositivos usando Firebase (gratis).';
+  el('fb-modal').classList.add('open');
+}
+function closeFbModal(){ el('fb-modal').classList.remove('open'); }
+function fbConnect(){
+  var cfg={
+    apiKey:    el('fb-apikey').value.trim(),
+    databaseURL: el('fb-dburl').value.trim(),
+    projectId: el('fb-projid').value.trim(),
+    authDomain: el('fb-projid').value.trim()+'.firebaseapp.com',
+    storageBucket: el('fb-projid').value.trim()+'.appspot.com',
+    messagingSenderId:'000000000000', appId:'1:000000000000:web:000000'
+  };
+  if(!cfg.apiKey||!cfg.databaseURL||!cfg.projectId){
+    showToast('⚠️ Completa los tres campos'); return;
+  }
+  showToast('⏳ Conectando a Firebase...');
+  fbSaveConfig(cfg);
+  fbInit(cfg, function(err){
+    if(err){
+      fbClearConfig();
+      showToast('❌ Error: '+err.message);
+      updateFbBadge(false);
+    } else {
+      updateFbBadge(true);
+      closeFbModal();
+      showToast('✅ Firebase conectado — historial sincronizado');
+    }
+  });
+}
+function fbDisconnect(){
+  fbClearConfig();
+  updateFbBadge(false);
+  closeFbModal();
+  showToast('⬡ Desconectado — usando almacenamiento local');
+  renderDashboard(); renderHistorial();
+}
 
 /* ── Views ── */
 function showView(v){
@@ -527,17 +647,19 @@ function resetEditor(){
 function saveFromEditor(){
   var d=collectDesk();
   if(!d.nombre.trim()){ showToast('⚠️ Ingresa el nombre del cliente'); return; }
-  var list=loadContracts(), now=new Date().toISOString();
+  var now=new Date().toISOString();
   if(D_editId){
-    var idx=list.findIndex(function(c){return c.id===D_editId;});
-    if(idx>=0) list[idx]=Object.assign(list[idx],d,{updatedAt:now});
+    var existing=getById(D_editId);
+    var updated=Object.assign({}, existing||{}, d, {id:D_editId, updatedAt:now});
+    if(!updated.createdAt) updated.createdAt=now;
+    saveContract(updated);
     showToast('✅ Contrato actualizado');
   } else {
-    list.unshift(Object.assign(d,{id:newId(),createdAt:now,updatedAt:now}));
-    D_editId=list[0].id;
+    D_editId=newId();
+    var c=Object.assign({}, d, {id:D_editId, createdAt:now, updatedAt:now});
+    saveContract(c);
     showToast('✅ Contrato guardado');
   }
-  saveContracts(list);
   el('edit-lbl').textContent='Editando: '+d.nombre;
 }
 
@@ -598,9 +720,9 @@ function askDel(id){
   el('del-modal').classList.add('open');
 }
 function confirmDel(){
-  saveContracts(loadContracts().filter(function(c){return c.id!==D_delId;}));
+  deleteContract(D_delId);
   closeDelModal(); D_delId=null;
-  renderDashboard(); renderHistorial();
+  if(!isFbMode()){ renderDashboard(); renderHistorial(); }
   showToast('🗑️ Contrato eliminado');
 }
 
@@ -623,38 +745,22 @@ function doDocx(){
   }).catch(function(e){ showToast('❌ Error: '+e.message); });
 }
 
-/* ── Image ── */
+/* ── Image — usa captureA4 de shared.js (mismo output que móvil) ── */
 function doImage(fmt){
   var d=collectDesk();
   showLoad('Generando '+fmt.toUpperCase()+'...');
-  var page=el('a4page');
-  // swap inputs → spans so html2canvas captures values
-  var frozen=[];
-  page.querySelectorAll('input,select').forEach(function(inp){
-    var val=inp.tagName==='SELECT'
-      ?(inp.options[inp.selectedIndex]?inp.options[inp.selectedIndex].text:'')
-      :(inp.type==='date'?fmtDate(inp.value):(inp.value||''));
-    var sp=document.createElement('span');
-    var cs=window.getComputedStyle(inp);
-    sp.style.cssText='display:inline-block;font-family:Arial,sans-serif;font-size:'+cs.fontSize+
-      ';color:#000;background:transparent;padding:0 2px;vertical-align:bottom;'+
-      'border-bottom:1px solid #444;min-width:'+inp.offsetWidth+'px;';
-    sp.textContent=val;
-    inp.parentNode.replaceChild(sp,inp);
-    frozen.push({sp:sp,inp:inp});
-  });
-  html2canvas(page,{scale:2,useCORS:true,backgroundColor:'#ffffff',logging:false,
-    width:page.offsetWidth,windowWidth:page.offsetWidth+60
-  }).then(function(canvas){
-    frozen.forEach(function(x){x.sp.parentNode.replaceChild(x.inp,x.sp);}); hideLoad();
-    var mime=fmt==='jpg'?'image/jpeg':'image/png';
-    dlDataURL(canvas.toDataURL(mime,fmt==='jpg'?0.92:1),
-      'CASVEL_'+(d.nombre||'contrato').replace(/\s+/g,'_')+'.'+fmt);
+  captureA4(d, fmt, function(err, dataURL){
+    hideLoad();
+    if(err){ showToast('❌ Error: '+err.message); return; }
+    dlDataURL(dataURL, 'CASVEL_'+(d.nombre||'contrato').replace(/\s+/g,'_')+'.'+fmt);
     showToast('✅ Imagen descargada');
-  }).catch(function(e){
-    frozen.forEach(function(x){x.sp.parentNode.replaceChild(x.inp,x.sp);}); hideLoad();
-    showToast('❌ Error: '+e.message);
   });
+}
+
+/* ── PDF — usa printA4 de shared.js (mismo layout que móvil) ── */
+function doPDF(){
+  var d=collectDesk();
+  printA4(d);
 }
 </script>
 </body>
