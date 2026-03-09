@@ -1,0 +1,770 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<title>CASVEL – Contratos</title>
+<link href="https://fonts.googleapis.com/css2?family=DM+Sans:wght@400;500;600;700&family=Playfair+Display:wght@700&display=swap" rel="stylesheet">
+<script src="https://cdnjs.cloudflare.com/ajax/libs/jszip/3.10.1/jszip.min.js"></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/html2canvas/1.4.1/html2canvas.min.js"></script>
+<style>
+*{box-sizing:border-box;margin:0;padding:0}
+:root{
+  --blue:#2563a8;--blt:#4F81BD;--bbg:#dce6f1;
+  --dark:#1a1f2e;--mid:#4a5568;--light:#f0f4f8;
+  --white:#fff;--red:#c0392b;--green:#1a7a44;--border:#d1dde8;--r:8px;
+  --ff:'DM Sans',system-ui,sans-serif;--fh:'Playfair Display',Georgia,serif;
+}
+body{font-family:var(--ff);background:var(--light);color:var(--dark);font-size:14px}
+/* sidebar */
+.sb{position:fixed;left:0;top:0;bottom:0;width:220px;background:var(--dark);
+  display:flex;flex-direction:column;z-index:100;box-shadow:4px 0 20px rgba(0,0,0,.2)}
+.sb-logo{padding:20px 18px 16px;border-bottom:1px solid rgba(255,255,255,.08);
+  display:flex;align-items:center;gap:10px}
+.sb-logo img{width:44px;border-radius:4px}
+.sb-brand{color:#fff;font-family:var(--fh);font-size:16px;line-height:1.2}
+.sb-sub{color:rgba(255,255,255,.4);font-size:10px;margin-top:2px}
+.nav-sec{padding:16px 0 4px}
+.nav-lbl{font-size:9px;font-weight:700;letter-spacing:.12em;text-transform:uppercase;
+  color:rgba(255,255,255,.3);padding:0 18px 6px}
+.nav-item{display:flex;align-items:center;gap:10px;padding:9px 18px;cursor:pointer;
+  color:rgba(255,255,255,.6);font-size:13px;font-weight:500;
+  border-left:3px solid transparent;text-decoration:none;transition:all .15s}
+.nav-item:hover{background:rgba(255,255,255,.06);color:#fff}
+.nav-item.on{background:rgba(79,129,189,.18);color:#fff;border-left-color:var(--blt)}
+.nav-item .ic{font-size:16px;width:20px;text-align:center}
+.sb-foot{margin-top:auto;padding:14px 18px;font-size:10px;
+  color:rgba(255,255,255,.25);border-top:1px solid rgba(255,255,255,.06)}
+.sb-foot a{color:rgba(255,255,255,.3);text-decoration:none}
+/* main */
+.main{margin-left:220px;min-height:100vh}
+.topbar{background:var(--white);border-bottom:1px solid var(--border);padding:14px 32px;
+  display:flex;align-items:center;justify-content:space-between;
+  position:sticky;top:0;z-index:50;box-shadow:0 1px 8px rgba(0,0,0,.06)}
+.topbar-title{font-family:var(--fh);font-size:20px}
+.content{padding:28px 32px 64px}
+/* views */
+.view{display:none}.view.on{display:block}
+/* buttons */
+.btn{display:inline-flex;align-items:center;gap:6px;padding:8px 16px;border:none;
+  border-radius:var(--r);font-family:var(--ff);font-size:13px;font-weight:600;
+  cursor:pointer;transition:all .15s;white-space:nowrap}
+.btn-p{background:var(--blue);color:#fff}.btn-p:hover{background:var(--dark)}
+.btn-g{background:transparent;color:var(--mid);border:1.5px solid var(--border)}
+.btn-g:hover{border-color:var(--blt);color:var(--blue)}
+.btn-grn{background:var(--green);color:#fff}.btn-grn:hover{background:#145c33}
+.btn-d{background:var(--red);color:#fff}.btn-d:hover{background:#9c2a21}
+.btn-sm{padding:5px 11px;font-size:12px}
+/* stats */
+.stats-grid{display:grid;grid-template-columns:repeat(4,1fr);gap:16px;margin-bottom:28px}
+.stat-card{background:var(--white);border-radius:var(--r);padding:20px;border:1px solid var(--border)}
+.stat-lbl{font-size:11px;font-weight:600;color:var(--mid);text-transform:uppercase;letter-spacing:.06em}
+.stat-val{font-size:28px;font-weight:700;margin:6px 0 2px;font-family:var(--fh)}
+/* table */
+.sec-hdr{display:flex;align-items:center;justify-content:space-between;margin-bottom:16px}
+.sec-title{font-family:var(--fh);font-size:17px}
+.search-row{display:flex;gap:8px;margin-bottom:16px}
+.search-inp{flex:1;padding:8px 14px;border:1.5px solid var(--border);border-radius:var(--r);
+  font-family:var(--ff);font-size:13px;outline:none}
+.search-inp:focus{border-color:var(--blt)}
+.ctable{background:var(--white);border:1px solid var(--border);border-radius:var(--r);overflow:hidden}
+.ctable table{width:100%;border-collapse:collapse}
+.ctable th{background:var(--dark);color:#fff;padding:10px 14px;text-align:left;
+  font-size:11px;font-weight:700;text-transform:uppercase;letter-spacing:.06em}
+.ctable td{padding:11px 14px;border-bottom:1px solid var(--border);font-size:13px;vertical-align:middle}
+.ctable tr:last-child td{border-bottom:none}
+.ctable tr:hover td{background:#f7fafd}
+.acts{display:flex;gap:5px}
+.badge{display:inline-block;padding:2px 9px;border-radius:20px;font-size:11px;font-weight:600;background:#dbeafe;color:#1d4ed8}
+.empty{text-align:center;padding:64px 20px;color:var(--mid)}
+.empty .ei{font-size:48px;margin-bottom:12px}
+/* toolbar */
+.ftbar{display:flex;gap:8px;align-items:center;background:var(--white);
+  padding:12px 20px;border-radius:var(--r);border:1px solid var(--border);margin-bottom:20px}
+.ftbar .sep{flex:1}
+.edit-lbl{font-weight:600;font-size:14px;color:var(--mid)}
+/* A4 */
+.a4-wrap{width:794px;margin:0 auto}
+.a4-page{width:794px;min-height:1123px;background:#fff;padding:28px 38px;
+  box-shadow:0 4px 32px rgba(0,0,0,.15);font-family:Arial,sans-serif;position:relative}
+.c-hdr{display:flex;align-items:flex-start;gap:10px;margin-bottom:2px}
+.c-logo{width:72px;flex-shrink:0}
+.c-hdr-r{flex:1}
+.c-title{font-size:13pt;font-weight:bold;color:#2563a8;line-height:1.2;margin-bottom:3px}
+.c-daterow{font-size:8.5pt;display:flex;justify-content:flex-end;align-items:center;gap:4px}
+.c-daterow input[type=date]{font-family:Arial;font-size:8.5pt;border:none;
+  border-bottom:1px solid #555;background:transparent;outline:none;padding:0 2px}
+.c-contact{color:#2563a8;font-size:8.5pt;margin:3px 0 5px}
+.c-sh1{color:#2563a8;font-weight:bold;font-size:9pt;text-transform:uppercase;
+  border-bottom:1.5px solid #2563a8;padding-bottom:1px;margin:5px 0 3px}
+.c-sh2{color:#2563a8;font-weight:bold;font-size:9.5pt;margin:5px 0 3px}
+.c-dt{width:100%;border-collapse:collapse;margin-bottom:3px}
+.c-dt td{padding:2px 0;font-size:8.5pt;vertical-align:bottom}
+.c-fl{display:flex;align-items:flex-end;gap:2px;padding-right:6px}
+.c-fl label{white-space:nowrap;font-size:8.5pt}
+.c-fi{flex:1;border:none;border-bottom:1px solid #444;font-family:Arial;font-size:8.5pt;
+  color:#000;background:transparent;outline:none;padding:0 2px 1px;min-width:30px}
+.c-fi:focus{background:#fffce8}
+select.c-fi{flex:none;width:auto;min-width:130px;cursor:pointer;border:none;
+  border-bottom:1px solid #444;background:transparent;font-family:Arial;font-size:8.5pt;outline:none}
+.c-mob{width:100%;border-collapse:collapse;font-size:8pt}
+.c-mob thead tr{background:#2563a8;color:#fff}
+.c-mob thead th{padding:3px 5px;font-weight:bold;text-align:center;border:1px solid #2563a8;font-size:7.5pt}
+.c-mob thead th:first-child{text-align:left}
+.c-mob tbody tr.odd{background:#dce6f1}.c-mob tbody tr.even{background:#fff}
+.c-mob tbody td{padding:2px 5px;border:1px solid #b8cce4;vertical-align:middle}
+.c-mob tbody td.desc{font-weight:bold}
+.c-mob tbody td.qty,.c-mob tbody td.price,.c-mob tbody td.amt{text-align:center}
+.c-qi{width:50px;text-align:center;border:1px solid #9ab5d4;border-radius:2px;
+  padding:1px 3px;font-size:8pt;font-family:Arial;background:#fff;outline:none}
+.c-pi{width:58px;text-align:right;border:1px solid #9ab5d4;border-radius:2px;
+  padding:1px 2px;font-size:8pt;font-family:Arial;background:#fff;outline:none}
+.c-pi:focus{border-color:#c5922a;background:#fffce8}
+.c-mob tfoot td{border:1px solid #b8cce4}
+.c-mob tfoot tr.alt td{background:#dce6f1}
+.c-mob tfoot tr.wht td{background:#fff}
+.c-mob tfoot tr.bld td{background:#dce6f1;font-weight:bold;font-size:8pt}
+.rlbl{text-align:right;font-weight:bold;padding:2px 5px}
+.rval{padding:2px 5px;min-width:70px}
+.inrow{display:flex;align-items:center;gap:2px}
+.inrow input{width:62px;border:none;border-bottom:1px solid #888;
+  font-size:8pt;font-family:Arial;background:transparent;outline:none;text-align:right}
+.ant-row{display:flex;align-items:center;gap:3px}
+.ant-row input{width:80px;border:none;border-bottom:1.5px solid #2563a8;
+  font-size:8pt;font-family:Arial;font-weight:bold;background:transparent;outline:none;text-align:right}
+.c-cl,.c-cu{margin:2px 0 4px;font-size:7.5pt}
+.c-cl ol,.c-cu ol{padding-left:18px}
+.c-cl li,.c-cu li{margin-bottom:1px;line-height:1.25;text-align:justify}
+.c-sig{width:100%;border-collapse:collapse;margin-top:10px}
+.c-sigl{border-bottom:1px solid #000;height:24px}
+.c-sigt{text-align:center;font-size:8pt;padding-top:2px}
+.c-foot{text-align:right;font-size:8pt;color:#555;margin-top:5px}
+/* overlays */
+.overlay{display:none;position:fixed;inset:0;background:rgba(0,0,0,.5);z-index:2000;
+  align-items:center;justify-content:center}
+.overlay.open{display:flex}
+.modal{background:#fff;border-radius:10px;padding:28px 32px;max-width:460px;width:90%;
+  box-shadow:0 16px 60px rgba(0,0,0,.25)}
+.modal-title{font-family:var(--fh);font-size:18px;margin-bottom:6px}
+.modal-sub{font-size:13px;color:var(--mid);margin-bottom:20px}
+.modal-btns{display:flex;gap:10px;justify-content:center;flex-wrap:wrap}
+.modal-cancel{background:none;border:none;color:#aaa;font-size:12px;cursor:pointer;
+  font-family:var(--ff);margin:12px auto 0;display:block}
+.exp-btn{display:flex;flex-direction:column;align-items:center;gap:4px;
+  padding:14px 20px;border:none;border-radius:8px;cursor:pointer;
+  font-family:var(--ff);font-size:12px;font-weight:700;transition:all .15s;min-width:80px}
+.exp-btn .ic{font-size:22px}
+.eb-docx{background:#1a4b8c;color:#fff}.eb-pdf{background:var(--red);color:#fff}
+.eb-png{background:#6b3fa0;color:#fff}.eb-jpg{background:#c4620e;color:#fff}
+.modal-acts{display:flex;gap:10px;justify-content:flex-end;margin-top:20px}
+/* loading */
+.lov{display:none;position:fixed;inset:0;background:rgba(255,255,255,.85);
+  z-index:3000;align-items:center;justify-content:center;flex-direction:column;gap:14px}
+.lov.show{display:flex}
+.spinner{width:40px;height:40px;border:4px solid var(--bbg);
+  border-top:4px solid var(--blue);border-radius:50%;animation:spin .7s linear infinite}
+@keyframes spin{to{transform:rotate(360deg)}}
+.lov p{font-size:14px;color:var(--blue);font-weight:600}
+/* toast */
+#toast{position:fixed;bottom:24px;right:24px;background:var(--dark);color:#acd4f5;
+  padding:10px 18px;border-radius:6px;font-size:13px;border-left:4px solid var(--blt);
+  transform:translateY(60px);opacity:0;transition:all .28s;z-index:9999;pointer-events:none}
+#toast.show{transform:translateY(0);opacity:1}
+
+/* Firebase status badge */
+.fb-badge{display:inline-flex;align-items:center;gap:5px;padding:3px 9px;border-radius:12px;
+  font-size:11px;font-weight:600;cursor:pointer;border:none;font-family:var(--ff);transition:all .15s}
+.fb-badge.local{background:rgba(255,255,255,.1);color:rgba(255,255,255,.5)}
+.fb-badge.live{background:rgba(26,122,68,.3);color:#6ee7b7}
+.fb-badge.live::before{content:"●";margin-right:2px;animation:pulse 2s infinite}
+@keyframes pulse{0%,100%{opacity:1}50%{opacity:.4}}
+/* Firebase modal */
+.fb-modal{max-width:520px}
+.fb-field{margin-bottom:14px}
+.fb-field label{display:block;font-size:12px;font-weight:600;color:var(--mid);margin-bottom:5px}
+.fb-field input{width:100%;padding:8px 12px;border:1.5px solid var(--border);border-radius:var(--r);
+  font-family:var(--ff);font-size:13px;outline:none}
+.fb-field input:focus{border-color:var(--blt)}
+.fb-steps{font-size:12px;color:var(--mid);line-height:1.7;background:var(--light);
+  border-radius:var(--r);padding:12px 16px;margin-bottom:16px}
+.fb-steps a{color:var(--blue)}
+.fb-steps code{background:#e2e8f0;padding:1px 5px;border-radius:3px;font-size:11px}
+
+/* print */
+@media print{
+  .sb,.topbar,.ftbar,.overlay,.lov,#toast{display:none!important}
+  .main{margin-left:0!important}
+  .content{padding:0!important}
+  .a4-wrap,.a4-page{width:100%!important}
+  .a4-page{box-shadow:none!important;padding:12px 20px!important;min-height:0!important}
+  .c-mob thead tr,.c-mob tbody tr.odd,.c-mob tfoot tr.alt,.c-mob tfoot tr.bld{
+    -webkit-print-color-adjust:exact;print-color-adjust:exact}
+  @page{size:A4;margin:8mm 10mm}
+}
+</style>
+</head>
+<body>
+
+<script>
+// Redirect mobile devices to mobile.html (skip if ?d=1 force desktop)
+if(!/[?&]d=1/.test(location.search) &&
+   (/Mobi|Android|iPhone|iPad/i.test(navigator.userAgent) || window.innerWidth < 768))
+  window.location.replace('mobile.html');
+</script>
+
+<!-- SIDEBAR -->
+<nav class="sb">
+  <div class="sb-logo">
+    <img id="sb-logo" src="" alt="CASVEL">
+    <div><div class="sb-brand">CASVEL</div><div class="sb-sub">Contratos</div></div>
+  </div>
+  <div class="nav-sec">
+    <div class="nav-lbl">Menú</div>
+    <a class="nav-item on" id="nav-dashboard" href="#" onclick="showView('dashboard');return false">
+      <span class="ic">📊</span> Dashboard</a>
+    <a class="nav-item" id="nav-historial" href="#" onclick="showView('historial');return false">
+      <span class="ic">📋</span> Historial</a>
+    <a class="nav-item" id="nav-editor" href="#" onclick="openEditor(null);return false">
+      <span class="ic">✏️</span> Nuevo Contrato</a>
+  </div>
+  <div class="nav-sec">
+    <div class="nav-lbl">Configuración</div>
+    <a class="nav-item" id="nav-ajustes" href="#" onclick="openFbModal();return false">
+      <span class="ic">☁️</span> Sincronización</a>
+  </div>
+  <div class="sb-foot">
+    <button class="fb-badge local" id="fb-status" onclick="openFbModal()">⬡ Solo local</button><br><br>
+    EVENTOS CASVEL © 2026<br>
+    <a href="mobile.html">📱 Versión móvil</a>
+  </div>
+</nav>
+
+<!-- MAIN -->
+<div class="main">
+  <div class="topbar">
+    <div class="topbar-title" id="pg-title">Dashboard</div>
+  </div>
+
+  <!-- DASHBOARD -->
+  <div id="view-dashboard" class="view on content">
+    <div class="stats-grid" id="db-stats"></div>
+    <div class="sec-hdr">
+      <div class="sec-title">Contratos Recientes</div>
+      <button class="btn btn-p" onclick="openEditor(null)">+ Nuevo Contrato</button>
+    </div>
+    <div id="db-recent"></div>
+  </div>
+
+  <!-- HISTORIAL -->
+  <div id="view-historial" class="view content">
+    <div class="sec-hdr">
+      <div class="sec-title">Historial de Contratos</div>
+      <button class="btn btn-p" onclick="openEditor(null)">+ Nuevo Contrato</button>
+    </div>
+    <div class="search-row">
+      <input class="search-inp" id="search-inp" placeholder="Buscar por nombre, teléfono, dirección…" oninput="renderHistorial()">
+    </div>
+    <div id="h-table"></div>
+  </div>
+
+  <!-- EDITOR -->
+  <div id="view-editor" class="view">
+    <div class="ftbar content" style="padding-bottom:0">
+      <button class="btn btn-g" onclick="showView('historial')">← Volver</button>
+      <span class="edit-lbl" id="edit-lbl">Nuevo Contrato</span>
+      <div class="sep"></div>
+      <button class="btn btn-g btn-sm" onclick="resetEditor()">🔄 Limpiar</button>
+      <button class="btn btn-grn btn-sm" onclick="saveFromEditor()">💾 Guardar</button>
+      <button class="btn btn-p btn-sm" onclick="openExportModal()">⬇ Exportar</button>
+      <button class="btn btn-g btn-sm" onclick="doCalendar()">📅 Calendario</button>
+    </div>
+    <div class="content" style="padding-top:16px">
+      <div class="a4-wrap">
+        <div class="a4-page" id="a4page">
+          <div class="c-hdr">
+            <img class="c-logo" id="c-logo" src="" alt="CASVEL">
+            <div class="c-hdr-r">
+              <div class="c-title">CONTRATO DE ALQUILER DE MOBILIARIO PARA EVENTOS</div>
+              <div class="c-daterow">Chihuahua, Chihuahua. a&nbsp;
+                <input type="date" id="c-cdate" class="c-fi" style="flex:none;width:auto">
+              </div>
+            </div>
+          </div>
+          <div class="c-contact">Contacto: 614 126 6784</div>
+
+          <div class="c-sh1">DATOS DEL ARRENDATARIO</div>
+          <table class="c-dt"><colgroup><col style="width:63%"><col style="width:37%"></colgroup>
+            <tr>
+              <td><div class="c-fl"><label>Nombre:</label><input type="text" class="c-fi" id="c-nombre"></div></td>
+              <td><div class="c-fl"><label>Telefono:</label><input type="text" class="c-fi" id="c-tel"></div></td>
+            </tr><tr>
+              <td><div class="c-fl"><label>Dirección del evento:</label><input type="text" class="c-fi" id="c-dir"></div></td>
+              <td><div class="c-fl"><label>Fecha del Evento:</label>
+                <input type="date" class="c-fi" id="c-fevento" style="flex:none;width:auto"></div></td>
+            </tr><tr>
+              <td><div class="c-fl"><label>Horario de entrega:</label>
+                <select class="c-fi" id="c-hentrega"></select></div></td>
+              <td><div class="c-fl"><label>Horario de recolección:</label>
+                <select class="c-fi" id="c-hrecol"></select></div></td>
+            </tr>
+          </table>
+
+          <div class="c-sh2">Mobiliario a arrendar:</div>
+          <table class="c-mob">
+            <thead><tr>
+              <th style="width:37%;text-align:left">Descripción</th>
+              <th style="width:19%">Cantidad</th>
+              <th style="width:22%">Precio Unitario</th>
+              <th style="width:22%">Importe</th>
+            </tr></thead>
+            <tbody id="c-items"></tbody>
+            <tfoot>
+              <tr class="wht">
+                <td colspan="2" style="border:1px solid #b8cce4"></td>
+                <td class="rlbl">Traslado:</td>
+                <td class="rval"><div class="inrow">$<input type="number" id="c-traslado" min="0" step="1" value="0" oninput="calcDesk()"></div></td>
+              </tr>
+              <tr class="alt">
+                <td colspan="2" style="border:1px solid #b8cce4"></td>
+                <td class="rlbl">Precio Total:</td>
+                <td class="rval" id="c-total">$0.00</td>
+              </tr>
+              <tr class="bld">
+                <td style="padding:2px 5px"><div class="ant-row">Anticipo:&nbsp;$
+                  <input type="number" id="c-anticipo" min="0" step="0.01" value="0">
+                </div></td>
+                <td colspan="3" id="c-resta" style="padding:2px 5px;font-weight:bold;font-size:8pt">Resta por Pagar: $0.00</td>
+              </tr>
+            </tfoot>
+          </table>
+
+          <div class="c-sh1">CLAUSULAS PARA ALQUILER:</div>
+          <div class="c-cl"><ol>
+            <li>El mobiliario se alquila por día, se entrega el día del evento y se retira el mismo día o al día siguiente a más tardar las 12:00 pm.</li>
+            <li>El costo del alquiler no incluye Traslado.</li>
+            <li>El pago debe de hacerse al momento de la entrega del mobiliario.</li>
+            <li>El mobiliario solo debe ser trasladado por el arrendador y no debe ser trasladado a otro sitio ya que puede sufrir daños con costo adicional.</li>
+            <li>El mobiliario debe entregarse en las mismas condiciones físicas recibidas, sin piezas faltantes ni quebraduras o quemaduras, ya que esto correrá por cuenta del arrendatario.</li>
+            <li>En caso de daño al brinca brinca, el cliente deberá pagar el importe acordado.</li>
+            <li><strong>EVENTOS CASVEL NO</strong> se hace responsable de algún accidente o incidente dentro o fuera del inflable.</li>
+            <li>En caso de suspensión del evento por parte del cliente no hay devolución del anticipo.</li>
+            <li>Cada contrato requiere un anticipo del <strong>25%</strong>.</li>
+            <li>En caso de posponer el evento, el cliente deberá elegir otra fecha disponible y avisar a "EVENTOS CASVEL" al menos 7 días antes.</li>
+            <li>Al firmar el presente contrato se dan por aceptadas todas las condiciones antes mencionadas.</li>
+          </ol></div>
+          <div class="c-sh2">Condiciones de uso por razones de higiene, seguridad y deterioro del inflable.</div>
+          <div class="c-cu"><ol>
+            <li>No usar dentro del juego: confeti, serpentinas, papel de china, espuma, luces de bengala, restos de piñata, alimentos y/o bebidas.</li>
+            <li>No usar zapatos dentro del inflable.</li>
+            <li>No se permite fumar o colocar inflables cerca de fogatas o parrillas calientes.</li>
+          </ol></div>
+
+          <table class="c-sig">
+            <tr>
+              <td style="width:46%"><div class="c-sigl"></div></td>
+              <td style="width:8%"></td>
+              <td style="width:46%"><div class="c-sigl"></div></td>
+            </tr><tr>
+              <td class="c-sigt">NOMBRE Y FIRMA ARRENDATARIO</td><td></td>
+              <td class="c-sigt">NOMBRE Y FIRMA ARRENDADOR</td>
+            </tr>
+          </table>
+          <div class="c-foot">@EventosCasVel, 2026</div>
+        </div><!-- /a4page -->
+      </div>
+    </div>
+  </div><!-- /view-editor -->
+</div><!-- /main -->
+
+<!-- FIREBASE CONFIG MODAL -->
+<div class="overlay" id="fb-modal">
+  <div class="modal fb-modal">
+    <div class="modal-title">☁️ Sincronización en la nube</div>
+    <div class="modal-sub" id="fb-modal-sub">Comparte el historial entre todos los dispositivos usando Firebase (gratis).</div>
+    <div class="fb-steps">
+      <strong>Cómo activarlo (5 minutos, gratis):</strong><br>
+      1. Ve a <a href="https://console.firebase.google.com" target="_blank">console.firebase.google.com</a><br>
+      2. Crea un proyecto → <em>Realtime Database</em> → <strong>Crear base de datos</strong><br>
+      3. Elige <em>Comenzar en modo de prueba</em> (reglas: read/write true)<br>
+      4. Copia la URL de la DB (ej: <code>https://mi-proyecto-default-rtdb.firebaseio.com</code>)<br>
+      5. En <em>Configuración del proyecto → General</em> copia el <code>apiKey</code> y <code>projectId</code>
+    </div>
+    <div class="fb-field"><label>API Key</label>
+      <input type="text" id="fb-apikey" placeholder="AIzaSy..."></div>
+    <div class="fb-field"><label>Database URL</label>
+      <input type="text" id="fb-dburl" placeholder="https://tu-proyecto-default-rtdb.firebaseio.com"></div>
+    <div class="fb-field"><label>Project ID</label>
+      <input type="text" id="fb-projid" placeholder="tu-proyecto-12345"></div>
+    <div class="modal-acts">
+      <button class="btn btn-d btn-sm" id="fb-disconnect-btn" onclick="fbDisconnect()" style="display:none">Desconectar</button>
+      <button class="btn btn-g" onclick="closeFbModal()">Cancelar</button>
+      <button class="btn btn-p" onclick="fbConnect()">Conectar</button>
+    </div>
+  </div>
+</div>
+
+<!-- EXPORT MODAL -->
+<div class="overlay" id="exp-modal">
+  <div class="modal">
+    <div class="modal-title">Exportar Contrato</div>
+    <div class="modal-sub">Elige el formato:</div>
+    <div class="modal-btns">
+      <button class="exp-btn eb-docx" onclick="closeExportModal();doDocx()"><span class="ic">📝</span>Word</button>
+      <button class="exp-btn eb-pdf"  onclick="closeExportModal();doPDF()"><span class="ic">📄</span>PDF</button>
+      <button class="exp-btn eb-png"  onclick="closeExportModal();doImage('png')"><span class="ic">🖼️</span>PNG</button>
+      <button class="exp-btn eb-jpg"  onclick="closeExportModal();doImage('jpg')"><span class="ic">📷</span>JPG</button>
+    </div>
+    <button class="modal-cancel" onclick="closeExportModal()">Cancelar</button>
+  </div>
+</div>
+
+<!-- DELETE MODAL -->
+<div class="overlay" id="del-modal">
+  <div class="modal">
+    <div class="modal-title">Eliminar contrato</div>
+    <div class="modal-sub" id="del-msg"></div>
+    <div class="modal-acts">
+      <button class="btn btn-g" onclick="closeDelModal()">Cancelar</button>
+      <button class="btn btn-d" onclick="confirmDel()">Eliminar</button>
+    </div>
+  </div>
+</div>
+
+<!-- LOADING -->
+<div class="lov" id="lov">
+  <div class="spinner"></div>
+  <p id="lov-msg">Generando...</p>
+</div>
+
+<!-- TOAST -->
+<div id="toast"></div>
+
+<script src="shared.js"></script>
+<script>
+"use strict";
+
+var D_editId = null;
+var D_delId  = null;
+
+/* ── Helpers ── */
+function el(id){ return document.getElementById(id); }
+function showToast(msg){
+  var t=el('toast'); t.textContent=msg; t.classList.add('show');
+  clearTimeout(t._t); t._t=setTimeout(function(){t.classList.remove('show');},3500);
+}
+function showLoad(msg){ el('lov-msg').textContent=msg||'Generando...'; el('lov').classList.add('show'); }
+function hideLoad(){ el('lov').classList.remove('show'); }
+function openExportModal() { el('exp-modal').classList.add('open'); }
+function closeExportModal(){ el('exp-modal').classList.remove('open'); }
+function closeDelModal()    { el('del-modal').classList.remove('open'); }
+
+/* ── Init ── */
+document.addEventListener('DOMContentLoaded', function(){
+  el('sb-logo').src = 'data:image/jpeg;base64,'+LOGO_B64;
+  el('c-logo').src  = 'data:image/jpeg;base64,'+LOGO_B64;
+
+  var opts = TIME_OPTIONS.map(function(t){
+    return '<option value="'+t.value+'">'+t.label+'</option>';
+  }).join('');
+  el('c-hentrega').innerHTML = opts;
+  el('c-hrecol').innerHTML   = opts;
+
+  buildItemsTable();
+  el('c-cdate').value = todayISO();
+
+  el('c-anticipo').addEventListener('input', function(){
+    this.dataset.manual='1'; calcDesk();
+  });
+
+  // Suscribir a cambios en tiempo real (funciona con localStorage Y Firebase)
+  onContractsChange(function(){
+    renderDashboard();
+    renderHistorial();
+  });
+
+  // Intentar conectar Firebase si hay config guardada
+  var cfg=fbGetConfig();
+  if(cfg){ fbInit(cfg, function(err){
+    if(err){ showToast('⚠️ Firebase: '+err.message); updateFbBadge(false); }
+    else updateFbBadge(true);
+  }); } else { updateFbBadge(false); renderDashboard(); }
+});
+
+/* ── Firebase UI ── */
+function updateFbBadge(live){
+  var b=el('fb-status');
+  if(live){
+    b.className='fb-badge live'; b.textContent='● Firebase activo';
+  } else {
+    b.className='fb-badge local'; b.textContent='⬡ Solo local';
+  }
+}
+function openFbModal(){
+  var cfg=fbGetConfig()||{};
+  el('fb-apikey').value=cfg.apiKey||'';
+  el('fb-dburl').value=cfg.databaseURL||'';
+  el('fb-projid').value=cfg.projectId||'';
+  el('fb-disconnect-btn').style.display=isFbMode()?'':'none';
+  el('fb-modal-sub').textContent=isFbMode()
+    ?'✅ Conectado a Firebase. El historial se sincroniza en tiempo real.'
+    :'Comparte el historial entre todos los dispositivos usando Firebase (gratis).';
+  el('fb-modal').classList.add('open');
+}
+function closeFbModal(){ el('fb-modal').classList.remove('open'); }
+function fbConnect(){
+  var cfg={
+    apiKey:    el('fb-apikey').value.trim(),
+    databaseURL: el('fb-dburl').value.trim(),
+    projectId: el('fb-projid').value.trim(),
+    authDomain: el('fb-projid').value.trim()+'.firebaseapp.com',
+    storageBucket: el('fb-projid').value.trim()+'.appspot.com',
+    messagingSenderId:'000000000000', appId:'1:000000000000:web:000000'
+  };
+  if(!cfg.apiKey||!cfg.databaseURL||!cfg.projectId){
+    showToast('⚠️ Completa los tres campos'); return;
+  }
+  showToast('⏳ Conectando a Firebase...');
+  fbSaveConfig(cfg);
+  fbInit(cfg, function(err){
+    if(err){
+      fbClearConfig();
+      showToast('❌ Error: '+err.message);
+      updateFbBadge(false);
+    } else {
+      updateFbBadge(true);
+      closeFbModal();
+      showToast('✅ Firebase conectado — historial sincronizado');
+    }
+  });
+}
+function fbDisconnect(){
+  fbClearConfig();
+  updateFbBadge(false);
+  closeFbModal();
+  showToast('⬡ Desconectado — usando almacenamiento local');
+  renderDashboard(); renderHistorial();
+}
+
+/* ── Views ── */
+function showView(v){
+  ['dashboard','historial','editor'].forEach(function(id){
+    el('view-'+id).classList.toggle('on', id===v);
+    el('nav-'+id).classList.toggle('on', id===v);
+  });
+  var titles={dashboard:'Dashboard',historial:'Historial de Contratos',editor:'Contrato'};
+  el('pg-title').textContent=titles[v]||'';
+  if(v==='historial') renderHistorial();
+  if(v==='dashboard') renderDashboard();
+  window.scrollTo(0,0);
+}
+
+/* ── Items table ── */
+function buildItemsTable(){
+  el('c-items').innerHTML = ITEMS.map(function(it,i){
+    return '<tr class="'+(i%2===0?'odd':'even')+'">'+
+      '<td class="desc">'+it.desc+'</td>'+
+      '<td class="qty"><input class="c-qi" type="number" min="0" step="1" value="0" id="dq'+i+'" oninput="calcDesk()"></td>'+
+      '<td class="price">$<input class="c-pi" type="number" min="0" step="0.01" value="'+it.price.toFixed(2)+'" id="dp'+i+'" oninput="calcDesk()"></td>'+
+      '<td class="amt" id="da'+i+'">$</td>'+
+      '</tr>';
+  }).join('');
+}
+
+/* ── Calculate ── */
+function calcDesk(){
+  var sub=0;
+  ITEMS.forEach(function(_,i){
+    var q=parseFloat(el('dq'+i).value)||0;
+    var p=parseFloat(el('dp'+i).value)||0;
+    var a=q*p; sub+=a;
+    el('da'+i).textContent=q>0?f2(a):'$';
+  });
+  var tr=parseFloat(el('c-traslado').value)||0;
+  var g=sub+tr;
+  el('c-total').textContent=f2(g);
+  var ai=el('c-anticipo');
+  if(!ai.dataset.manual) ai.value=(g*.25).toFixed(2);
+  el('c-resta').textContent='Resta por Pagar: '+f2(g-(parseFloat(ai.value)||0));
+}
+
+/* ── Collect ── */
+function collectDesk(){
+  var items=ITEMS.map(function(it,i){
+    var q=parseFloat(el('dq'+i).value)||0;
+    var p=parseFloat(el('dp'+i).value)||it.price;
+    return {qty:q,price:p,amt:q*p};
+  });
+  var total=parseFloat((el('c-total').textContent||'$0').replace('$',''))||0;
+  var ant=parseFloat(el('c-anticipo').value)||0;
+  function selLbl(id){ var e=el(id); return (e&&e.options[e.selectedIndex])?e.options[e.selectedIndex].text:''; }
+  return {
+    cDate:el('c-cdate').value, nombre:el('c-nombre').value, tel:el('c-tel').value,
+    dir:el('c-dir').value, fEvento:el('c-fevento').value,
+    hEntrega:el('c-hentrega').value, hEntregaL:selLbl('c-hentrega'),
+    hRecol:el('c-hrecol').value, hRecolL:selLbl('c-hrecol'),
+    traslado:parseFloat(el('c-traslado').value)||0,
+    anticipo:ant, total:total, resta:total-ant,
+    items:items
+  };
+}
+
+/* ── Populate ── */
+function populateDesk(d){
+  el('c-cdate').value  =d.cDate||todayISO(); el('c-nombre').value=d.nombre||'';
+  el('c-tel').value    =d.tel||'';           el('c-dir').value   =d.dir||'';
+  el('c-fevento').value=d.fEvento||'';
+  el('c-hentrega').value=d.hEntrega||'';     el('c-hrecol').value=d.hRecol||'';
+  el('c-traslado').value=d.traslado||0;
+  var ai=el('c-anticipo'); ai.value='0'; ai.removeAttribute('data-manual');
+  if(d.items) d.items.forEach(function(r,i){
+    el('dq'+i).value=(r.qty||0);
+    el('dp'+i).value=(r.price||ITEMS[i].price).toFixed(2);
+  });
+  calcDesk();
+  ai.value=(d.anticipo||0).toFixed(2); ai.dataset.manual='1'; calcDesk();
+}
+
+/* ── Open editor ── */
+function openEditor(id){
+  D_editId=id;
+  if(id){ var c=getById(id); if(c){ populateDesk(c); el('edit-lbl').textContent='Editando: '+c.nombre; } }
+  else resetEditor();
+  showView('editor');
+}
+function resetEditor(){
+  D_editId=null;
+  el('c-cdate').value=todayISO(); el('c-nombre').value=''; el('c-tel').value='';
+  el('c-dir').value=''; el('c-fevento').value='';
+  el('c-hentrega').value=''; el('c-hrecol').value='';
+  el('c-traslado').value=0;
+  var ai=el('c-anticipo'); ai.value='0'; ai.removeAttribute('data-manual');
+  ITEMS.forEach(function(it,i){ el('dq'+i).value=0; el('dp'+i).value=it.price.toFixed(2); });
+  el('edit-lbl').textContent='Nuevo Contrato';
+  calcDesk();
+}
+
+/* ── Save ── */
+function saveFromEditor(){
+  var d=collectDesk();
+  if(!d.nombre.trim()){ showToast('⚠️ Ingresa el nombre del cliente'); return; }
+  var now=new Date().toISOString();
+  if(D_editId){
+    var existing=getById(D_editId);
+    var updated=Object.assign({}, existing||{}, d, {id:D_editId, updatedAt:now});
+    if(!updated.createdAt) updated.createdAt=now;
+    saveContract(updated);
+    showToast('✅ Contrato actualizado');
+  } else {
+    D_editId=newId();
+    var c=Object.assign({}, d, {id:D_editId, createdAt:now, updatedAt:now});
+    saveContract(c);
+    showToast('✅ Contrato guardado');
+  }
+  el('edit-lbl').textContent='Editando: '+d.nombre;
+}
+
+/* ── Dashboard ── */
+function renderDashboard(){
+  var list=loadContracts();
+  var total=list.reduce(function(s,c){return s+(c.total||0);},0);
+  var mo=new Date().toISOString().substring(0,7);
+  var mc=list.filter(function(c){return(c.fEvento||c.createdAt||'').startsWith(mo);});
+  var mt=mc.reduce(function(s,c){return s+(c.total||0);},0);
+  function sc(l,v){ return '<div class="stat-card"><div class="stat-lbl">'+l+'</div><div class="stat-val">'+v+'</div></div>'; }
+  el('db-stats').innerHTML=
+    sc('Contratos totales',list.length)+sc('Este mes',mc.length)+
+    sc('Total acumulado','$'+total.toLocaleString('es-MX',{minimumFractionDigits:2}))+
+    sc('Ingresos del mes','$'+mt.toLocaleString('es-MX',{minimumFractionDigits:2}));
+  el('db-recent').innerHTML=list.length?cTableHTML(list.slice(0,5)):emptyHTML('Sin contratos','Crea el primero arriba');
+}
+
+/* ── Historial ── */
+function renderHistorial(){
+  var q=(el('search-inp').value||'').toLowerCase();
+  var list=loadContracts().filter(function(c){
+    if(!q) return true;
+    return (c.nombre||'').toLowerCase().includes(q)||(c.tel||'').includes(q)||
+           (c.dir||'').toLowerCase().includes(q)||fmtDate(c.fEvento).includes(q);
+  });
+  el('h-table').innerHTML=list.length?cTableHTML(list):emptyHTML('Sin resultados',q?'Nada para: "'+q+'"':'Sin contratos');
+}
+
+function cTableHTML(list){
+  var rows=list.map(function(c){
+    var ni=(c.items||[]).filter(function(r){return r.qty>0;}).length;
+    return '<tr>'+
+      '<td><strong>'+(c.nombre||'—')+'</strong></td>'+
+      '<td>'+(c.tel||'—')+'</td>'+
+      '<td>'+fmtDate(c.fEvento)+'</td>'+
+      '<td>'+fmtDate(c.cDate)+'</td>'+
+      '<td><span class="badge">'+ni+' art.</span></td>'+
+      '<td>$'+(c.total||0).toLocaleString('es-MX',{minimumFractionDigits:2})+'</td>'+
+      '<td><div class="acts">'+
+        '<button class="btn btn-g btn-sm" onclick="openEditor(\''+c.id+'\')">✏️ Editar</button>'+
+        '<button class="btn btn-g btn-sm" onclick="qExport(\''+c.id+'\')">⬇️</button>'+
+        '<button class="btn btn-d btn-sm" onclick="askDel(\''+c.id+'\')">🗑</button>'+
+      '</div></td></tr>';
+  }).join('');
+  return '<div class="ctable"><table>'+
+    '<thead><tr><th>Cliente</th><th>Teléfono</th><th>Evento</th>'+
+    '<th>Contrato</th><th>Art.</th><th>Total</th><th></th></tr></thead>'+
+    '<tbody>'+rows+'</tbody></table></div>';
+}
+function emptyHTML(t,m){ return '<div class="empty"><div class="ei">📭</div><p><strong>'+t+'</strong></p><p style="font-size:13px;margin-top:6px">'+m+'</p></div>'; }
+function qExport(id){ openEditor(id); setTimeout(openExportModal,100); }
+
+/* ── Delete ── */
+function askDel(id){
+  D_delId=id; var c=getById(id);
+  el('del-msg').textContent='¿Eliminar el contrato de "'+(c?c.nombre:id)+'"? No se puede deshacer.';
+  el('del-modal').classList.add('open');
+}
+function confirmDel(){
+  deleteContract(D_delId);
+  closeDelModal(); D_delId=null;
+  if(!isFbMode()){ renderDashboard(); renderHistorial(); }
+  showToast('🗑️ Contrato eliminado');
+}
+
+/* ── Calendar ── */
+function doCalendar(){
+  var d=collectDesk();
+  if(!d.fEvento){ showToast('⚠️ Ingresa la Fecha del Evento'); return; }
+  dlBlob(new Blob([buildICS(d)],{type:'text/calendar;charset=utf-8'}),
+    'evento_casvel_'+d.fEvento+'.ics');
+  showToast('📅 Evento exportado');
+}
+
+/* ── DOCX ── */
+function doDocx(){
+  var d=collectDesk();
+  showToast('⏳ Generando Word...');
+  buildDOCX(d).then(function(blob){
+    dlBlob(blob,'CASVEL_'+(d.nombre||'contrato').replace(/\s+/g,'_')+'.docx');
+    showToast('✅ Word descargado');
+  }).catch(function(e){ showToast('❌ Error: '+e.message); });
+}
+
+/* ── Image — usa captureA4 de shared.js (mismo output que móvil) ── */
+function doImage(fmt){
+  var d=collectDesk();
+  showLoad('Generando '+fmt.toUpperCase()+'...');
+  captureA4(d, fmt, function(err, dataURL){
+    hideLoad();
+    if(err){ showToast('❌ Error: '+err.message); return; }
+    dlDataURL(dataURL, 'CASVEL_'+(d.nombre||'contrato').replace(/\s+/g,'_')+'.'+fmt);
+    showToast('✅ Imagen descargada');
+  });
+}
+
+/* ── PDF — descarga directa sin diálogo de impresión ── */
+function doPDF(){
+  var d=collectDesk();
+  showLoad('Generando PDF...');
+  savePDF(d,'CASVEL_'+(d.nombre||'contrato').replace(/\s+/g,'_')+'.pdf')
+    .then(function(){ hideLoad(); showToast('\u2705 PDF descargado'); })
+    .catch(function(e){ hideLoad(); showToast('\u274c Error: '+e.message); });
+}
+</script>
+</body>
+</html>
