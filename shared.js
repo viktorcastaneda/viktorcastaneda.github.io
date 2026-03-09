@@ -315,11 +315,15 @@ async function buildDOCX(d){
 
 /* ═══════════════════════════════════════════════════════════════════════
    buildA4Node(d)  —  construye el nodo DOM del contrato A4.
-   El div.a4p tiene height:1123px y layout flex-column para llenar
-   exactamente una hoja A4 sin espacio vacío.
+   scaleA4ToFit(node) ajusta UN SOLO valor — el font-size base del .a4p —
+   y todo el contenido escala en cascada (em units) para llenar 1123px.
+   Sin transform, sin recortes, sin iteraciones por sección.
    Devuelve: { wrap, node }
 ═══════════════════════════════════════════════════════════════════════ */
-var A4_CSS = "*{box-sizing:border-box;margin:0;padding:0}\nbody,html{margin:0;padding:0}\n.a4p{width:794px;height:1123px;background:#fff;padding:22px 36px;font-family:Arial,sans-serif;font-size:10pt;display:flex;flex-direction:column;overflow:hidden}\n.chdr{display:flex;align-items:flex-start;gap:10px;margin-bottom:2px;flex-shrink:0}\n.clogo{width:68px;flex-shrink:0}\n.chdrr{flex:1}\n.ctitle{font-size:12.5pt;font-weight:bold;color:#2563a8;line-height:1.2;margin-bottom:2px}\n.cdate{font-size:8pt;text-align:right;margin-top:2px}\n.ccontact{color:#2563a8;font-size:8pt;margin:2px 0 3px;flex-shrink:0}\n.csh1{color:#2563a8;font-weight:bold;font-size:8.5pt;text-transform:uppercase;border-bottom:1.5px solid #2563a8;padding-bottom:1px;margin:4px 0 2px;flex-shrink:0}\n.csh2{color:#2563a8;font-weight:bold;font-size:9pt;margin:3px 0 2px;flex-shrink:0}\n.cdt{width:100%;border-collapse:collapse;margin-bottom:3px;flex-shrink:0}\n.cdt td{padding:1px 0;font-size:8pt;vertical-align:bottom}\n.cfl{display:flex;align-items:flex-end;gap:3px;padding-right:6px}\n.clbl{white-space:nowrap;font-size:8pt;font-family:Arial}\n.cval{flex:1;border:none;border-bottom:1px solid #444;font-family:Arial;font-size:8pt;color:#000;padding:0 2px 1px;min-width:20px}\n.cmob-wrap{flex:1;display:flex;flex-direction:column;min-height:0}\n.cmob{width:100%;border-collapse:collapse;font-size:7.5pt;height:100%}\n.cmob thead tr{background:#2563a8;color:#fff}\n.cmob thead th{padding:3px 5px;font-weight:bold;text-align:center;border:1px solid #2563a8;font-size:7pt}\n.cmob thead th.thl{text-align:left}\n.cmob tbody{height:100%}\n.cmob tbody tr.odd{background:#dce6f1}\n.cmob tbody tr.even{background:#fff}\n.cmob tbody tr{height:auto}\n.cmob tbody td{padding:2px 5px;border:1px solid #b8cce4;vertical-align:middle;font-size:7.5pt}\n.cmob tbody td.tdesc{font-weight:bold}\n.cmob tbody td.tnum{text-align:center}\n.cmob tfoot td{border:1px solid #b8cce4;padding:2px 5px}\n.cmob tfoot tr.fwht td{background:#fff}\n.cmob tfoot tr.falt td{background:#dce6f1}\n.cmob tfoot tr.fbld td{background:#dce6f1;font-weight:bold;font-size:7.5pt}\n.rlbl{text-align:right;font-weight:bold}\n.clauses-wrap{flex-shrink:0}\n.ccl,.ccu{margin:1px 0 3px;font-size:7pt}\n.ccl ol,.ccu ol{padding-left:16px}\n.ccl li,.ccu li{margin-bottom:0;line-height:1.28;text-align:justify}\n.csig{width:100%;border-collapse:collapse;margin-top:6px;flex-shrink:0}\n.csigl{border-bottom:1px solid #000;height:20px}\n.csigt{text-align:center;font-size:7.5pt;padding-top:2px}\n.cfoot{text-align:right;font-size:7.5pt;color:#555;margin-top:3px;flex-shrink:0}";
+var A4_CSS = "*{box-sizing:border-box;margin:0;padding:0}\nbody,html{margin:0;padding:0}\n.a4p{width:794px;height:auto;background:#fff;padding:24px 38px 20px;font-family:Arial,sans-serif;font-size:10pt;display:block}\n.chdr{display:flex;align-items:flex-start;gap:10px;margin-bottom:0.3em}\n.clogo{width:70px;flex-shrink:0}\n.chdrr{flex:1}\n.ctitle{font-size:1.25em;font-weight:bold;color:#2563a8;line-height:1.2;margin-bottom:0.2em}\n.cdate{font-size:0.85em;text-align:right;margin-top:0.2em}\n.ccontact{color:#2563a8;font-size:0.85em;margin:0.2em 0 0.5em}\n.csh1{color:#2563a8;font-weight:bold;font-size:0.9em;text-transform:uppercase;border-bottom:1.5px solid #2563a8;padding-bottom:0.1em;margin:0.5em 0 0.3em}\n.csh2{color:#2563a8;font-weight:bold;font-size:0.95em;margin:0.5em 0 0.3em}\n.cdt{width:100%;border-collapse:collapse;margin-bottom:0.4em}\n.cdt td{padding:0.2em 0;font-size:0.85em;vertical-align:bottom}\n.cfl{display:flex;align-items:flex-end;gap:0.3em;padding-right:0.6em}\n.clbl{white-space:nowrap;font-size:1em;font-family:Arial}\n.cval{flex:1;border:none;border-bottom:1px solid #444;font-family:Arial;font-size:1em;color:#000;padding:0 0.2em 0.1em;min-width:20px}\n.cmob{width:100%;border-collapse:collapse;font-size:0.8em;table-layout:fixed}\n.cmob thead tr{background:#2563a8;color:#fff}\n.cmob thead th{padding:0.3em 0.5em;font-weight:bold;text-align:center;border:1px solid #2563a8;font-size:0.95em}\n.cmob thead th.thl{text-align:left}\n.cmob tbody tr.odd{background:#dce6f1}\n.cmob tbody tr.even{background:#fff}\n.cmob tbody td{padding:0.25em 0.5em;border:1px solid #b8cce4;vertical-align:middle}\n.cmob tbody td.tdesc{font-weight:bold}\n.cmob tbody td.tnum{text-align:center}\n.cmob tfoot td{border:1px solid #b8cce4;padding:0.25em 0.5em}\n.cmob tfoot tr.fwht td{background:#fff}\n.cmob tfoot tr.falt td{background:#dce6f1}\n.cmob tfoot tr.fbld td{background:#dce6f1;font-weight:bold}\n.rlbl{text-align:right;font-weight:bold}\n.ccl,.ccu{margin:0.3em 0 0.5em}\n.ccl ol,.ccu ol{padding-left:1.6em}\n.ccl li,.ccu li{margin-bottom:0.1em;line-height:1.3;text-align:justify;font-size:0.75em}\n.csig{width:100%;border-collapse:collapse;margin-top:1.2em}\n.csigl{border-bottom:1px solid #000;height:2em}\n.csigt{text-align:center;font-size:0.8em;padding-top:0.2em}\n.cfoot{text-align:right;font-size:0.8em;color:#555;margin-top:0.5em}";
+
+var A4_W = 794;   /* ancho A4 a 96 dpi */
+var A4_H = 1123;  /* alto  A4 a 96 dpi */
 
 function buildA4Node(d){
   var logo="data:image/jpeg;base64,"+LOGO_B64;
@@ -339,7 +343,6 @@ function buildA4Node(d){
   var html=
     '<div class="a4p">'
 
-    // ── Header ──────────────────────────────────────────
     +'<div class="chdr">'
       +'<img class="clogo" src="'+logo+'" crossorigin="anonymous">'
       +'<div class="chdrr">'
@@ -349,7 +352,6 @@ function buildA4Node(d){
     +'</div>'
     +'<div class="ccontact">Contacto: 614 126 6784</div>'
 
-    // ── Client data ─────────────────────────────────────
     +'<div class="csh1">DATOS DEL ARRENDATARIO</div>'
     +'<table class="cdt"><colgroup><col style="width:63%"><col style="width:37%"></colgroup>'
       +'<tr>'
@@ -364,10 +366,8 @@ function buildA4Node(d){
       +'</tr>'
     +'</table>'
 
-    // ── Items table (flex:1 — fills remaining space) ────
     +'<div class="csh2">Mobiliario a arrendar:</div>'
-    +'<div class="cmob-wrap">'
-    +'<table class="cmob" style="table-layout:fixed">'
+    +'<table class="cmob">'
       +'<thead><tr>'
         +'<th class="thl" style="width:37%">Descripción</th>'
         +'<th style="width:19%">Cantidad</th>'
@@ -388,11 +388,8 @@ function buildA4Node(d){
         +'</tr>'
       +'</tfoot>'
     +'</table>'
-    +'</div>'  // /cmob-wrap
 
-    // ── Clauses ─────────────────────────────────────────
-    +'<div class="clauses-wrap">'
-    +'<div class="csh1">CLAUSULAS PARA ALQUILER:</div>'
+    +'<div class="csh1" style="margin-top:0.6em">CLAUSULAS PARA ALQUILER:</div>'
     +'<div class="ccl"><ol>'
       +'<li>El mobiliario se alquila por día, se entrega el día del evento y se retira el mismo día o al día siguiente a más tardar las 12:00 pm.</li>'
       +'<li>El costo del alquiler no incluye Traslado.</li>'
@@ -412,9 +409,7 @@ function buildA4Node(d){
       +'<li>No usar zapatos dentro del inflable.</li>'
       +'<li>No se permite fumar o colocar inflables cerca de fogatas o parrillas calientes.</li>'
     +'</ol></div>'
-    +'</div>'  // /clauses-wrap
 
-    // ── Signatures ──────────────────────────────────────
     +'<table class="csig"><tr>'
       +'<td style="width:46%"><div class="csigl"></div></td>'
       +'<td style="width:8%"></td>'
@@ -433,25 +428,100 @@ function buildA4Node(d){
   return {wrap:wrap, node:node};
 }
 
+/* ── scaleA4ToFit(node) ───────────────────────────────────────────────
+   Ajusta el font-size base del .a4p para que el contenido llene
+   exactamente A4_H (1123px) de alto.
+
+   Todos los tamaños de fuente y espaciados del CSS están en em,
+   relativos al font-size del .a4p. Cambiar ese único valor escala
+   proporcionalmente TODO: títulos, tabla, cláusulas, firmas.
+
+   Algoritmo (sin transform, sin recortes):
+   1. Medir altura natural con font-size base (10pt).
+   2. Calcular nuevo font-size = 10pt × (A4_H / naturalHeight).
+   3. Aplicar y refinar en ≤6 pasos hasta converger a ±1px.
+   4. Ajustar margin-top de .csig para absorber el residuo de redondeo
+      y garantizar que las firmas queden exactamente al fondo.
+   5. Fijar height:A4_H en el nodo para captura exacta con html2canvas.
+   ─────────────────────────────────────────────────────────────────── */
+function scaleA4ToFit(node){
+  var BASE_PT  = 10;      /* font-size base del .a4p en pt */
+  var MIN_PT   = 6.5;     /* mínimo absoluto */
+  var MAX_PT   = 13;      /* máximo absoluto */
+  var TOLERANCE = 1;      /* ±1px */
+
+  node.style.height    = "auto";
+  node.style.minHeight = "0";
+  node.style.overflow  = "visible";
+  node.style.transform = "";
+
+  /* ── 1. Medir con fuente base ── */
+  node.style.fontSize = BASE_PT + "pt";
+  var naturalH = node.scrollHeight;
+  if(naturalH <= 0) return;
+
+  /* ── 2. Estimación inicial proporcional ── */
+  var currentPt = BASE_PT * (A4_H / naturalH);
+  currentPt = Math.max(MIN_PT, Math.min(MAX_PT, currentPt));
+
+  /* ── 3. Refinamiento ── */
+  for(var i = 0; i < 6; i++){
+    node.style.fontSize = currentPt + "pt";
+    var h = node.scrollHeight;
+    var diff = A4_H - h;
+    if(Math.abs(diff) <= TOLERANCE) break;
+    /* Corrección proporcional: si estamos a diff px del target,
+       ajustar la fuente en la misma proporción */
+    currentPt = currentPt * (A4_H / h);
+    currentPt = Math.max(MIN_PT, Math.min(MAX_PT, currentPt));
+  }
+
+  /* ── 4. Absorber residuo en margin-top de .csig ── */
+  var finalH = node.scrollHeight;
+  var residual = A4_H - finalH;
+  var sig = node.querySelector(".csig");
+  if(sig && residual > 0){
+    var curMt = parseFloat(getComputedStyle(sig).marginTop) || 0;
+    sig.style.marginTop = (curMt + residual) + "px";
+  }
+
+  /* ── 5. Fijar dimensiones exactas para captura ── */
+  node.style.height    = A4_H + "px";
+  node.style.minHeight = A4_H + "px";
+  node.style.overflow  = "hidden";
+}
+
 /* ── captureA4(d, fmt, onDone) — PNG/JPG directo ── */
 function captureA4(d, fmt, onDone){
   var r=buildA4Node(d);
-  r.wrap.style.cssText="position:fixed;left:-9999px;top:0;width:794px;pointer-events:none;z-index:-999";
+  r.wrap.style.cssText="position:fixed;left:-9999px;top:0;width:"+A4_W+"px;pointer-events:none;z-index:-999";
   document.body.appendChild(r.wrap);
-  setTimeout(function(){
-    html2canvas(r.node,{
-      scale:2, useCORS:true, allowTaint:true,
-      backgroundColor:"#ffffff", logging:false,
-      width:794, height:1123, windowWidth:794
-    }).then(function(canvas){
-      document.body.removeChild(r.wrap);
-      var mime=fmt==="jpg"?"image/jpeg":"image/png";
-      onDone(null, canvas.toDataURL(mime, fmt==="jpg"?0.92:1));
-    }).catch(function(e){
-      document.body.removeChild(r.wrap);
-      onDone(e, null);
-    });
-  }, 100);
+
+  function doCapture(){
+    scaleA4ToFit(r.node);
+    setTimeout(function(){
+      html2canvas(r.node,{
+        scale:2, useCORS:true, allowTaint:true,
+        backgroundColor:"#ffffff", logging:false,
+        width:A4_W, height:A4_H, windowWidth:A4_W
+      }).then(function(canvas){
+        document.body.removeChild(r.wrap);
+        var mime=fmt==="jpg"?"image/jpeg":"image/png";
+        onDone(null, canvas.toDataURL(mime, fmt==="jpg"?0.92:1));
+      }).catch(function(e){
+        document.body.removeChild(r.wrap);
+        onDone(e, null);
+      });
+    }, 80);
+  }
+
+  var img=r.node.querySelector("img.clogo");
+  if(img && !img.complete){
+    img.onload=doCapture; img.onerror=doCapture;
+    setTimeout(doCapture, 600);
+  } else {
+    setTimeout(doCapture, 80);
+  }
 }
 
 /* ── savePDF(d, filename) — guarda PDF directamente (sin diálogo de impresión) ──
@@ -461,31 +531,41 @@ function savePDF(d, filename){
   return new Promise(function(resolve, reject){
     function doSave(){
       var r=buildA4Node(d);
-      r.wrap.style.cssText="position:fixed;left:-9999px;top:0;width:794px;pointer-events:none;z-index:-999";
+      r.wrap.style.cssText="position:fixed;left:-9999px;top:0;width:"+A4_W+"px;pointer-events:none;z-index:-999";
       document.body.appendChild(r.wrap);
-      setTimeout(function(){
-        html2canvas(r.node,{
-          scale:2, useCORS:true, allowTaint:true,
-          backgroundColor:"#ffffff", logging:false,
-          width:794, height:1123, windowWidth:794
-        }).then(function(canvas){
-          document.body.removeChild(r.wrap);
-          // A4 en mm: 210×297
-          var pdf=new window.jspdf.jsPDF({
-            orientation:"portrait", unit:"mm", format:"a4"
+
+      function doRender(){
+        scaleA4ToFit(r.node);
+        setTimeout(function(){
+          html2canvas(r.node,{
+            scale:2, useCORS:true, allowTaint:true,
+            backgroundColor:"#ffffff", logging:false,
+            width:A4_W, height:A4_H, windowWidth:A4_W
+          }).then(function(canvas){
+            document.body.removeChild(r.wrap);
+            var pdf=new window.jspdf.jsPDF({
+              orientation:"portrait", unit:"mm", format:"a4"
+            });
+            var imgData=canvas.toDataURL("image/jpeg",0.92);
+            pdf.addImage(imgData,"JPEG",0,0,210,297,undefined,"FAST");
+            pdf.save(filename||"CASVEL_contrato.pdf");
+            resolve();
+          }).catch(function(e){
+            document.body.removeChild(r.wrap);
+            reject(e);
           });
-          var imgData=canvas.toDataURL("image/jpeg",0.92);
-          pdf.addImage(imgData,"JPEG",0,0,210,297,undefined,"FAST");
-          pdf.save(filename||"CASVEL_contrato.pdf");
-          resolve();
-        }).catch(function(e){
-          document.body.removeChild(r.wrap);
-          reject(e);
-        });
-      }, 100);
+        }, 80);
+      }
+
+      var img=r.node.querySelector("img.clogo");
+      if(img && !img.complete){
+        img.onload=doRender; img.onerror=doRender;
+        setTimeout(doRender, 600);
+      } else {
+        setTimeout(doRender, 80);
+      }
     }
 
-    // Cargar jsPDF del CDN si no está disponible
     if(window.jspdf){
       doSave();
     } else {
