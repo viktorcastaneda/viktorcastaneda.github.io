@@ -15,8 +15,8 @@ var ITEMS=[
   {desc:"Juego de Mesa y 8 Sillas metálicas",price:130,pq:"72278F03",pa:"75A931AA"},
   {desc:"Brinca Brinca para bebes",price:350,pq:"59149711",pa:"0A0F89D2"},
   {desc:"Brinca Brinca Castillo Colors de 3x4 mts",price:450,pq:"31C0F202",pa:"6F2C1098"},
-  {desc:"Brinca Brinca Caramelo de 4x4 mts",price:500,pq:"60078EC9",pa:"48CB43A9"},
-  {desc:"Brinca Brinca Resbaladilla 4x5 mts",price:550,pq:"154AF4FB",pa:"0CE938FA"},
+  {desc:"Brinca Brinca Castillo Caramelo de 4x4 mts",price:500,pq:"60078EC9",pa:"48CB43A9"},
+  {desc:"Brinca Brinca Resbaladilla Colors 4x5 mts",price:550,pq:"154AF4FB",pa:"0CE938FA"},
   {desc:"Area Infantil",price:1200,pq:"6E84C2CA",pa:"6A98D161"}
 ];
 
