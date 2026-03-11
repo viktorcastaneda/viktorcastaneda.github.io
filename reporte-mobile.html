@@ -1,0 +1,742 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width,initial-scale=1,maximum-scale=1,user-scalable=no">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="theme-color" content="#1a1f2e">
+<title>CASVEL – Reportes</title>
+<link href="https://fonts.googleapis.com/css2?family=DM+Sans:wght@400;500;600;700&family=DM+Mono:wght@400;500&display=swap" rel="stylesheet">
+<link rel="icon" type="image/x-icon" href="eventos_casvel_favicon.ico">
+<!-- iPhone / iPad -->
+<link rel="apple-touch-icon" sizes="180x180" href="apple-touch-icon.png">
+<style>
+*{box-sizing:border-box;margin:0;padding:0}
+:root{
+  --blue:#2563a8;--blt:#4F81BD;--bbg:#dce6f1;
+  --dark:#1a1f2e;--mid:#5a6580;--light:#f0f4f8;
+  --white:#fff;--red:#c0392b;--green:#1a7a44;--border:#d1dde8;
+  --gold:#b8860b;--gold-lt:#fdf3d0;
+  --teal:#0e7490;--teal-lt:#e0f2f7;
+  --r:14px;--sb:env(safe-area-inset-bottom,16px);--st:env(safe-area-inset-top,0px);
+  --fm:'DM Mono',monospace;
+}
+html,body{height:100%;font-family:'DM Sans',system-ui,sans-serif;background:var(--light);color:var(--dark)}
+body{-webkit-text-size-adjust:100%;overscroll-behavior-y:none}
+
+/* ── SCREENS ── */
+.sc{display:none;min-height:100vh;flex-direction:column}.sc.on{display:flex}
+
+/* ── TOPBAR ── */
+.tb{background:var(--dark);color:#fff;display:flex;align-items:center;gap:10px;
+  padding:14px 16px;padding-top:calc(14px + var(--st));position:sticky;top:0;z-index:100;flex-shrink:0}
+.tb-bk{background:none;border:none;color:rgba(255,255,255,.7);font-size:22px;
+  cursor:pointer;padding:4px 6px;min-width:36px;display:flex;align-items:center}
+.tb-ttl{flex:1;font-size:15px;font-weight:700;color:#fff;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+.tb-act{background:rgba(255,255,255,.14);border:none;color:rgba(255,255,255,.9);
+  font-size:13px;font-weight:600;cursor:pointer;padding:7px 14px;border-radius:20px;
+  font-family:'DM Sans',sans-serif;white-space:nowrap;-webkit-tap-highlight-color:transparent}
+
+/* ── HERO ── */
+.hhero{background:var(--dark);padding:20px 18px 18px;padding-top:calc(20px + var(--st));
+  display:flex;align-items:center;gap:14px;flex-shrink:0}
+.hhero img{width:48px;border-radius:8px}
+.hbrand{font-size:20px;font-weight:700;color:#fff}
+.hsub{font-size:12px;color:rgba(255,255,255,.4);margin-top:2px}
+.fb-sync{display:inline-flex;align-items:center;gap:5px;font-size:11px;font-weight:600;
+  padding:3px 9px;border-radius:10px;cursor:pointer;border:none;font-family:inherit;
+  margin-left:auto;-webkit-tap-highlight-color:transparent}
+.fb-sync.local{background:rgba(255,255,255,.08);color:rgba(255,255,255,.4)}
+.fb-sync.live{background:rgba(26,122,68,.25);color:#6ee7b7}
+.fb-sync.live::before{content:"●";margin-right:2px;animation:fbpulse 2s infinite}
+@keyframes fbpulse{0%,100%{opacity:1}50%{opacity:.4}}
+
+/* ── TAB BAR (under hero) ── */
+.tab-bar{background:var(--dark);display:flex;padding:0 16px 14px;gap:8px;flex-shrink:0}
+.tab-pill{flex:1;padding:10px 8px;border-radius:10px;border:none;
+  font-family:'DM Sans',sans-serif;font-size:13px;font-weight:700;cursor:pointer;
+  background:rgba(255,255,255,.08);color:rgba(255,255,255,.5);
+  display:flex;align-items:center;justify-content:center;gap:5px;
+  -webkit-tap-highlight-color:transparent;transition:all .15s}
+.tab-pill.on{background:var(--blue);color:#fff;box-shadow:0 2px 10px rgba(37,99,168,.4)}
+
+/* ── SCROLL AREA ── */
+.sarea{flex:1;overflow-y:auto;-webkit-overflow-scrolling:touch;
+  padding:14px 16px calc(84px + var(--sb))}
+
+/* ── CARDS ── */
+.card{background:var(--white);border-radius:var(--r);padding:18px;
+  border:1px solid var(--border);margin-bottom:12px;box-shadow:0 1px 6px rgba(0,0,0,.05)}
+.card-ttl{font-size:11px;font-weight:700;color:var(--blue);text-transform:uppercase;
+  letter-spacing:.07em;margin-bottom:14px;padding-bottom:8px;border-bottom:1.5px solid var(--bbg)}
+
+/* ── METRIC CARDS (2-col grid) ── */
+.mgrid{display:grid;grid-template-columns:1fr 1fr;gap:10px;margin-bottom:12px}
+.mcard{background:var(--white);border-radius:12px;padding:14px 15px;
+  border:1px solid var(--border);position:relative;overflow:hidden}
+.mcard::before{content:'';position:absolute;top:0;left:0;right:0;height:3px;border-radius:3px 3px 0 0}
+.mc-blue::before{background:var(--blue)}
+.mc-teal::before{background:var(--teal)}
+.mc-green::before{background:var(--green)}
+.mc-gold::before{background:var(--gold)}
+.mcard-icon{font-size:20px;margin-bottom:6px}
+.mcard-lbl{font-size:10px;font-weight:700;text-transform:uppercase;letter-spacing:.06em;
+  color:var(--mid);margin-bottom:4px;line-height:1.3}
+.mcard-val{font-family:var(--fm);font-size:18px;font-weight:500;color:var(--dark);
+  letter-spacing:-.3px;line-height:1}
+.mcard-sub{font-size:10px;color:var(--mid);margin-top:4px;line-height:1.3}
+
+/* Full-width metric card */
+.mcard-full{background:var(--white);border-radius:12px;padding:16px 18px;
+  border:1px solid var(--border);margin-bottom:12px;
+  display:flex;align-items:center;justify-content:space-between;position:relative;overflow:hidden}
+.mcard-full::before{content:'';position:absolute;top:0;left:0;right:0;height:3px}
+.mcard-full-info .mcard-lbl{font-size:10px;font-weight:700;text-transform:uppercase;
+  letter-spacing:.06em;color:var(--mid);margin-bottom:4px}
+.mcard-full-info .mcard-val{font-family:var(--fm);font-size:22px;font-weight:500;color:var(--dark)}
+.mcard-full-info .mcard-sub{font-size:11px;color:var(--mid);margin-top:3px}
+.mcard-full-icon{font-size:28px;opacity:.7}
+
+/* ── YEAR NAVIGATOR ── */
+.year-nav{display:flex;align-items:center;justify-content:space-between;
+  background:var(--white);border-radius:12px;border:1px solid var(--border);
+  padding:12px 16px;margin-bottom:12px}
+.ynav-lbl{font-size:12px;font-weight:700;text-transform:uppercase;letter-spacing:.06em;color:var(--mid)}
+.ynav-ctrl{display:flex;align-items:center;gap:10px}
+.ynav-btn{width:34px;height:34px;border-radius:8px;border:1.5px solid var(--border);
+  background:var(--light);cursor:pointer;font-size:18px;display:flex;align-items:center;
+  justify-content:center;color:var(--mid);-webkit-tap-highlight-color:transparent}
+.ynav-btn:active{background:var(--bbg)}
+.ynav-year{font-family:var(--fm);font-size:17px;font-weight:500;min-width:48px;text-align:center}
+
+/* ── MINI CHART (12 bars) ── */
+.mini-chart{display:flex;align-items:flex-end;gap:4px;height:70px;
+  margin-bottom:8px;padding:0 2px}
+.mbar-col{flex:1;display:flex;flex-direction:column;align-items:center;gap:2px;justify-content:flex-end}
+.mbar{width:100%;border-radius:3px 3px 0 0;min-height:2px;transition:height .4s ease}
+.mbar-lbl{font-size:8px;color:var(--mid);font-weight:600;margin-top:4px}
+.mbar-bp{background:var(--blue)}
+.mbar-bc{background:var(--gold)}
+.mbar-bz{background:var(--border)}
+.chart-divider{border-top:1px solid var(--border);margin-top:0}
+.chart-legend{display:flex;gap:12px;margin-top:8px;font-size:10px;color:var(--mid)}
+.chart-legend span{display:flex;align-items:center;gap:4px}
+.leg-dot{width:8px;height:8px;border-radius:2px;display:inline-block}
+
+/* ── MONTH ROWS ── */
+.month-row{display:flex;align-items:center;gap:10px;padding:12px 0;
+  border-bottom:1px solid var(--border)}
+.month-row:last-child{border-bottom:none}
+.month-left{width:80px;flex-shrink:0}
+.month-name{font-size:13px;font-weight:700;line-height:1.2}
+.month-badge{display:inline-flex;font-size:9px;font-weight:700;
+  padding:2px 6px;border-radius:8px;margin-top:3px}
+.mb-past{background:var(--bbg);color:var(--blue)}
+.mb-cur{background:#fef9c3;color:#854d0e}
+.mb-future{background:#dcfce7;color:#15803d}
+.mb-empty{background:var(--light);color:var(--mid)}
+.month-center{flex:1;min-width:0}
+.month-bar-bg{height:5px;background:var(--light);border-radius:3px;overflow:hidden;margin-bottom:3px}
+.month-bar-fill{height:100%;border-radius:3px;background:var(--blue)}
+.month-count{font-size:10px;color:var(--mid)}
+.month-right{text-align:right;flex-shrink:0}
+.month-total{font-family:var(--fm);font-size:13px;font-weight:500;color:var(--dark)}
+.month-net{font-family:var(--fm);font-size:10px;color:var(--mid);margin-top:2px}
+
+/* ── MONTH TOTAL ROW ── */
+.month-total-row{background:var(--dark);border-radius:10px;padding:12px 16px;
+  display:flex;justify-content:space-between;align-items:center;margin-top:4px}
+.mtr-lbl{font-size:12px;font-weight:700;color:rgba(255,255,255,.6)}
+.mtr-val{font-family:var(--fm);font-size:14px;font-weight:500;color:#acd4f5}
+.mtr-val-main{font-family:var(--fm);font-size:16px;font-weight:500;color:#fff}
+
+/* ── FUTURE CONTRACT ROW ── */
+.frow{background:var(--white);border-radius:12px;border:1px solid var(--border);
+  padding:14px 16px;margin-bottom:10px;box-shadow:0 1px 4px rgba(0,0,0,.04)}
+.frow-top{display:flex;justify-content:space-between;align-items:flex-start;margin-bottom:10px}
+.frow-name{font-size:15px;font-weight:700;line-height:1.2}
+.frow-date{font-size:12px;color:var(--mid);margin-top:2px}
+.frow-total{font-family:var(--fm);font-size:16px;font-weight:500;color:var(--blue)}
+.days-badge{display:inline-flex;font-size:10px;font-weight:700;
+  padding:3px 8px;border-radius:8px;margin-top:4px}
+.db-today{background:#fee2e2;color:#b91c1c}
+.db-soon{background:#fef9c3;color:#854d0e}
+.db-future{background:#dcfce7;color:#15803d}
+.frow-metrics{display:grid;grid-template-columns:1fr 1fr;gap:6px}
+.fmet{background:var(--light);border-radius:8px;padding:8px 10px}
+.fmet-lbl{font-size:9px;font-weight:700;text-transform:uppercase;letter-spacing:.05em;color:var(--mid);margin-bottom:2px}
+.fmet-val{font-family:var(--fm);font-size:13px;font-weight:500;color:var(--dark)}
+
+/* ── RANGE PILLS ── */
+.range-grid{display:grid;grid-template-columns:1fr 1fr;gap:8px;margin-bottom:12px}
+.range-pill{background:var(--white);border-radius:12px;border:1px solid var(--border);
+  padding:12px 14px;display:flex;justify-content:space-between;align-items:center}
+.range-info{min-width:0}
+.range-lbl{font-size:11px;font-weight:700;color:var(--mid);line-height:1.3}
+.range-count{font-size:10px;color:var(--mid);margin-top:2px}
+.range-val{font-family:var(--fm);font-size:13px;font-weight:500;color:var(--dark);
+  text-align:right;flex-shrink:0;margin-left:6px}
+
+/* ── SECTION HEADER ── */
+.sec-hdr{display:flex;align-items:center;justify-content:space-between;
+  margin-bottom:10px;padding:0 2px}
+.sec-lbl{font-size:12px;font-weight:700;text-transform:uppercase;letter-spacing:.07em;color:var(--mid)}
+.sec-count{font-size:11px;font-weight:600;background:var(--bbg);color:var(--blue);
+  padding:2px 8px;border-radius:8px}
+
+/* ── EMPTY STATE ── */
+.empty{text-align:center;padding:48px 20px;color:var(--mid)}
+.empty-icon{font-size:44px;margin-bottom:12px}
+.empty-title{font-size:15px;font-weight:700;color:var(--dark);margin-bottom:6px}
+.empty-sub{font-size:13px;line-height:1.5}
+
+/* ── BOTTOM NAV ── */
+.bnav{position:fixed;bottom:0;left:0;right:0;background:var(--dark);
+  padding:10px 0 calc(10px + var(--sb));display:flex;z-index:90;
+  box-shadow:0 -2px 16px rgba(0,0,0,.25)}
+.bn{flex:1;display:flex;flex-direction:column;align-items:center;gap:3px;
+  padding:6px 4px;cursor:pointer;color:rgba(255,255,255,.4);border:none;background:none;
+  font-family:'DM Sans',sans-serif;-webkit-tap-highlight-color:transparent}
+.bn.on{color:#fff}
+.bi{font-size:22px}.bl{font-size:10px;font-weight:600}
+
+/* ── TOAST ── */
+#mtoast{position:fixed;bottom:calc(80px + var(--sb));left:16px;right:16px;
+  background:var(--dark);color:#acd4f5;padding:13px 18px;border-radius:12px;
+  font-size:14px;font-weight:500;border-left:4px solid var(--blt);
+  transform:translateY(20px);opacity:0;transition:all .25s;z-index:600;pointer-events:none}
+#mtoast.show{transform:translateY(0);opacity:1}
+
+/* ── FIREBASE SHEET ── */
+.fb-sheet{position:fixed;left:0;right:0;bottom:0;z-index:500;background:var(--white);
+  border-radius:20px 20px 0 0;padding:0 20px calc(20px + var(--sb));
+  transform:translateY(100%);transition:transform .3s cubic-bezier(.32,.72,0,1)}
+.fb-sheet.on{transform:translateY(0)}
+.fb-sbg{display:none;position:fixed;inset:0;background:rgba(0,0,0,.5);z-index:499}
+.fb-sbg.on{display:block}
+.fb-field{margin-bottom:14px}
+.fb-field label{display:block;font-size:12px;font-weight:700;color:var(--mid);
+  text-transform:uppercase;letter-spacing:.05em;margin-bottom:6px}
+.fb-field input{width:100%;padding:13px 14px;border:1.5px solid var(--border);border-radius:10px;
+  font-family:inherit;font-size:16px;outline:none;-webkit-appearance:none}
+.fb-field input:focus{border-color:var(--blue)}
+.fb-steps{font-size:12px;color:var(--mid);line-height:1.7;background:var(--light);
+  border-radius:var(--r);padding:12px 14px;margin-bottom:14px}
+.fb-steps a{color:var(--blue)}
+.shandle{width:40px;height:4px;background:#ddd;border-radius:2px;margin:12px auto 18px}
+.sttitle{font-size:18px;font-weight:700;margin-bottom:6px}
+.stsub{font-size:13px;color:var(--mid);margin-bottom:18px}
+.wbtn{width:100%;padding:15px;border-radius:12px;border:none;font-family:'DM Sans',sans-serif;
+  font-size:16px;font-weight:700;cursor:pointer;display:flex;align-items:center;
+  justify-content:center;gap:8px;-webkit-tap-highlight-color:transparent;margin-bottom:10px}
+.wbtn:active{transform:scale(.98)}
+.wbtn-p{background:var(--blue);color:#fff}
+.wbtn-d{background:var(--red);color:#fff}
+.wbtn-g{background:var(--light);color:var(--mid)}
+</style>
+</head>
+<body>
+
+<!-- ═══════════════════════════════════════════════
+     SCREEN: MENSUAL
+═══════════════════════════════════════════════ -->
+<div id="sc-mensual" class="sc on">
+  <!-- Hero -->
+  <div class="hhero">
+    <img id="hero-logo" src="" alt="CASVEL">
+    <div>
+      <div class="hbrand">Reportes</div>
+      <div class="hsub">EVENTOS CASVEL</div>
+    </div>
+    <button class="fb-sync local" id="fb-btn" onclick="openFbSheet()">⬡ Local</button>
+  </div>
+  <!-- Tab bar -->
+  <div class="tab-bar">
+    <button class="tab-pill on" id="tpill-mensual" onclick="showTab('mensual')">📅 Por Mes</button>
+    <button class="tab-pill"    id="tpill-futuro"  onclick="showTab('futuro')">🔮 Futuros</button>
+  </div>
+  <!-- Content -->
+  <div class="sarea" id="sarea-mensual">
+
+    <!-- Year nav -->
+    <div class="year-nav">
+      <div class="ynav-lbl">Año</div>
+      <div class="ynav-ctrl">
+        <button class="ynav-btn" onclick="changeYear(-1)">‹</button>
+        <div class="ynav-year" id="ynav-year">2026</div>
+        <button class="ynav-btn" onclick="changeYear(1)">›</button>
+      </div>
+    </div>
+
+    <!-- Summary 2×2 cards -->
+    <div class="mgrid" id="mensual-cards"></div>
+
+    <!-- Mini bar chart -->
+    <div class="card" style="padding:16px 16px 12px">
+      <div style="font-size:11px;font-weight:700;text-transform:uppercase;letter-spacing:.06em;color:var(--mid);margin-bottom:12px">
+        Ingresos mensuales</div>
+      <div class="mini-chart" id="mini-chart"></div>
+      <div class="chart-divider"></div>
+      <div class="chart-legend">
+        <span><span class="leg-dot" style="background:var(--blue)"></span>Meses anteriores</span>
+        <span><span class="leg-dot" style="background:var(--gold)"></span>Mes actual</span>
+      </div>
+    </div>
+
+    <!-- Month list -->
+    <div class="card" style="padding:16px">
+      <div class="card-ttl">Detalle mensual</div>
+      <div id="month-list"></div>
+    </div>
+
+    <!-- Year total -->
+    <div id="year-total-row"></div>
+
+  </div><!-- /sarea-mensual -->
+</div>
+
+<!-- ═══════════════════════════════════════════════
+     SCREEN: FUTUROS
+═══════════════════════════════════════════════ -->
+<div id="sc-futuro" class="sc">
+  <!-- Hero (reuse same hero, just hide first sc and show second) -->
+  <div class="hhero">
+    <img id="hero-logo2" src="" alt="CASVEL">
+    <div>
+      <div class="hbrand">Futuros</div>
+      <div class="hsub">Ingresos pendientes</div>
+    </div>
+    <button class="fb-sync local" id="fb-btn2" onclick="openFbSheet()">⬡ Local</button>
+  </div>
+  <!-- Tab bar -->
+  <div class="tab-bar">
+    <button class="tab-pill"    id="tpill2-mensual" onclick="showTab('mensual')">📅 Por Mes</button>
+    <button class="tab-pill on" id="tpill2-futuro"  onclick="showTab('futuro')">🔮 Futuros</button>
+  </div>
+  <!-- Content -->
+  <div class="sarea" id="sarea-futuro">
+
+    <!-- 3 full-width metric cards -->
+    <div id="futuro-metrics"></div>
+
+    <!-- Breakdown by time range -->
+    <div class="sec-hdr"><div class="sec-lbl">Por proximidad</div></div>
+    <div class="range-grid" id="range-grid"></div>
+
+    <!-- By month breakdown -->
+    <div class="card" style="padding:16px" id="bymonth-card">
+      <div class="card-ttl">Por mes</div>
+      <div id="bymonth-list"></div>
+    </div>
+
+    <!-- Contracts list -->
+    <div class="sec-hdr" style="margin-top:4px">
+      <div class="sec-lbl">Contratos pendientes</div>
+      <div class="sec-count" id="fut-count">0</div>
+    </div>
+    <div id="future-contracts"></div>
+
+  </div><!-- /sarea-futuro -->
+</div>
+
+<!-- ── BOTTOM NAV ── -->
+<nav class="bnav">
+  <a class="bn" href="mobile.html">
+    <span class="bi">📋</span><span class="bl">Contratos</span></a>
+  <button class="bn on" onclick="showTab(currentTab)">
+    <span class="bi">💰</span><span class="bl">Reportes</span></button>
+  <a class="bn" href="index.html?d=1">
+    <span class="bi">🖥</span><span class="bl">Escritorio</span></a>
+</nav>
+
+<!-- ── FIREBASE SHEET ── -->
+<div class="fb-sbg" id="fb-sbg" onclick="closeFbSheet()"></div>
+<div class="fb-sheet" id="fb-sheet">
+  <div class="shandle"></div>
+  <div class="sttitle">☁️ Sincronización</div>
+  <div class="stsub" id="fb-sheet-sub">Conecta Firebase para compartir datos.</div>
+  <div class="fb-steps">
+    1. <a href="https://console.firebase.google.com" target="_blank">console.firebase.google.com</a><br>
+    2. Realtime Database → Crear → Modo de prueba<br>
+    3. Copiar URL de DB y API Key
+  </div>
+  <div class="fb-field"><label>API Key</label>
+    <input type="text" id="m-fb-apikey" placeholder="AIzaSy..."></div>
+  <div class="fb-field"><label>Database URL</label>
+    <input type="url" id="m-fb-dburl" placeholder="https://tu-proyecto-rtdb.firebaseio.com"></div>
+  <div class="fb-field"><label>Project ID</label>
+    <input type="text" id="m-fb-projid" placeholder="tu-proyecto-12345"></div>
+  <button class="wbtn wbtn-p" onclick="mFbConnect()">Conectar</button>
+  <button class="wbtn wbtn-d" id="m-fb-disc" style="display:none" onclick="mFbDisconnect()">Desconectar</button>
+  <button class="wbtn wbtn-g" onclick="closeFbSheet()">Cancelar</button>
+</div>
+
+<div id="mtoast"></div>
+
+<script src="shared.js"></script>
+<script>
+"use strict";
+
+/* ─── State ─────────────────────────────────────────────────── */
+var currentYear = new Date().getFullYear();
+var currentTab  = 'mensual';
+var todayISO_val = todayISO();
+var todayDate    = new Date(todayISO_val + 'T00:00:00');
+
+var MONTHS_ES    = ['Enero','Feb','Marzo','Abril','Mayo','Junio',
+                    'Julio','Agosto','Sep','Octubre','Nov','Dic'];
+var MONTHS_SHORT = ['Ene','Feb','Mar','Abr','May','Jun',
+                    'Jul','Ago','Sep','Oct','Nov','Dic'];
+
+/* ─── Helpers ───────────────────────────────────────────────── */
+function el(id){ return document.getElementById(id); }
+function mxn(n){
+  var v = Number(n);
+  if(v >= 1000) return '$'+v.toLocaleString('es-MX',{minimumFractionDigits:0,maximumFractionDigits:0});
+  return '$'+v.toLocaleString('es-MX',{minimumFractionDigits:2,maximumFractionDigits:2});
+}
+function mxnFull(n){
+  return '$'+Number(n).toLocaleString('es-MX',{minimumFractionDigits:2,maximumFractionDigits:2});
+}
+function showToast(msg){
+  var t=el('mtoast'); t.textContent=msg; t.classList.add('show');
+  clearTimeout(t._t); t._t=setTimeout(function(){t.classList.remove('show');},3000);
+}
+function daysDiff(iso){
+  var d=new Date(iso+'T00:00:00');
+  return Math.max(0, Math.round((d-todayDate)/(86400000)));
+}
+
+/* ─── Tab switching ─────────────────────────────────────────── */
+function showTab(name){
+  currentTab = name;
+  el('sc-mensual').classList.toggle('on', name==='mensual');
+  el('sc-futuro').classList.toggle('on',  name==='futuro');
+  ['mensual','futuro'].forEach(function(t){
+    var p1=el('tpill-'+t), p2=el('tpill2-'+t);
+    if(p1) p1.classList.toggle('on',t===name);
+    if(p2) p2.classList.toggle('on',t===name);
+  });
+}
+
+/* ─── Year nav ──────────────────────────────────────────────── */
+function changeYear(d){
+  currentYear += d;
+  renderMensual();
+}
+
+/* ═══════════════════════════════════════════════════════════════
+   RENDER: INGRESOS POR MES
+═══════════════════════════════════════════════════════════════ */
+function renderMensual(){
+  var list  = loadContracts();
+  var curMoKey = todayDate.getFullYear()*100 + (todayDate.getMonth()+1);
+
+  el('ynav-year').textContent = currentYear;
+
+  /* Build 12 monthly buckets */
+  var months = MONTHS_ES.map(function(name,i){
+    return { m:i+1, name:name, short:MONTHS_SHORT[i],
+             contracts:[], total:0, sinTrl:0 };
+  });
+
+  list.forEach(function(c){
+    var ds = c.fEvento || c.cDate || '';
+    if(!ds || ds.length<7) return;
+    var y  = parseInt(ds.substr(0,4));
+    var mo = parseInt(ds.substr(5,2));
+    if(y !== currentYear) return;
+    var b = months[mo-1];
+    b.contracts.push(c);
+    b.total   += c.total    || 0;
+    b.sinTrl  += (c.total||0) - (c.traslado||0);
+  });
+
+  var maxTotal = Math.max.apply(null, months.map(function(b){return b.total;})) || 1;
+  var yearTotal    = months.reduce(function(s,b){return s+b.total;},0);
+  var yearSinTrl   = months.reduce(function(s,b){return s+b.sinTrl;},0);
+  var yearContracts= months.reduce(function(s,b){return s+b.contracts.length;},0);
+  var bestBucket   = months.reduce(function(a,b){return b.total>a.total?b:a;},months[0]);
+
+  /* ── Summary cards ── */
+  el('mensual-cards').innerHTML =
+    mCard('mc-blue','💰','Total del año',   mxn(yearTotal),    yearContracts+' contratos') +
+    mCard('mc-teal','📦','Sin traslados',   mxn(yearSinTrl),   'Estimado neto') +
+    mCard('mc-gold','🏆','Mejor mes',       bestBucket.total>0?bestBucket.name:'—',
+                                            bestBucket.total>0?mxn(bestBucket.total):'Sin datos') +
+    mCard('mc-green','📋','Contratos',      yearContracts,     'En '+currentYear);
+
+  /* ── Mini chart ── */
+  el('mini-chart').innerHTML = months.map(function(b){
+    var isCur = (currentYear*100+b.m) === curMoKey;
+    var pct   = maxTotal>0 ? (b.total/maxTotal*100) : 0;
+    var cls   = isCur ? 'mbar-bc' : (b.total>0 ? 'mbar-bp' : 'mbar-bz');
+    var h     = Math.max(pct*0.62, b.total>0?2:0); /* max ~62px */
+    return '<div class="mbar-col">'+
+      '<div class="mbar '+cls+'" style="height:'+h.toFixed(1)+'px"></div>'+
+      '<div class="mbar-lbl">'+b.short+'</div>'+
+    '</div>';
+  }).join('');
+
+  /* ── Month list ── */
+  el('month-list').innerHTML = months.map(function(b){
+    var moKey = currentYear*100+b.m;
+    var isCur = moKey === curMoKey;
+    var isFut = moKey > curMoKey;
+    var barW  = maxTotal>0 ? (b.total/maxTotal*100).toFixed(1) : 0;
+
+    var badge = b.contracts.length===0
+      ? '<span class="month-badge mb-empty">Vacío</span>'
+      : isCur  ? '<span class="month-badge mb-cur">Actual</span>'
+      : isFut  ? '<span class="month-badge mb-future">Próximo</span>'
+               : '<span class="month-badge mb-past">Cerrado</span>';
+
+    return '<div class="month-row">'+
+      '<div class="month-left">'+
+        '<div class="month-name">'+b.name+'</div>'+badge+
+      '</div>'+
+      '<div class="month-center">'+
+        '<div class="month-bar-bg"><div class="month-bar-fill" style="width:'+barW+'%"></div></div>'+
+        '<div class="month-count">'+
+          (b.contracts.length>0 ? b.contracts.length+' contrato'+(b.contracts.length!==1?'s':'') : 'Sin contratos')+
+        '</div>'+
+      '</div>'+
+      '<div class="month-right">'+
+        (b.total>0
+          ? '<div class="month-total">'+mxn(b.total)+'</div>'+
+            '<div class="month-net">'+mxn(b.sinTrl)+' neto</div>'
+          : '<div class="month-net" style="color:var(--mid)">—</div>')+
+      '</div>'+
+    '</div>';
+  }).join('');
+
+  /* ── Year total ── */
+  el('year-total-row').innerHTML =
+    '<div class="month-total-row">'+
+      '<div>'+
+        '<div class="mtr-lbl">Total '+currentYear+'</div>'+
+        '<div style="font-size:10px;color:rgba(255,255,255,.4);margin-top:2px">'+
+          yearContracts+' contratos</div>'+
+      '</div>'+
+      '<div style="text-align:right">'+
+        '<div class="mtr-val-main">'+mxn(yearTotal)+'</div>'+
+        '<div class="mtr-val" style="font-size:12px">'+mxn(yearSinTrl)+' sin traslado</div>'+
+      '</div>'+
+    '</div>';
+}
+
+function mCard(colorClass, icon, lbl, val, sub){
+  return '<div class="mcard '+colorClass+'">'+
+    '<div class="mcard-icon">'+icon+'</div>'+
+    '<div class="mcard-lbl">'+lbl+'</div>'+
+    '<div class="mcard-val">'+val+'</div>'+
+    (sub?'<div class="mcard-sub">'+sub+'</div>':'')+
+  '</div>';
+}
+
+/* ═══════════════════════════════════════════════════════════════
+   RENDER: INGRESOS FUTUROS
+═══════════════════════════════════════════════════════════════ */
+function renderFuturo(){
+  var list = loadContracts();
+
+  var future = list.filter(function(c){
+    if(!c.fEvento||c.fEvento.length<10) return false;
+    return c.fEvento >= todayISO_val;
+  }).sort(function(a,b){
+    return (a.fEvento||'').localeCompare(b.fEvento||'');
+  });
+
+  var totBruto    = future.reduce(function(s,c){return s+(c.total||0);},0);
+  var totAnticipo = future.reduce(function(s,c){return s+(c.anticipo||0);},0);
+  var totTrl      = future.reduce(function(s,c){return s+(c.traslado||0);},0);
+  var totSinAnt   = totBruto - totAnticipo;
+  var totNeto     = totBruto - totAnticipo - totTrl;
+
+  el('fut-count').textContent = future.length;
+
+  /* ── 3 metric cards full-width ── */
+  el('futuro-metrics').innerHTML =
+    mCardFull('mc-blue',  '📋', 'Total bruto pendiente',  mxnFull(totBruto),
+              future.length+' contrato'+(future.length!==1?'s':'')+' con evento futuro') +
+    mCardFull('mc-teal',  '💳', 'Pendiente por cobrar',   mxnFull(totSinAnt),
+              'Total menos anticipos ('+mxn(totAnticipo)+' recibido)') +
+    mCardFull('mc-green', '✅', 'Pendiente neto',          mxnFull(totNeto),
+              'Sin anticipos ni traslado ('+mxn(totTrl)+')');
+
+  /* ── Breakdown by range ── */
+  var ranges = [
+    { lbl:'Hoy',             filter:function(c){ return c.fEvento===todayISO_val; }},
+    { lbl:'7 días',          filter:function(c){ var d=daysDiff(c.fEvento); return d>0&&d<=7; }},
+    { lbl:'30 días',         filter:function(c){ var d=daysDiff(c.fEvento); return d>7&&d<=30; }},
+    { lbl:'+30 días',        filter:function(c){ return daysDiff(c.fEvento)>30; }},
+  ];
+  el('range-grid').innerHTML = ranges.map(function(rng){
+    var rc   = future.filter(rng.filter);
+    var rtot = rc.reduce(function(s,c){return s+(c.total||0);},0);
+    return '<div class="range-pill">'+
+      '<div class="range-info">'+
+        '<div class="range-lbl">'+rng.lbl+'</div>'+
+        '<div class="range-count">'+rc.length+' contrato'+(rc.length!==1?'s':'')+'</div>'+
+      '</div>'+
+      '<div class="range-val">'+mxn(rtot)+'</div>'+
+    '</div>';
+  }).join('');
+
+  /* ── By month ── */
+  var byMonth = {};
+  future.forEach(function(c){
+    var key = c.fEvento.substr(0,7);
+    if(!byMonth[key]) byMonth[key]={key:key,lbl:'',total:0,count:0};
+    byMonth[key].total+=c.total||0;
+    byMonth[key].count++;
+    var p=key.split('-');
+    byMonth[key].lbl = MONTHS_ES[parseInt(p[1])-1]+' '+p[0];
+  });
+  var bma = Object.values(byMonth).sort(function(a,b){return a.key.localeCompare(b.key);});
+  if(bma.length===0){
+    el('bymonth-list').innerHTML =
+      '<div style="text-align:center;padding:16px;color:var(--mid);font-size:13px">Sin eventos futuros</div>';
+  } else {
+    el('bymonth-list').innerHTML = bma.map(function(bm){
+      return '<div class="month-row">'+
+        '<div class="month-left"><div class="month-name" style="font-size:12px">'+bm.lbl+'</div>'+
+          '<span class="month-badge mb-future">'+bm.count+' evento'+(bm.count!==1?'s':'')+'</span>'+
+        '</div>'+
+        '<div class="month-right">'+
+          '<div class="month-total">'+mxn(bm.total)+'</div>'+
+        '</div>'+
+      '</div>';
+    }).join('');
+  }
+
+  /* ── Contract list ── */
+  if(future.length===0){
+    el('future-contracts').innerHTML =
+      '<div class="empty">'+
+        '<div class="empty-icon">🗓</div>'+
+        '<div class="empty-title">Sin contratos futuros</div>'+
+        '<div class="empty-sub">No hay contratos con fecha de evento posterior a hoy.</div>'+
+      '</div>';
+    return;
+  }
+
+  el('future-contracts').innerHTML = future.map(function(c){
+    var days    = daysDiff(c.fEvento);
+    var sinAnt  = (c.total||0)-(c.anticipo||0);
+    var neto    = sinAnt-(c.traslado||0);
+    var dBadge  = days===0
+      ? '<span class="days-badge db-today">HOY</span>'
+      : days<=7
+        ? '<span class="days-badge db-soon">en '+days+' día'+(days!==1?'s':'')+'</span>'
+        : '<span class="days-badge db-future">en '+days+' días</span>';
+    return '<div class="frow">'+
+      '<div class="frow-top">'+
+        '<div>'+
+          '<div class="frow-name">'+(c.nombre||'Sin nombre')+'</div>'+
+          '<div class="frow-date">'+fmtDate(c.fEvento)+(c.tel?' · '+c.tel:'')+'</div>'+
+          dBadge+
+        '</div>'+
+        '<div class="frow-total">'+mxn(c.total||0)+'</div>'+
+      '</div>'+
+      '<div class="frow-metrics">'+
+        '<div class="fmet">'+
+          '<div class="fmet-lbl">Sin anticipo</div>'+
+          '<div class="fmet-val">'+mxn(sinAnt)+'</div>'+
+        '</div>'+
+        '<div class="fmet">'+
+          '<div class="fmet-lbl">Sin ant. + trasl.</div>'+
+          '<div class="fmet-val">'+mxn(neto)+'</div>'+
+        '</div>'+
+      '</div>'+
+    '</div>';
+  }).join('');
+}
+
+function mCardFull(colorClass, icon, lbl, val, sub){
+  return '<div class="mcard-full '+colorClass+'">'+
+    '<div class="mcard-full-info">'+
+      '<div class="mcard-lbl">'+lbl+'</div>'+
+      '<div class="mcard-val">'+val+'</div>'+
+      (sub?'<div class="mcard-sub">'+sub+'</div>':'')+
+    '</div>'+
+    '<div class="mcard-full-icon">'+icon+'</div>'+
+  '</div>';
+}
+
+/* ─── Firebase sheet ─────────────────────────────────────────── */
+function updateFbBadge(live){
+  var cls = live?'fb-sync live':'fb-sync local';
+  var txt = live?'● Firebase':'⬡ Local';
+  ['fb-btn','fb-btn2'].forEach(function(id){
+    var e=el(id);if(!e)return;
+    e.className=cls; e.textContent=txt;
+  });
+}
+function openFbSheet(){
+  var cfg=fbGetConfig()||{};
+  el('m-fb-apikey').value=cfg.apiKey||'';
+  el('m-fb-dburl').value=cfg.databaseURL||'';
+  el('m-fb-projid').value=cfg.projectId||'';
+  el('m-fb-disc').style.display=isFbMode()?'':'none';
+  el('fb-sheet-sub').textContent=isFbMode()
+    ?'✅ Conectado. Datos sincronizados.':'Conecta Firebase para compartir datos.';
+  el('fb-sheet').classList.add('on');
+  el('fb-sbg').classList.add('on');
+}
+function closeFbSheet(){
+  el('fb-sheet').classList.remove('on');
+  el('fb-sbg').classList.remove('on');
+}
+function mFbConnect(){
+  var cfg={
+    apiKey:      el('m-fb-apikey').value.trim(),
+    databaseURL: el('m-fb-dburl').value.trim(),
+    projectId:   el('m-fb-projid').value.trim(),
+    authDomain:  el('m-fb-projid').value.trim()+'.firebaseapp.com',
+    storageBucket:el('m-fb-projid').value.trim()+'.appspot.com',
+    messagingSenderId:'000000000000', appId:'1:000000000000:web:000000'
+  };
+  if(!cfg.apiKey||!cfg.databaseURL||!cfg.projectId){
+    showToast('⚠️ Completa los tres campos'); return;
+  }
+  showToast('⏳ Conectando...');
+  fbSaveConfig(cfg);
+  fbInit(cfg,function(err){
+    if(err){fbClearConfig();showToast('❌ Error: '+err.message);updateFbBadge(false);}
+    else{updateFbBadge(true);closeFbSheet();showToast('✅ Firebase conectado');}
+  });
+}
+function mFbDisconnect(){
+  fbClearConfig(); updateFbBadge(false); closeFbSheet();
+  showToast('⬡ Desconectado');
+  renderAll();
+}
+
+/* ─── Init ──────────────────────────────────────────────────── */
+function renderAll(){
+  renderMensual();
+  renderFuturo();
+}
+
+document.addEventListener('DOMContentLoaded', function(){
+  var logoSrc = 'data:image/jpeg;base64,'+LOGO_B64;
+  el('hero-logo').src  = logoSrc;
+  el('hero-logo2').src = logoSrc;
+
+  onContractsChange(function(){ renderAll(); });
+
+  var cfg = fbGetConfig();
+  if(cfg){
+    fbInit(cfg,function(err){
+      if(err){showToast('⚠️ Firebase: '+err.message);updateFbBadge(false);}
+      else updateFbBadge(true);
+    });
+  } else {
+    updateFbBadge(false);
+    renderAll();
+  }
+});
+</script>
+</body>
+</html>
