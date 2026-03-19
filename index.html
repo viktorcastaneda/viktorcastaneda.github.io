@@ -193,9 +193,23 @@ select.c-fi{flex:none;width:auto;min-width:130px;cursor:pointer;border:none;
 .fb-steps a{color:var(--blue)}
 .fb-steps code{background:#e2e8f0;padding:1px 5px;border-radius:3px;font-size:11px}
 
+
+/* ADDED: status badge */
+.status-badge{display:inline-block;padding:2px 9px;border-radius:10px;font-size:11px;font-weight:700}
+/* ADDED: extra panel (no imprime) */
+.extra-panel{background:var(--white);border:1px solid var(--border);border-radius:var(--r);
+  padding:14px 18px;margin-bottom:14px;display:flex;flex-wrap:wrap;gap:14px;align-items:flex-end}
+.ep-field{display:flex;flex-direction:column;gap:4px;min-width:180px}
+.ep-field label{font-size:11px;font-weight:700;color:var(--mid);text-transform:uppercase;letter-spacing:.05em}
+.ep-field input,.ep-field select{padding:7px 10px;border:1.5px solid var(--border);border-radius:var(--r);
+  font-family:var(--ff);font-size:13px;outline:none;background:var(--white)}
+.ep-field input:focus,.ep-field select:focus{border-color:var(--blt)}
+.ep-field.ep-wide{flex:2;min-width:260px}
+.inv-warn-panel{padding:8px 12px;background:#fef9c3;border:1.5px solid #fbbf24;border-radius:8px;
+  font-size:12px;color:#92400e;width:100%;display:none}
 /* print */
 @media print{
-  .sb,.topbar,.ftbar,.overlay,.lov,#toast{display:none!important}
+  .sb,.topbar,.ftbar,.overlay,.lov,#toast,.no-print{display:none!important}
   .main{margin-left:0!important}
   .content{padding:0!important}
   .a4-wrap,.a4-page{width:100%!important}
@@ -282,6 +296,26 @@ if(!/[?&]d=1/.test(location.search) &&
       <button class="btn btn-g btn-sm" onclick="doCalendar()">📅 Calendario</button>
     </div>
     <div class="content" style="padding-top:16px">
+      <!-- ADDED: Campos extra (no se imprimen) -->
+      <div class="extra-panel no-print">
+        <div class="ep-field">
+          <label>Status</label>
+          <select id="c-status">
+            <option value="abierto">&#9679; Abierto</option>
+            <option value="cerrado">&#9679; Cerrado</option>
+            <option value="cancelado">&#9679; Cancelado</option>
+          </select>
+        </div>
+        <div class="ep-field ep-wide">
+          <label>Ubicaci&#243;n del evento (Maps / Waze / GPS)</label>
+          <input type="text" id="c-ubicacion" placeholder="https://maps.google.com/... o coordenadas GPS">
+        </div>
+        <div class="ep-field ep-wide">
+          <label>Notas</label>
+          <input type="text" id="c-notas" placeholder="Observaciones del contrato...">
+        </div>
+        <div class="inv-warn-panel" id="inv-warning-desk"></div>
+      </div>
       <div class="a4-wrap">
         <div class="a4-page" id="a4page">
           <div class="c-hdr">
@@ -478,6 +512,7 @@ document.addEventListener('DOMContentLoaded', function(){
   el('c-anticipo').addEventListener('input', function(){
     this.dataset.manual='1'; calcDesk();
   });
+  el('c-fevento').addEventListener('change', updateInvWarningDesk);
 
   // Suscribir a cambios en tiempo real (funciona con localStorage Y Firebase)
   onContractsChange(function(){
@@ -588,6 +623,24 @@ function calcDesk(){
   var ai=el('c-anticipo');
   if(!ai.dataset.manual) ai.value=(g*.25).toFixed(2);
   el('c-resta').textContent='Resta por Pagar: '+f2(g-(parseFloat(ai.value)||0));
+  updateInvWarningDesk();
+}
+
+/* ADDED: inventory warning for desktop editor */
+function updateInvWarningDesk(){
+  var iw=el('inv-warning-desk'); if(!iw) return;
+  var d=collectDesk();
+  if(!d.fEvento){ iw.style.display='none'; return; }
+  var conflicts=checkInventory(d.items,d.fEvento,D_editId);
+  if(conflicts.length>0){
+    iw.innerHTML='&#9888;&#65039; Inventario excedido para '+fmtDate(d.fEvento)+': '+
+      conflicts.map(function(x){
+        return '<strong>'+x.name+'</strong> ('+x.used+'/'+x.max+')';
+      }).join(', ')+' &mdash; Puedes guardar de todas formas.';
+    iw.style.display='block';
+  } else {
+    iw.style.display='none';
+  }
 }
 
 /* ── Collect ── */
@@ -607,7 +660,10 @@ function collectDesk(){
     hRecol:el('c-hrecol').value, hRecolL:selLbl('c-hrecol'),
     traslado:parseFloat(el('c-traslado').value)||0,
     anticipo:ant, total:total, resta:total-ant,
-    items:items
+    items:items,
+    status:el('c-status').value||'abierto',
+    ubicacion:(el('c-ubicacion').value||'').trim(),
+    notas:(el('c-notas').value||'').trim()
   };
 }
 
@@ -618,6 +674,9 @@ function populateDesk(d){
   el('c-fevento').value=d.fEvento||'';
   el('c-hentrega').value=d.hEntrega||'';     el('c-hrecol').value=d.hRecol||'';
   el('c-traslado').value=d.traslado||0;
+  el('c-status').value=d.status||'abierto';
+  el('c-ubicacion').value=d.ubicacion||'';
+  el('c-notas').value=d.notas||'';
   var ai=el('c-anticipo'); ai.value='0'; ai.removeAttribute('data-manual');
   if(d.items) d.items.forEach(function(r,i){
     el('dq'+i).value=(r.qty||0);
@@ -640,6 +699,10 @@ function resetEditor(){
   el('c-dir').value=''; el('c-fevento').value='';
   el('c-hentrega').value=''; el('c-hrecol').value='';
   el('c-traslado').value=0;
+  el('c-status').value='abierto';
+  el('c-ubicacion').value='';
+  el('c-notas').value='';
+  el('inv-warning-desk').style.display='none';
   var ai=el('c-anticipo'); ai.value='0'; ai.removeAttribute('data-manual');
   ITEMS.forEach(function(it,i){ el('dq'+i).value=0; el('dp'+i).value=it.price.toFixed(2); });
   el('edit-lbl').textContent='Nuevo Contrato';
@@ -695,21 +758,30 @@ function renderHistorial(){
 function cTableHTML(list){
   var rows=list.map(function(c){
     var ni=(c.items||[]).filter(function(r){return r.qty>0;}).length;
+    var waNum=c.tel?(c.tel+'').replace(/\D/g,''):'';
+    var telCell=c.tel
+      ? '<a href="https://wa.me/'+waNum+'" target="_blank" style="color:var(--green);text-decoration:none;font-weight:600">&#128172; '+xe(c.tel)+'</a>'
+      : '&mdash;';
+    var locCell=c.ubicacion
+      ? '<a href="'+xe(c.ubicacion)+'" target="_blank" title="Abrir ubicaci&#243;n" style="font-size:16px;text-decoration:none">&#128205;</a>'
+      : '';
     return '<tr>'+
-      '<td><strong>'+(c.nombre||'—')+'</strong></td>'+
-      '<td>'+(c.tel||'—')+'</td>'+
+      '<td>'+statusBadgeHTML(c)+'</td>'+
+      '<td><strong>'+(c.nombre||'&mdash;')+'</strong></td>'+
+      '<td>'+telCell+'</td>'+
       '<td>'+fmtDate(c.fEvento)+'</td>'+
       '<td>'+fmtDate(c.cDate)+'</td>'+
       '<td><span class="badge">'+ni+' art.</span></td>'+
       '<td>$'+(c.total||0).toLocaleString('es-MX',{minimumFractionDigits:2})+'</td>'+
       '<td><div class="acts">'+
-        '<button class="btn btn-g btn-sm" onclick="openEditor(\''+c.id+'\')">✏️ Editar</button>'+
-        '<button class="btn btn-g btn-sm" onclick="qExport(\''+c.id+'\')">⬇️</button>'+
-        '<button class="btn btn-d btn-sm" onclick="askDel(\''+c.id+'\')">🗑</button>'+
+        (locCell?locCell+' ':'')+
+        '<button class="btn btn-g btn-sm" onclick="openEditor(\''+c.id+'\')">&#9999;&#65039; Editar</button>'+
+        '<button class="btn btn-g btn-sm" onclick="qExport(\''+c.id+'\')">&#11015;&#65039;</button>'+
+        '<button class="btn btn-d btn-sm" onclick="askDel(\''+c.id+'\')">&#128465;</button>'+
       '</div></td></tr>';
   }).join('');
   return '<div class="ctable"><table>'+
-    '<thead><tr><th>Cliente</th><th>Teléfono</th><th>Evento</th>'+
+    '<thead><tr><th>Status</th><th>Cliente</th><th>Tel&#233;fono</th><th>Evento</th>'+
     '<th>Contrato</th><th>Art.</th><th>Total</th><th></th></tr></thead>'+
     '<tbody>'+rows+'</tbody></table></div>';
 }

@@ -251,9 +251,11 @@ body{-webkit-text-size-adjust:100%;overscroll-behavior-y:none}
     <button class="fb-sync local" id="fb-btn" onclick="openFbSheet()">⬡ Local</button>
   </div>
   <!-- Tab bar -->
-  <div class="tab-bar">
-    <button class="tab-pill on" id="tpill-mensual" onclick="showTab('mensual')">📅 Por Mes</button>
-    <button class="tab-pill"    id="tpill-futuro"  onclick="showTab('futuro')">🔮 Futuros</button>
+  <div class="tab-bar" style="flex-wrap:wrap;gap:6px">
+    <button class="tab-pill on" id="tpill-mensual"  onclick="showTab('mensual')">&#128202; Por A&#241;o</button>
+    <button class="tab-pill"    id="tpill-xmes"     onclick="showTab('xmes')">&#128197; Por Mes</button>
+    <button class="tab-pill"    id="tpill-futuro"   onclick="showTab('futuro')">&#128302; Futuros</button>
+    <button class="tab-pill"    id="tpill-entregas" onclick="showTab('entregas')">&#128666; Entregas</button>
   </div>
   <!-- Content -->
   <div class="sarea" id="sarea-mensual">
@@ -309,9 +311,11 @@ body{-webkit-text-size-adjust:100%;overscroll-behavior-y:none}
     <button class="fb-sync local" id="fb-btn2" onclick="openFbSheet()">⬡ Local</button>
   </div>
   <!-- Tab bar -->
-  <div class="tab-bar">
-    <button class="tab-pill"    id="tpill2-mensual" onclick="showTab('mensual')">📅 Por Mes</button>
-    <button class="tab-pill on" id="tpill2-futuro"  onclick="showTab('futuro')">🔮 Futuros</button>
+  <div class="tab-bar" style="flex-wrap:wrap;gap:6px">
+    <button class="tab-pill"    id="tpill2-mensual"  onclick="showTab('mensual')">&#128202; Por A&#241;o</button>
+    <button class="tab-pill"    id="tpill2-xmes"     onclick="showTab('xmes')">&#128197; Por Mes</button>
+    <button class="tab-pill on" id="tpill2-futuro"   onclick="showTab('futuro')">&#128302; Futuros</button>
+    <button class="tab-pill"    id="tpill2-entregas" onclick="showTab('entregas')">&#128666; Entregas</button>
   </div>
   <!-- Content -->
   <div class="sarea" id="sarea-futuro">
@@ -337,6 +341,72 @@ body{-webkit-text-size-adjust:100%;overscroll-behavior-y:none}
     <div id="future-contracts"></div>
 
   </div><!-- /sarea-futuro -->
+</div>
+
+
+<!-- ═══════════════════════════════════════════════
+     SCREEN: POR MES
+═══════════════════════════════════════════════ -->
+<div id="sc-xmes" class="sc">
+  <div class="hhero">
+    <img id="hero-logo3" src="" alt="CASVEL">
+    <div><div class="hbrand">Por Mes</div><div class="hsub">Filtrar contratos</div></div>
+    <button class="fb-sync local" id="fb-btn3" onclick="openFbSheet()">&#x25e1; Local</button>
+  </div>
+  <div class="tab-bar" style="flex-wrap:wrap;gap:6px">
+    <button class="tab-pill"    id="tpill3-mensual"  onclick="showTab('mensual')">&#128202; Por A&#241;o</button>
+    <button class="tab-pill on" id="tpill3-xmes"     onclick="showTab('xmes')">&#128197; Por Mes</button>
+    <button class="tab-pill"    id="tpill3-futuro"   onclick="showTab('futuro')">&#128302; Futuros</button>
+    <button class="tab-pill"    id="tpill3-entregas" onclick="showTab('entregas')">&#128666; Entregas</button>
+  </div>
+  <div class="sarea" id="sarea-xmes">
+    <div class="year-nav" style="gap:10px;flex-wrap:wrap">
+      <div class="ynav-lbl">A&#241;o</div>
+      <div class="ynav-ctrl">
+        <button class="ynav-btn" onclick="changeXMesYear(-1)">&#8249;</button>
+        <div class="ynav-year" id="xmes-year">2026</div>
+        <button class="ynav-btn" onclick="changeXMesYear(1)">&#8250;</button>
+      </div>
+      <div class="ynav-lbl" style="margin-left:8px">Mes</div>
+      <select id="xmes-month" onchange="renderXMes()" style="padding:6px 10px;border:1.5px solid var(--border);border-radius:8px;font-family:inherit;font-size:13px;background:var(--white);outline:none"></select>
+    </div>
+    <div class="mgrid" id="xmes-cards"></div>
+    <div class="sec-hdr">
+      <div class="sec-lbl">Contratos del mes</div>
+      <div class="sec-count" id="xmes-count">0</div>
+    </div>
+    <div id="xmes-contracts"></div>
+  </div>
+</div>
+
+<!-- ═══════════════════════════════════════════════
+     SCREEN: ENTREGAS POR DIA
+═══════════════════════════════════════════════ -->
+<div id="sc-entregas" class="sc">
+  <div class="hhero">
+    <img id="hero-logo4" src="" alt="CASVEL">
+    <div><div class="hbrand">Entregas</div><div class="hsub">Por d&#237;a</div></div>
+    <button class="fb-sync local" id="fb-btn4" onclick="openFbSheet()">&#x25e1; Local</button>
+  </div>
+  <div class="tab-bar" style="flex-wrap:wrap;gap:6px">
+    <button class="tab-pill"    id="tpill4-mensual"  onclick="showTab('mensual')">&#128202; Por A&#241;o</button>
+    <button class="tab-pill"    id="tpill4-xmes"     onclick="showTab('xmes')">&#128197; Por Mes</button>
+    <button class="tab-pill"    id="tpill4-futuro"   onclick="showTab('futuro')">&#128302; Futuros</button>
+    <button class="tab-pill on" id="tpill4-entregas" onclick="showTab('entregas')">&#128666; Entregas</button>
+  </div>
+  <div class="sarea" id="sarea-entregas">
+    <div class="year-nav">
+      <div class="ynav-lbl">Fecha de entrega</div>
+      <input type="date" id="ent-fecha" onchange="renderEntregas()"
+        style="padding:6px 12px;border:1.5px solid var(--border);border-radius:8px;font-family:inherit;font-size:14px;background:var(--white);outline:none;color-scheme:light">
+    </div>
+    <div class="mgrid" id="ent-cards"></div>
+    <div class="sec-hdr">
+      <div class="sec-lbl">Contratos a entregar</div>
+      <div class="sec-count" id="ent-count">0</div>
+    </div>
+    <div id="ent-contracts"></div>
+  </div>
 </div>
 
 <!-- ── BOTTOM NAV ── -->
@@ -380,6 +450,8 @@ body{-webkit-text-size-adjust:100%;overscroll-behavior-y:none}
 /* ─── State ─────────────────────────────────────────────────── */
 var currentYear = new Date().getFullYear();
 var currentTab  = 'mensual';
+var xmesYear    = new Date().getFullYear();
+var xmesMonth   = new Date().getMonth()+1;
 var todayISO_val = todayISO();
 var todayDate    = new Date(todayISO_val + 'T00:00:00');
 
@@ -407,16 +479,20 @@ function daysDiff(iso){
   return Math.max(0, Math.round((d-todayDate)/(86400000)));
 }
 
-/* ─── Tab switching ─────────────────────────────────────────── */
+/* ─── Tab switching ──────────────────────────────────────────── */
+var ALL_TABS=['mensual','xmes','futuro','entregas'];
 function showTab(name){
-  currentTab = name;
-  el('sc-mensual').classList.toggle('on', name==='mensual');
-  el('sc-futuro').classList.toggle('on',  name==='futuro');
-  ['mensual','futuro'].forEach(function(t){
-    var p1=el('tpill-'+t), p2=el('tpill2-'+t);
-    if(p1) p1.classList.toggle('on',t===name);
-    if(p2) p2.classList.toggle('on',t===name);
+  currentTab=name;
+  ALL_TABS.forEach(function(t){
+    var sc=el('sc-'+t); if(sc) sc.classList.toggle('on',t===name);
   });
+  ['','2','3','4'].forEach(function(sfx){
+    ALL_TABS.forEach(function(t){
+      var p=el('tpill'+sfx+'-'+t); if(p) p.classList.toggle('on',t===name);
+    });
+  });
+  if(name==='xmes')     renderXMes();
+  if(name==='entregas') renderEntregas();
 }
 
 /* ─── Year nav ──────────────────────────────────────────────── */
@@ -668,7 +744,7 @@ function mCardFull(colorClass, icon, lbl, val, sub){
 function updateFbBadge(live){
   var cls = live?'fb-sync live':'fb-sync local';
   var txt = live?'● Firebase':'⬡ Local';
-  ['fb-btn','fb-btn2'].forEach(function(id){
+  ['fb-btn','fb-btn2','fb-btn3','fb-btn4'].forEach(function(id){
     var e=el(id);if(!e)return;
     e.className=cls; e.textContent=txt;
   });
@@ -713,23 +789,138 @@ function mFbDisconnect(){
   renderAll();
 }
 
-/* ─── Init ──────────────────────────────────────────────────── */
+/* ─── Init ──────────────────────────────────────────── */
 function renderAll(){
   renderMensual();
   renderFuturo();
 }
 
+/* ═══════════════════════════════════════════════════════════════
+   ADDED: POR MES
+═══════════════════════════════════════════════════════════════ */
+function changeXMesYear(d){ xmesYear+=d; el('xmes-year').textContent=xmesYear; renderXMes(); }
+
+function renderXMes(){
+  var yr=xmesYear;
+  var mo=parseInt((el('xmes-month')||{value:xmesMonth}).value)||xmesMonth;
+  el('xmes-year').textContent=yr;
+  var moKey=yr+'-'+pad2(mo);
+  var list=loadContracts().filter(function(c){
+    return (c.fEvento||'').startsWith(moKey);
+  }).sort(function(a,b){ return (a.fEvento||'').localeCompare(b.fEvento||''); });
+  var totBruto   =list.reduce(function(s,c){return s+(c.total||0);},0);
+  var totAnticipo=list.reduce(function(s,c){return s+(c.anticipo||0);},0);
+  var totTrl     =list.reduce(function(s,c){return s+(c.traslado||0);},0);
+  var totResta   =list.reduce(function(s,c){return s+(c.resta||0);},0);
+  el('xmes-count').textContent=list.length;
+  el('xmes-cards').innerHTML=
+    mCard('mc-blue','&#128176;','Total',mxn(totBruto),list.length+' contrato'+(list.length!==1?'s':''))+
+    mCard('mc-teal','&#128179;','Por cobrar',mxn(totResta),'Resta pendiente')+
+    mCard('mc-green','&#9989;','Anticipos',mxn(totAnticipo),'Recibidos')+
+    mCard('mc-gold','&#128666;','Traslados',mxn(totTrl),'Del mes');
+  if(list.length===0){
+    el('xmes-contracts').innerHTML=
+      '<div class="empty"><div class="empty-icon">&#128235;</div>'+
+      '<div class="empty-title">Sin contratos</div>'+
+      '<div class="empty-sub">No hay contratos para '+MONTHS_ES[mo-1]+' '+yr+'</div></div>';
+    return;
+  }
+  el('xmes-contracts').innerHTML=list.map(function(c){
+    var waNum=c.tel?(c.tel+'').replace(/\D/g,''):'';
+    var telLink=c.tel
+      ? '<a href="https://wa.me/'+waNum+'" target="_blank" style="color:#15803d;text-decoration:none">&#128172; '+c.tel+'</a>'
+      : '&mdash;';
+    var locLink=c.ubicacion
+      ? ' &middot; <a href="'+c.ubicacion+'" target="_blank" style="text-decoration:none">&#128205; Mapa</a>'
+      : '';
+    var summ=itemsSummary(c.items);
+    return '<div class="frow">'+
+      '<div class="frow-top">'+
+        '<div>'+
+          '<div class="frow-name">'+(c.nombre||'Sin nombre')+'</div>'+
+          '<div class="frow-date">'+fmtDate(c.fEvento)+'</div>'+
+          '<div style="font-size:12px;margin-top:3px">'+telLink+locLink+'</div>'+
+          (summ?'<div style="font-size:11px;color:var(--mid);margin-top:4px;line-height:1.4">'+summ+'</div>':'')+
+        '</div>'+
+        '<div class="frow-total">'+mxn(c.total||0)+'</div>'+
+      '</div>'+
+      '<div class="frow-metrics">'+
+        '<div class="fmet"><div class="fmet-lbl">Resta</div><div class="fmet-val">'+mxn(c.resta||0)+'</div></div>'+
+        '<div class="fmet"><div class="fmet-lbl">Anticipo</div><div class="fmet-val">'+mxn(c.anticipo||0)+'</div></div>'+
+      '</div>'+
+    '</div>';
+  }).join('');
+}
+
+/* ═══════════════════════════════════════════════════════════════
+   ADDED: ENTREGAS POR DIA
+═══════════════════════════════════════════════════════════════ */
+function renderEntregas(){
+  var fecha=(el('ent-fecha')||{value:todayISO_val}).value||todayISO_val;
+  var list=loadContracts().filter(function(c){
+    return c.fEvento===fecha && resolveStatus(c)!=='cancelado';
+  }).sort(function(a,b){ return (a.hEntrega||'').localeCompare(b.hEntrega||''); });
+  el('ent-count').textContent=list.length;
+  var totBruto=list.reduce(function(s,c){return s+(c.total||0);},0);
+  var totResta=list.reduce(function(s,c){return s+(c.resta||0);},0);
+  el('ent-cards').innerHTML=
+    mCard('mc-blue','&#128666;','Entregas',list.length,'Para '+fmtDate(fecha))+
+    mCard('mc-green','&#128176;','Total',mxn(totBruto),mxn(totResta)+' por cobrar');
+  if(list.length===0){
+    el('ent-contracts').innerHTML=
+      '<div class="empty"><div class="empty-icon">&#128230;</div>'+
+      '<div class="empty-title">Sin entregas</div>'+
+      '<div class="empty-sub">No hay contratos a entregar el '+fmtDate(fecha)+'</div></div>';
+    return;
+  }
+  el('ent-contracts').innerHTML=list.map(function(c){
+    var waNum=c.tel?(c.tel+'').replace(/\D/g,''):'';
+    var telLink=c.tel
+      ? '<a href="https://wa.me/'+waNum+'" target="_blank" style="color:#15803d;text-decoration:none;font-weight:700">&#128172; '+c.tel+'</a>'
+      : '&mdash;';
+    var locBtn=c.ubicacion
+      ? '<a href="'+c.ubicacion+'" target="_blank" style="display:inline-flex;align-items:center;gap:4px;'+
+          'background:#dbeafe;color:var(--blue);padding:5px 10px;border-radius:8px;'+
+          'text-decoration:none;font-size:12px;font-weight:700;margin-top:6px">&#128205; Abrir ubicaci&#243;n</a>'
+      : '';
+    var summ=itemsSummary(c.items);
+    var entH=c.hEntregaL||c.hEntrega||'';
+    var recolH=c.hRecolL||c.hRecol||'';
+    return '<div class="frow">'+
+      '<div class="frow-top">'+
+        '<div style="flex:1">'+
+          '<div class="frow-name">'+(c.nombre||'Sin nombre')+'</div>'+
+          '<div style="font-size:13px;margin-top:4px">'+telLink+'</div>'+
+          (entH?'<div style="font-size:12px;color:var(--mid);margin-top:3px">&#128336; Entrega: <strong>'+entH+'</strong>'+(recolH?' &middot; Recol: '+recolH:'')+'</div>':'')+
+          (summ?'<div style="font-size:12px;margin-top:6px;padding:6px 8px;background:var(--light);border-radius:6px">&#128230; '+summ+'</div>':'')+
+          (locBtn?'<div>'+locBtn+'</div>':'')+
+        '</div>'+
+        '<div style="text-align:right;flex-shrink:0;margin-left:8px">'+
+          '<div class="frow-total">'+mxn(c.total||0)+'</div>'+
+          '<div style="font-size:11px;color:var(--mid);margin-top:3px">resta '+mxn(c.resta||0)+'</div>'+
+        '</div>'+
+      '</div>'+
+    '</div>';
+  }).join('');
+}
+
 document.addEventListener('DOMContentLoaded', function(){
-  var logoSrc = 'data:image/jpeg;base64,'+LOGO_B64;
+  var logoSrc='data:image/jpeg;base64,'+LOGO_B64;
   el('hero-logo').src  = logoSrc;
   el('hero-logo2').src = logoSrc;
-
+  if(el('hero-logo3')) el('hero-logo3').src=logoSrc;
+  if(el('hero-logo4')) el('hero-logo4').src=logoSrc;
+  var ms=el('xmes-month');
+  if(ms) ms.innerHTML=MONTHS_ES.map(function(n,i){
+    return '<option value="'+(i+1)+'"'+(i+1===xmesMonth?' selected':'')+'>'+n+'</option>';
+  }).join('');
+  if(el('xmes-year')) el('xmes-year').textContent=xmesYear;
+  if(el('ent-fecha')) el('ent-fecha').value=todayISO_val;
   onContractsChange(function(){ renderAll(); });
-
-  var cfg = fbGetConfig();
+  var cfg=fbGetConfig();
   if(cfg){
     fbInit(cfg,function(err){
-      if(err){showToast('⚠️ Firebase: '+err.message);updateFbBadge(false);}
+      if(err){showToast('&#9888; Firebase: '+err.message);updateFbBadge(false);}
       else updateFbBadge(true);
     });
   } else {
@@ -737,6 +928,7 @@ document.addEventListener('DOMContentLoaded', function(){
     renderAll();
   }
 });
+
 </script>
 </body>
 </html>

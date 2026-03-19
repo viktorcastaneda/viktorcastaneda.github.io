@@ -241,6 +241,12 @@ input[type=date].fi{color-scheme:light}
 .fb-btn-d{background:#fde8e8;color:var(--red)}
 .fb-btn-c{background:var(--light);color:var(--mid)}
 
+/* ADDED: status badge */
+.status-badge{display:inline-block;padding:2px 8px;border-radius:8px;font-size:10px;font-weight:700;vertical-align:middle}
+/* ADDED: inventory warning */
+.inv-warn{background:#fef9c3;border:1.5px solid #fbbf24;border-radius:10px;
+  padding:10px 14px;margin-bottom:12px;font-size:13px;color:#92400e;display:none}
+.inv-warn.on{display:block}
 .mempty{text-align:center;padding:52px 20px;color:var(--mid)}
 .mempty .ei{font-size:48px;margin-bottom:10px}
 .mempty .et{font-size:16px;font-weight:600;margin-bottom:4px}
@@ -321,6 +327,16 @@ if(!/[?&]m=1/.test(location.search) &&
           <input type="tel" class="fi" id="m-tel" autocomplete="tel" placeholder="614 123 4567"></div>
         <div class="fg"><label class="flb">Dirección del evento</label>
           <input type="text" class="fi" id="m-dir" placeholder="Calle, colonia, ciudad"></div>
+        <div class="fg"><label class="flb">Status del contrato</label>
+          <select class="fi" id="m-status">
+            <option value="abierto">&#9679; Abierto</option>
+            <option value="cerrado">&#9679; Cerrado</option>
+            <option value="cancelado">&#9679; Cancelado</option>
+          </select></div>
+        <div class="fg"><label class="flb">Ubicaci&#243;n del evento (Maps / Waze / GPS)</label>
+          <input type="url" class="fi" id="m-ubicacion" placeholder="https://maps.google.com/..."></div>
+        <div class="fg"><label class="flb">Notas</label>
+          <input type="text" class="fi" id="m-notas" placeholder="Observaciones del contrato..."></div>
       </div>
     </div>
 
@@ -346,6 +362,7 @@ if(!/[?&]m=1/.test(location.search) &&
       <div class="shdr"><div class="snum">3</div>
         <div><div class="sttl">Mobiliario</div><div class="ssub">Selecciona las cantidades</div></div>
       </div>
+      <div class="inv-warn" id="m-inv-warn"></div>
       <div class="card"><div id="m-items"></div></div>
     </div>
 
@@ -581,9 +598,32 @@ function goStep(n){
   M_step=n;
   var c=el('ws'+n); if(c) c.style.display='block';
   updateProg();
+  if(n===3) mUpdateInvWarn();
   if(n===4) mCalc();
   if(n===5) renderSummary();
   var sa=el('wiz-scroll'); if(sa) sa.scrollTop=0;
+}
+
+/* ADDED: inventory warning for mobile wizard step 3 */
+function mUpdateInvWarn(){
+  var iw=el('m-inv-warn'); if(!iw) return;
+  var fEvento=gv('m-fevento');
+  if(!fEvento){ iw.textContent=''; iw.classList.remove('on'); return; }
+  var items=ITEMS.map(function(it,i){
+    var q=parseInt((el('mq'+i)||{textContent:'0'}).textContent)||0;
+    var p=parseFloat((el('mp'+i)||{value:it.price}).value)||it.price;
+    return {qty:q,price:p,amt:q*p};
+  });
+  var conflicts=checkInventory(items,fEvento,M_editId);
+  if(conflicts.length>0){
+    iw.innerHTML='&#9888;&#65039; Inventario excedido para '+fmtDate(fEvento)+': '+
+      conflicts.map(function(x){
+        return '<strong>'+x.name+'</strong> ('+x.used+'/'+x.max+')';
+      }).join(', ')+'<br><small>Puedes guardar de todas formas.</small>';
+    iw.classList.add('on');
+  } else {
+    iw.textContent=''; iw.classList.remove('on');
+  }
 }
 function wizNext(){
   if(M_step===1 && !gv('m-nombre').trim()){ showToast('⚠️ Ingresa el nombre del cliente'); el('m-nombre').focus(); return; }
@@ -619,6 +659,7 @@ function mQty(i,d){
   var n=Math.max(0,(parseInt(e.textContent)||0)+d);
   e.textContent=n; mUpdAmt(i);
   if(navigator.vibrate) navigator.vibrate(8);
+  mUpdateInvWarn();
 }
 function mUpdAmt(i){
   var q=parseInt((el('mq'+i)||{textContent:'0'}).textContent)||0;
@@ -663,7 +704,10 @@ function mCollect(){
     fEvento:gv('m-fevento'), hEntrega:gv('m-hentrega'), hEntregaL:sl('m-hentrega'),
     hRecol:gv('m-hrecol'), hRecolL:sl('m-hrecol'),
     traslado:parseFloat(gv('m-traslado'))||0,
-    anticipo:ant, total:total, resta:total-ant, items:items
+    anticipo:ant, total:total, resta:total-ant, items:items,
+    status:gv('m-status')||'abierto',
+    ubicacion:(gv('m-ubicacion')||'').trim(),
+    notas:(gv('m-notas')||'').trim()
   };
 }
 
@@ -673,6 +717,9 @@ function mPopulate(d){
   sv('m-dir',d.dir||'');        sv('m-cdate',d.cDate||todayISO());
   sv('m-fevento',d.fEvento||'');sv('m-hentrega',d.hEntrega||'');
   sv('m-hrecol',d.hRecol||'');  sv('m-traslado',d.traslado||0);
+  sv('m-status',d.status||'abierto');
+  sv('m-ubicacion',d.ubicacion||'');
+  sv('m-notas',d.notas||'');
   var ai=el('m-anticipo'); if(ai){ ai.value=(d.anticipo||0).toFixed(2); ai.removeAttribute('data-manual'); }
   if(d.items) d.items.forEach(function(r,i){
     var qe=el('mq'+i), pe=el('mp'+i);
@@ -739,6 +786,10 @@ function startNew(){
   sv('m-nombre',''); sv('m-tel',''); sv('m-dir','');
   sv('m-cdate',todayISO()); sv('m-fevento','');
   sv('m-hentrega',''); sv('m-hrecol',''); sv('m-traslado',0);
+  sv('m-status','abierto');
+  sv('m-ubicacion','');
+  sv('m-notas','');
+  var iw=el('m-inv-warn'); if(iw){ iw.textContent=''; iw.classList.remove('on'); }
   var ai=el('m-anticipo'); if(ai){ ai.value='0'; ai.removeAttribute('data-manual'); }
   ITEMS.forEach(function(it,i){
     var qe=el('mq'+i), pe=el('mp'+i), ae=el('ma'+i);
@@ -785,18 +836,29 @@ function renderHist(){
 }
 function cardHTML(c){
   var ni=(c.items||[]).filter(function(r){return r.qty>0;}).length;
+  var waNum=c.tel?(c.tel+'').replace(/\D/g,''):'';
+  var telHtml=c.tel
+    ? '<a href="https://wa.me/'+waNum+'" target="_blank" style="color:var(--green);text-decoration:none">&#128172; '+c.tel+'</a>'
+    : '';
+  var locHtml=c.ubicacion
+    ? '<a href="'+c.ubicacion+'" target="_blank" style="text-decoration:none">&#128205; Mapa</a>'
+    : '';
   return '<div class="ccard">'+
     '<div class="cctop">'+
       '<div><div class="ccname">'+(c.nombre||'Sin nombre')+'</div>'+
-        '<div class="ccmeta"><span>📅 '+fmtDate(c.fEvento)+'</span>'+
-          (c.tel?'<span>📞 '+c.tel+'</span>':'')+
-          '<span>📦 '+ni+' artículos</span></div></div>'+
+        '<div class="ccmeta">'+
+          '<span>&#128197; '+fmtDate(c.fEvento)+'</span>'+
+          (telHtml?'<span>'+telHtml+'</span>':'')+
+          (locHtml?'<span>'+locHtml+'</span>':'')+
+          '<span>&#128230; '+ni+' artículos</span>'+
+          '<span>'+statusBadgeHTML(c)+'</span>'+
+        '</div></div>'+
       '<div class="cctotal">$'+(c.total||0).toLocaleString('es-MX',{minimumFractionDigits:2})+'</div>'+
     '</div>'+
     '<div class="ccacts">'+
-      '<button class="ccbtn cce" onclick="mEdit(\''+c.id+'\')">✏️ Editar</button>'+
-      '<button class="ccbtn ccx" onclick="qExp(\''+c.id+'\')">⬇️ Exportar</button>'+
-      '<button class="ccbtn ccd" onclick="askDel(\''+c.id+'\')">🗑</button>'+
+      '<button class="ccbtn cce" onclick="mEdit(\''+c.id+'\')">&#9999;&#65039; Editar</button>'+
+      '<button class="ccbtn ccx" onclick="qExp(\''+c.id+'\')">&#11015;&#65039; Exportar</button>'+
+      '<button class="ccbtn ccd" onclick="askDel(\''+c.id+'\')">&#128465;</button>'+
     '</div></div>';
 }
 function mempty(t,m){ return '<div class="mempty"><div class="ei">📭</div><div class="et">'+t+'</div><div class="es">'+m+'</div></div>'; }

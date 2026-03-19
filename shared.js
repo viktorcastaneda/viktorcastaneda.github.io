@@ -322,6 +322,7 @@ async function buildDOCX(d){
 ═══════════════════════════════════════════════════════════════════════ */
 var A4_CSS = "*{box-sizing:border-box;margin:0;padding:0}\nbody,html{margin:0;padding:0}\n.a4p{width:794px;height:auto;background:#fff;padding:24px 38px 20px;font-family:Arial,sans-serif;font-size:10pt;display:block}\n.chdr{display:flex;align-items:flex-start;gap:10px;margin-bottom:0.3em}\n.clogo{width:70px;flex-shrink:0}\n.chdrr{flex:1}\n.ctitle{font-size:1.25em;font-weight:bold;color:#2563a8;line-height:1.2;margin-bottom:0.2em}\n.cdate{font-size:0.85em;text-align:right;margin-top:0.2em}\n.ccontact{color:#2563a8;font-size:0.85em;margin:0.2em 0 0.5em}\n.csh1{color:#2563a8;font-weight:bold;font-size:0.9em;text-transform:uppercase;border-bottom:1.5px solid #2563a8;padding-bottom:0.1em;margin:0.5em 0 0.3em}\n.csh2{color:#2563a8;font-weight:bold;font-size:0.95em;margin:0.5em 0 0.3em}\n.cdt{width:100%;border-collapse:collapse;margin-bottom:0.4em}\n.cdt td{padding:0.2em 0;font-size:0.85em;vertical-align:bottom}\n.cfl{display:flex;align-items:flex-end;gap:0.3em;padding-right:0.6em}\n.clbl{white-space:nowrap;font-size:1em;font-family:Arial}\n.cval{flex:1;border:none;border-bottom:1px solid #444;font-family:Arial;font-size:1em;color:#000;padding:0 0.2em 0.1em;min-width:20px}\n.cmob{width:100%;border-collapse:collapse;font-size:0.8em;table-layout:fixed}\n.cmob thead tr{background:#2563a8;color:#fff}\n.cmob thead th{padding:0.3em 0.5em;font-weight:bold;text-align:center;border:1px solid #2563a8;font-size:0.95em}\n.cmob thead th.thl{text-align:left}\n.cmob tbody tr.odd{background:#dce6f1}\n.cmob tbody tr.even{background:#fff}\n.cmob tbody td{padding:0.25em 0.5em;border:1px solid #b8cce4;vertical-align:middle}\n.cmob tbody td.tdesc{font-weight:bold}\n.cmob tbody td.tnum{text-align:center}\n.cmob tfoot td{border:1px solid #b8cce4;padding:0.25em 0.5em}\n.cmob tfoot tr.fwht td{background:#fff}\n.cmob tfoot tr.falt td{background:#dce6f1}\n.cmob tfoot tr.fbld td{background:#dce6f1;font-weight:bold}\n.rlbl{text-align:right;font-weight:bold}\n.ccl,.ccu{margin:0.3em 0 0.5em}\n.ccl ol,.ccu ol{padding-left:1.6em}\n.ccl li,.ccu li{margin-bottom:0.1em;line-height:1.3;text-align:justify;font-size:0.75em}\n.csig{width:100%;border-collapse:collapse;margin-top:1.2em}\n.csigl{border-bottom:1px solid #000;height:2em}\n.csigt{text-align:center;font-size:0.8em;padding-top:0.2em}\n.cfoot{text-align:right;font-size:0.8em;color:#555;margin-top:0.5em}";
 
+
 var A4_W = 794;   /* ancho A4 a 96 dpi */
 var A4_H = 1123;  /* alto  A4 a 96 dpi */
 
@@ -576,4 +577,109 @@ function savePDF(d, filename){
       document.head.appendChild(s);
     }
   });
+}
+
+/* ═══════════════════════════════════════════════════════════════════════
+   ADDED: Inventario diario, validación y status
+═══════════════════════════════════════════════════════════════════════ */
+
+/* ── Inventario disponible por día (unidades totales por recurso) ── */
+var DAILY_INVENTORY={
+  mantel_rect:10, mantel_camino:10, sillas_negras:72, mesa_180:10,
+  mesa_inf:10, sillas_tiffany:48, sillas_colors:56,
+  bb_bebes:1, bb_castillo_colors:1, bb_caramelo:1,
+  bb_resbaladilla:1, area_infantil:1
+};
+
+/* ── Recursos que consume cada ITEMS[i] por unidad pedida ── */
+var ITEM_RESOURCES=[
+  /* 0  Mantel rect      */ [['mantel_rect',1]],
+  /* 1  Mantel camino    */ [['mantel_camino',1]],
+  /* 2  Sillas negras    */ [['sillas_negras',1]],
+  /* 3  Mesa 1.80        */ [['mesa_180',1]],
+  /* 4  Mesa inf 1.20    */ [['mesa_inf',1]],
+  /* 5  Juego Tiffany    */ [['mesa_inf',1],['sillas_tiffany',8]],
+  /* 6  Juego Colors     */ [['mesa_inf',1],['sillas_colors',8]],
+  /* 7  Juego Metálicas  */ [['mesa_180',1],['sillas_negras',8]],
+  /* 8  BB bebés         */ [['bb_bebes',1]],
+  /* 9  BB Castillo Col  */ [['bb_castillo_colors',1]],
+  /* 10 BB Caramelo      */ [['bb_caramelo',1]],
+  /* 11 BB Resbaladilla  */ [['bb_resbaladilla',1]],
+  /* 12 Área infantil    */ [['area_infantil',1]]
+];
+
+var RESOURCE_NAMES={
+  mantel_rect:'Manteles rect.',mantel_camino:'Manteles camino',
+  sillas_negras:'Sillas negras',mesa_180:'Mesas 1.80',mesa_inf:'Mesas inf.',
+  sillas_tiffany:'Sillas Tiffany inf.',sillas_colors:'Sillas Colors inf.',
+  bb_bebes:'BB bebés',bb_castillo_colors:'BB Castillo Colors',
+  bb_caramelo:'BB Caramelo',bb_resbaladilla:'BB Resbaladilla',
+  area_infantil:'Área infantil'
+};
+
+/* ── Status efectivo de un contrato (no muta el objeto) ── */
+function resolveStatus(c){
+  var s=c.status||'abierto';
+  if(s==='cancelado') return 'cancelado';
+  if(s==='cerrado')   return 'cerrado';
+  if(c.fEvento){
+    var ev=new Date(c.fEvento+'T00:00:00');
+    var hoy=new Date(todayISO()+'T00:00:00');
+    if((hoy-ev)/86400000>5) return 'cerrado';
+  }
+  return 'abierto';
+}
+
+/* ── Verificar conflictos de inventario ──────────────────────
+   items      : [{qty,price,amt}×13]  — ítems del nuevo/editado contrato
+   fEvento    : 'YYYY-MM-DD'
+   excludeId  : id a ignorar al editar
+   Retorna array de {key,name,used,max} con recursos excedidos.        */
+function checkInventory(items,fEvento,excludeId){
+  if(!fEvento) return [];
+  var contracts=loadContracts().filter(function(c){
+    return c.fEvento===fEvento&&c.id!==excludeId&&resolveStatus(c)!=='cancelado';
+  });
+  var usage={};
+  contracts.forEach(function(c){
+    (c.items||[]).forEach(function(r,i){
+      if(!r||!(r.qty>0)) return;
+      ITEM_RESOURCES[i].forEach(function(res){
+        usage[res[0]]=(usage[res[0]]||0)+r.qty*res[1];
+      });
+    });
+  });
+  (items||[]).forEach(function(r,i){
+    if(!r||!(r.qty>0)) return;
+    ITEM_RESOURCES[i].forEach(function(res){
+      usage[res[0]]=(usage[res[0]]||0)+r.qty*res[1];
+    });
+  });
+  var conflicts=[];
+  Object.keys(usage).forEach(function(key){
+    var max=DAILY_INVENTORY[key];
+    if(max!==undefined&&usage[key]>max)
+      conflicts.push({key:key,name:RESOURCE_NAMES[key]||key,used:usage[key],max:max});
+  });
+  return conflicts;
+}
+
+/* ── Badge HTML de status (tablas y tarjetas) ── */
+function statusBadgeHTML(c){
+  var s=resolveStatus(c);
+  var styles={
+    abierto: 'background:#dcfce7;color:#15803d',
+    cerrado: 'background:#f1f5f9;color:#475569',
+    cancelado:'background:#fee2e2;color:#b91c1c'
+  };
+  var labels={abierto:'Abierto',cerrado:'Cerrado',cancelado:'Cancelado'};
+  return '<span class="status-badge" style="'+styles[s]+'">'+labels[s]+'</span>';
+}
+
+/* ── Resumen compacto de ítems (para fichas de reporte) ── */
+function itemsSummary(items){
+  return (items||[]).map(function(r,i){
+    if(!r||!r.qty||r.qty<=0) return '';
+    return r.qty+'\u00d7 '+ITEM_ABBREV[i];
+  }).filter(Boolean).join(' \u00b7 ');
 }
