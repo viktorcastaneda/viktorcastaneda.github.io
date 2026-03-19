@@ -261,6 +261,24 @@ input[type=date].fi{color-scheme:light}
 .inv-conflict-nums{font-weight:700;color:var(--red)}
 /* ADDED: disabled next button */
 .wbtn:disabled{opacity:.4;cursor:not-allowed;transform:none!important}
+/* ADDED: inventory viewer sheet */
+.inv-sheet-bg{display:none;position:fixed;inset:0;background:rgba(0,0,0,.55);z-index:360}
+.inv-sheet-bg.on{display:block}
+.inv-sheet{position:fixed;left:0;right:0;bottom:0;z-index:361;background:var(--white);
+  border-radius:20px 20px 0 0;padding:0 20px calc(20px + var(--sb));
+  transform:translateY(100%);transition:transform .3s cubic-bezier(.32,.72,0,1);
+  max-height:82vh;overflow-y:auto}
+.inv-sheet.on{transform:translateY(0)}
+.inv-row{display:flex;align-items:center;justify-content:space-between;
+  padding:9px 0;border-bottom:1px solid var(--border);gap:8px}
+.inv-row:last-child{border-bottom:none}
+.inv-row-name{font-size:13px;font-weight:500;color:var(--dark);flex:1;min-width:0}
+.inv-row-nums{display:flex;gap:6px;flex-shrink:0;align-items:center}
+.inv-pill{font-size:11px;font-weight:700;padding:3px 8px;border-radius:8px;white-space:nowrap}
+.inv-pill-ok{background:#dcfce7;color:#15803d}
+.inv-pill-low{background:#fef9c3;color:#854d0e}
+.inv-pill-out{background:#fee2e2;color:#b91c1c}
+.inv-pill-used{background:var(--light);color:var(--mid)}
 .mempty{text-align:center;padding:52px 20px;color:var(--mid)}
 .mempty .ei{font-size:48px;margin-bottom:10px}
 .mempty .et{font-size:16px;font-weight:600;margin-bottom:4px}
@@ -375,6 +393,7 @@ if(!/[?&]m=1/.test(location.search) &&
     <div id="ws3" style="display:none">
       <div class="shdr"><div class="snum">3</div>
         <div><div class="sttl">Mobiliario</div><div class="ssub">Selecciona las cantidades</div></div>
+        <button onclick="openInvSheet()" style="margin-left:auto;background:var(--bbg);border:none;border-radius:10px;padding:8px 12px;font-size:12px;font-weight:700;color:var(--blue);cursor:pointer;white-space:nowrap">&#128230; Inventario</button>
       </div>
       <div class="inv-warn" id="m-inv-warn"></div>
       <div class="card"><div id="m-items"></div></div>
@@ -425,6 +444,17 @@ if(!/[?&]m=1/.test(location.search) &&
     <div class="inv-conflict-list" id="inv-conflict-list"></div>
     <button class="wbtn wbtn-d" onclick="closeInvModal()" style="margin-bottom:10px">Corregir cantidades</button>
   </div>
+</div>
+
+
+<!-- ═══ INVENTORY VIEWER SHEET ══════════════════════════════════ -->
+<div class="inv-sheet-bg" id="inv-sheet-bg" onclick="closeInvSheet()"></div>
+<div class="inv-sheet" id="inv-sheet">
+  <div class="shandle"></div>
+  <div class="sttitle">&#128230; Inventario disponible</div>
+  <div class="stsub" id="inv-sheet-sub">Cargando...</div>
+  <div id="inv-sheet-rows"></div>
+  <button class="wbtn wbtn-g" onclick="closeInvSheet()" style="margin-top:10px">Cerrar</button>
 </div>
 
 <!-- ═══ EXPORT SHEET ══════════════════════════════════════════════════ -->
@@ -616,8 +646,6 @@ function updateProg(){
   if(next){
     if(M_step===M_steps){ next.textContent='⬇ Exportar'; next.className='wbtn wbtn-exp'; }
     else               { next.textContent='Siguiente →'; next.className='wbtn wbtn-next'; }
-    // ADDED: re-apply disabled state when returning to step 3
-    next.disabled = (M_step===3 && M_invConflicts.length>0);
   }
 }
 
@@ -633,7 +661,7 @@ function goStep(n){
   var sa=el('wiz-scroll'); if(sa) sa.scrollTop=0;
 }
 
-/* MODIFIED: inventory warning — blocks next/save when conflicts exist */
+/* MODIFIED: inventory warning — blocks next/save, shows modal immediately */
 var M_invConflicts = [];  // shared conflict state
 
 function mGetCurrentItems(){
@@ -642,28 +670,6 @@ function mGetCurrentItems(){
     var p=parseFloat((el('mp'+i)||{value:it.price}).value)||it.price;
     return {qty:q,price:p,amt:q*p};
   });
-}
-
-function mUpdateInvWarn(){
-  var iw=el('m-inv-warn'); if(!iw) return;
-  var fEvento=gv('m-fevento');
-  var btn=el('wbtn-next');
-  if(!fEvento){
-    iw.textContent=''; iw.classList.remove('on');
-    M_invConflicts=[];
-    if(btn) btn.disabled=false;
-    return;
-  }
-  M_invConflicts=checkInventory(mGetCurrentItems(),fEvento,M_editId);
-  if(M_invConflicts.length>0){
-    iw.innerHTML='&#9888;&#65039; <strong>Inventario excedido</strong> — toca el bot&#243;n Siguiente para ver detalles.';
-    iw.classList.add('on');
-    if(btn && M_step===3) btn.disabled=true;
-  } else {
-    iw.textContent=''; iw.classList.remove('on');
-    M_invConflicts=[];
-    if(btn) btn.disabled=false;
-  }
 }
 
 function openInvModal(){
@@ -675,7 +681,7 @@ function openInvModal(){
     var over=x.used-x.max;
     return '<div class="inv-conflict-item">'+
       '<span class="inv-conflict-name">'+x.name+'</span>'+
-      '<span class="inv-conflict-nums">'+x.used+' / '+x.max+' &nbsp;(+'+over+' de m&#225;s)</span>'+
+      '<span class="inv-conflict-nums">'+x.used+'/'+x.max+' &nbsp;(+'+over+' de m&#225;s)</span>'+
     '</div>';
   }).join('');
   el('inv-modal-bg').classList.add('on');
@@ -683,9 +689,104 @@ function openInvModal(){
 function closeInvModal(){
   el('inv-modal-bg').classList.remove('on');
 }
+
+/* ADDED: inventory viewer sheet */
+function openInvSheet(){
+  var fEvento=gv('m-fevento');
+  var sub=el('inv-sheet-sub');
+  var rows=el('inv-sheet-rows');
+  if(!rows) return;
+
+  // Compute usage from OTHER contracts on the same date (excluding current)
+  var usageOthers={};
+  if(fEvento){
+    loadContracts().filter(function(c){
+      return c.fEvento===fEvento && c.id!==M_editId && resolveStatus(c)!=='cancelado';
+    }).forEach(function(c){
+      (c.items||[]).forEach(function(r,i){
+        if(!r||!(r.qty>0)) return;
+        ITEM_RESOURCES[i].forEach(function(res){
+          usageOthers[res[0]]=(usageOthers[res[0]]||0)+r.qty*res[1];
+        });
+      });
+    });
+  }
+
+  // Compute usage from THIS contract
+  var usageMine={};
+  mGetCurrentItems().forEach(function(r,i){
+    if(!r||!(r.qty>0)) return;
+    ITEM_RESOURCES[i].forEach(function(res){
+      usageMine[res[0]]=(usageMine[res[0]]||0)+r.qty*res[1];
+    });
+  });
+
+  if(sub){
+    sub.textContent = fEvento
+      ? 'Para el evento del ' + fmtDate(fEvento)
+      : 'Sin fecha de evento seleccionada — mostrando máximos';
+  }
+
+  var keys=Object.keys(DAILY_INVENTORY);
+  rows.innerHTML=keys.map(function(key){
+    var max   = DAILY_INVENTORY[key];
+    var others= usageOthers[key]||0;
+    var mine  = usageMine[key]||0;
+    var avail = max - others - mine;
+    var pillCls, pillTxt;
+    if(avail<=0){
+      pillCls='inv-pill-out'; pillTxt='Agotado';
+    } else if(avail <= Math.ceil(max*0.25)){
+      pillCls='inv-pill-low'; pillTxt=avail+' disp.';
+    } else {
+      pillCls='inv-pill-ok'; pillTxt=avail+' disp.';
+    }
+    var usedTxt = (others+mine)>0
+      ? '<span class="inv-pill inv-pill-used">'+(others+mine)+' usados</span>'
+      : '';
+    return '<div class="inv-row">'+
+      '<span class="inv-row-name">'+(RESOURCE_NAMES[key]||key)+'</span>'+
+      '<div class="inv-row-nums">'+
+        usedTxt+
+        '<span class="inv-pill '+pillCls+'">'+pillTxt+'</span>'+
+        '<span style="font-size:11px;color:var(--mid);min-width:28px;text-align:right">/ '+max+'</span>'+
+      '</div>'+
+    '</div>';
+  }).join('');
+
+  el('inv-sheet-bg').classList.add('on');
+  el('inv-sheet').classList.add('on');
+}
+function closeInvSheet(){
+  el('inv-sheet-bg').classList.remove('on');
+  el('inv-sheet').classList.remove('on');
+}
+
+function mUpdateInvWarn(){
+  var iw=el('m-inv-warn'); if(!iw) return;
+  var fEvento=gv('m-fevento');
+  if(!fEvento){
+    iw.textContent=''; iw.classList.remove('on');
+    M_invConflicts=[];
+    return;
+  }
+  var prev=M_invConflicts.length;
+  M_invConflicts=checkInventory(mGetCurrentItems(),fEvento,M_editId);
+  if(M_invConflicts.length>0){
+    iw.innerHTML='&#9888;&#65039; <strong>Inventario excedido</strong> — no se puede avanzar hasta corregir.';
+    iw.classList.add('on');
+    // Show modal automatically the first time a conflict appears
+    if(prev===0) openInvModal();
+  } else {
+    iw.textContent=''; iw.classList.remove('on');
+    M_invConflicts=[];
+  }
+}
+
 function wizNext(){
   if(M_step===1 && !gv('m-nombre').trim()){ showToast('⚠️ Ingresa el nombre del cliente'); el('m-nombre').focus(); return; }
-  if(M_step===3 && M_invConflicts.length>0){ openInvModal(); return; } // ADDED: block if inventory conflict
+  // Block step 3 → 4 if inventory conflict; re-open modal so user sees details
+  if(M_step===3 && M_invConflicts.length>0){ openInvModal(); return; }
   if(M_step===M_steps){ openSheet(); return; }
   goStep(M_step+1);
 }
