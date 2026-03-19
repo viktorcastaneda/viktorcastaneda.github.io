@@ -247,6 +247,20 @@ input[type=date].fi{color-scheme:light}
 .inv-warn{background:#fef9c3;border:1.5px solid #fbbf24;border-radius:10px;
   padding:10px 14px;margin-bottom:12px;font-size:13px;color:#92400e;display:none}
 .inv-warn.on{display:block}
+/* ADDED: inventory conflict modal */
+.inv-modal-bg{display:none;position:fixed;inset:0;background:rgba(0,0,0,.55);z-index:350;align-items:flex-end;justify-content:center}
+.inv-modal-bg.on{display:flex}
+.inv-modal{background:var(--white);border-radius:20px 20px 0 0;width:100%;padding:0 20px calc(24px + var(--sb))}
+.inv-modal-icon{font-size:40px;text-align:center;margin:20px 0 8px}
+.inv-modal-title{font-size:17px;font-weight:700;color:var(--red);text-align:center;margin-bottom:6px}
+.inv-modal-sub{font-size:13px;color:var(--mid);text-align:center;margin-bottom:16px;line-height:1.5}
+.inv-conflict-list{background:var(--light);border-radius:12px;padding:12px 14px;margin-bottom:18px}
+.inv-conflict-item{display:flex;justify-content:space-between;align-items:center;padding:7px 0;border-bottom:1px solid var(--border);font-size:13px}
+.inv-conflict-item:last-child{border-bottom:none}
+.inv-conflict-name{font-weight:600;color:var(--dark)}
+.inv-conflict-nums{font-weight:700;color:var(--red)}
+/* ADDED: disabled next button */
+.wbtn:disabled{opacity:.4;cursor:not-allowed;transform:none!important}
 .mempty{text-align:center;padding:52px 20px;color:var(--mid)}
 .mempty .ei{font-size:48px;margin-bottom:10px}
 .mempty .et{font-size:16px;font-weight:600;margin-bottom:4px}
@@ -397,6 +411,19 @@ if(!/[?&]m=1/.test(location.search) &&
   <div class="bbar">
     <button class="wbtn wbtn-prev" id="wbtn-prev" onclick="wizPrev()" style="display:none">← Anterior</button>
     <button class="wbtn wbtn-next" id="wbtn-next" onclick="wizNext()">Siguiente →</button>
+  </div>
+</div>
+
+
+<!-- ═══ INVENTORY CONFLICT MODAL ════════════════════════════════ -->
+<div class="inv-modal-bg" id="inv-modal-bg">
+  <div class="inv-modal">
+    <div class="shandle"></div>
+    <div class="inv-modal-icon">&#9888;&#65039;</div>
+    <div class="inv-modal-title">Inventario excedido</div>
+    <div class="inv-modal-sub" id="inv-modal-sub">La fecha del evento no tiene suficiente inventario disponible.</div>
+    <div class="inv-conflict-list" id="inv-conflict-list"></div>
+    <button class="wbtn wbtn-d" onclick="closeInvModal()" style="margin-bottom:10px">Corregir cantidades</button>
   </div>
 </div>
 
@@ -589,6 +616,8 @@ function updateProg(){
   if(next){
     if(M_step===M_steps){ next.textContent='⬇ Exportar'; next.className='wbtn wbtn-exp'; }
     else               { next.textContent='Siguiente →'; next.className='wbtn wbtn-next'; }
+    // ADDED: re-apply disabled state when returning to step 3
+    next.disabled = (M_step===3 && M_invConflicts.length>0);
   }
 }
 
@@ -604,29 +633,59 @@ function goStep(n){
   var sa=el('wiz-scroll'); if(sa) sa.scrollTop=0;
 }
 
-/* ADDED: inventory warning for mobile wizard step 3 */
-function mUpdateInvWarn(){
-  var iw=el('m-inv-warn'); if(!iw) return;
-  var fEvento=gv('m-fevento');
-  if(!fEvento){ iw.textContent=''; iw.classList.remove('on'); return; }
-  var items=ITEMS.map(function(it,i){
+/* MODIFIED: inventory warning — blocks next/save when conflicts exist */
+var M_invConflicts = [];  // shared conflict state
+
+function mGetCurrentItems(){
+  return ITEMS.map(function(it,i){
     var q=parseInt((el('mq'+i)||{textContent:'0'}).textContent)||0;
     var p=parseFloat((el('mp'+i)||{value:it.price}).value)||it.price;
     return {qty:q,price:p,amt:q*p};
   });
-  var conflicts=checkInventory(items,fEvento,M_editId);
-  if(conflicts.length>0){
-    iw.innerHTML='&#9888;&#65039; Inventario excedido para '+fmtDate(fEvento)+': '+
-      conflicts.map(function(x){
-        return '<strong>'+x.name+'</strong> ('+x.used+'/'+x.max+')';
-      }).join(', ')+'<br><small>Puedes guardar de todas formas.</small>';
+}
+
+function mUpdateInvWarn(){
+  var iw=el('m-inv-warn'); if(!iw) return;
+  var fEvento=gv('m-fevento');
+  var btn=el('wbtn-next');
+  if(!fEvento){
+    iw.textContent=''; iw.classList.remove('on');
+    M_invConflicts=[];
+    if(btn) btn.disabled=false;
+    return;
+  }
+  M_invConflicts=checkInventory(mGetCurrentItems(),fEvento,M_editId);
+  if(M_invConflicts.length>0){
+    iw.innerHTML='&#9888;&#65039; <strong>Inventario excedido</strong> — toca el bot&#243;n Siguiente para ver detalles.';
     iw.classList.add('on');
+    if(btn && M_step===3) btn.disabled=true;
   } else {
     iw.textContent=''; iw.classList.remove('on');
+    M_invConflicts=[];
+    if(btn) btn.disabled=false;
   }
+}
+
+function openInvModal(){
+  var fEvento=gv('m-fevento');
+  var cl=el('inv-conflict-list');
+  var sub=el('inv-modal-sub');
+  if(sub) sub.textContent='El evento del '+fmtDate(fEvento)+' supera el inventario disponible en:';
+  if(cl) cl.innerHTML=M_invConflicts.map(function(x){
+    var over=x.used-x.max;
+    return '<div class="inv-conflict-item">'+
+      '<span class="inv-conflict-name">'+x.name+'</span>'+
+      '<span class="inv-conflict-nums">'+x.used+' / '+x.max+' &nbsp;(+'+over+' de m&#225;s)</span>'+
+    '</div>';
+  }).join('');
+  el('inv-modal-bg').classList.add('on');
+}
+function closeInvModal(){
+  el('inv-modal-bg').classList.remove('on');
 }
 function wizNext(){
   if(M_step===1 && !gv('m-nombre').trim()){ showToast('⚠️ Ingresa el nombre del cliente'); el('m-nombre').focus(); return; }
+  if(M_step===3 && M_invConflicts.length>0){ openInvModal(); return; } // ADDED: block if inventory conflict
   if(M_step===M_steps){ openSheet(); return; }
   goStep(M_step+1);
 }
@@ -762,6 +821,8 @@ function renderSummary(){
 
 /* ── Save ── */
 function mSave(){
+  // ADDED: block save if inventory conflict exists on step 3
+  if(M_step===3 && M_invConflicts.length>0){ openInvModal(); return; }
   var data=mCollect();
   if(!data.nombre.trim()){ showToast('⚠️ Ingresa el nombre del cliente'); return; }
   var now=new Date().toISOString();
@@ -790,6 +851,7 @@ function startNew(){
   sv('m-ubicacion','');
   sv('m-notas','');
   var iw=el('m-inv-warn'); if(iw){ iw.textContent=''; iw.classList.remove('on'); }
+  M_invConflicts=[]; // ADDED: reset conflicts
   var ai=el('m-anticipo'); if(ai){ ai.value='0'; ai.removeAttribute('data-manual'); }
   ITEMS.forEach(function(it,i){
     var qe=el('mq'+i), pe=el('mp'+i), ae=el('ma'+i);
