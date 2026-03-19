@@ -751,6 +751,8 @@ function renderHistorial(){
     if(!q) return true;
     return (c.nombre||'').toLowerCase().includes(q)||(c.tel||'').includes(q)||
            (c.dir||'').toLowerCase().includes(q)||fmtDate(c.fEvento).includes(q);
+  }).sort(function(a,b){ // ADDED: newest event first
+    return (b.fEvento||'').localeCompare(a.fEvento||'');
   });
   el('h-table').innerHTML=list.length?cTableHTML(list):emptyHTML('Sin resultados',q?'Nada para: "'+q+'"':'Sin contratos');
 }

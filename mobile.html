@@ -993,6 +993,8 @@ function renderHist(){
     if(!q) return true;
     return (c.nombre||'').toLowerCase().indexOf(q)!==-1||(c.tel||'').indexOf(q)!==-1||
            (c.dir||'').toLowerCase().indexOf(q)!==-1||fmtDate(c.fEvento).indexOf(q)!==-1;
+  }).sort(function(a,b){ // ADDED: newest event first
+    return (b.fEvento||'').localeCompare(a.fEvento||'');
   });
   el('hist-list').innerHTML=list.length?list.map(cardHTML).join(''):
     mempty('Sin resultados',q?'Nada para: "'+q+'"':'Sin contratos guardados');
