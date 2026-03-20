@@ -347,6 +347,30 @@ input[type=date].fi{color-scheme:light}
 .det-btn-wa{background:#dcfce7;color:#15803d}
 .det-btn-map{background:#dbeafe;color:var(--blue)}
 .det-btn-close{background:var(--light);color:var(--mid)}
+/* ADDED: home inventory sheet date picker */
+.hinv-date-wrap{background:var(--light);border-radius:12px;padding:14px 16px;
+  margin-bottom:14px;display:flex;align-items:center;gap:12px}
+.hinv-date-lbl{font-size:12px;font-weight:700;color:var(--mid);white-space:nowrap}
+.hinv-date-inp{flex:1;padding:10px 12px;border:1.5px solid var(--border);border-radius:10px;
+  font-family:inherit;font-size:15px;color:var(--dark);background:var(--white);
+  outline:none;-webkit-appearance:none;color-scheme:light}
+.hinv-date-inp:focus{border-color:var(--blue)}
+/* ADDED: historial filter section */
+.hist-filters{padding:12px 16px 0;display:flex;flex-direction:column;gap:8px}
+.hf-row{display:flex;gap:8px;align-items:center}
+.hf-lbl{font-size:10px;font-weight:700;text-transform:uppercase;letter-spacing:.06em;
+  color:var(--mid);margin-bottom:4px}
+.hf-inp{width:100%;padding:11px 14px;border:1.5px solid var(--border);border-radius:10px;
+  font-family:inherit;font-size:15px;color:var(--dark);background:var(--white);
+  outline:none;-webkit-appearance:none;color-scheme:light}
+.hf-inp:focus{border-color:var(--blue);box-shadow:0 0 0 3px rgba(37,99,168,.1)}
+.hf-date-wrap{flex:1;display:flex;flex-direction:column}
+.hf-clear{padding:10px 14px;border:1.5px solid var(--border);border-radius:10px;
+  background:var(--white);color:var(--mid);font-family:inherit;font-size:13px;
+  font-weight:700;cursor:pointer;white-space:nowrap;-webkit-tap-highlight-color:transparent;
+  flex-shrink:0;align-self:flex-end}
+.hf-clear:active{background:var(--light)}
+.hf-count{font-size:12px;color:var(--mid);padding:6px 2px 10px;text-align:center}
 .mempty{text-align:center;padding:52px 20px;color:var(--mid)}
 .mempty .ei{font-size:48px;margin-bottom:10px}
 .mempty .et{font-size:16px;font-weight:600;margin-bottom:4px}
@@ -372,7 +396,10 @@ if(!/[?&]m=1/.test(location.search) &&
   </div>
   <div class="hcontent">
     <div class="sgrid" id="home-stats"></div>
-    <button class="nbtn" onclick="startNew()">✏️ Nuevo Contrato</button>
+    <div style="display:flex;gap:10px;margin-bottom:16px">
+      <button class="nbtn" style="margin-bottom:0" onclick="startNew()">✏️ Nuevo Contrato</button>
+      <button onclick="openHomeInvSheet()" style="flex-shrink:0;padding:17px 18px;border:none;border-radius:14px;background:var(--bbg);color:var(--blue);font-family:inherit;font-size:15px;font-weight:700;cursor:pointer;-webkit-tap-highlight-color:transparent;display:flex;align-items:center;gap:6px;white-space:nowrap">&#128230; Inventario</button>
+    </div>
     <div class="rec-ttl">Recientes</div>
     <div id="home-recent"></div>
   </div>
@@ -390,8 +417,27 @@ if(!/[?&]m=1/.test(location.search) &&
     <span class="tb-ttl">Historial</span>
     <button class="tb-act" onclick="startNew()">+ Nuevo</button>
   </div>
-  <div class="hcont">
-    <input type="search" class="sinp" id="m-search" placeholder="🔍  Buscar contratos…" oninput="renderHist()">
+  <!-- ADDED: filter bar -->
+  <div class="hist-filters">
+    <div>
+      <div class="hf-lbl">Nombre del cliente</div>
+      <input type="search" class="hf-inp" id="m-search"
+        placeholder="🔍 Buscar por nombre o teléfono…" oninput="renderHist()">
+    </div>
+    <div class="hf-row">
+      <div class="hf-date-wrap">
+        <div class="hf-lbl">Fecha del contrato</div>
+        <input type="date" class="hf-inp" id="hf-cdate" onchange="renderHist()" style="color-scheme:light">
+      </div>
+      <div class="hf-date-wrap">
+        <div class="hf-lbl">Fecha del evento</div>
+        <input type="date" class="hf-inp" id="hf-fevento" onchange="renderHist()" style="color-scheme:light">
+      </div>
+      <button class="hf-clear" onclick="clearHistFilters()">✕</button>
+    </div>
+    <div class="hf-count" id="hf-count"></div>
+  </div>
+  <div class="hcont" style="padding-top:0">
     <div id="hist-list"></div>
   </div>
   <nav class="bnav">
@@ -516,6 +562,21 @@ if(!/[?&]m=1/.test(location.search) &&
 
 
 <!-- ═══ INVENTORY VIEWER SHEET ══════════════════════════════════ -->
+
+<!-- ═══ HOME INVENTORY SHEET ═════════════════════════════════ -->
+<div class="inv-sheet-bg" id="hinv-sheet-bg" onclick="closeHomeInvSheet()"></div>
+<div class="inv-sheet" id="hinv-sheet">
+  <div class="shandle"></div>
+  <div class="sttitle">&#128230; Inventario disponible</div>
+  <div class="hinv-date-wrap">
+    <span class="hinv-date-lbl">Fecha del evento</span>
+    <input type="date" class="hinv-date-inp" id="hinv-date" onchange="renderHomeInv()">
+  </div>
+  <div id="hinv-sub" style="font-size:13px;color:var(--mid);margin-bottom:10px;min-height:18px"></div>
+  <div id="hinv-rows"></div>
+  <button class="wbtn wbtn-g" onclick="closeHomeInvSheet()" style="margin-top:10px">Cerrar</button>
+</div>
+
 <div class="inv-sheet-bg" id="inv-sheet-bg" onclick="closeInvSheet()"></div>
 <div class="inv-sheet" id="inv-sheet">
   <div class="shandle"></div>
@@ -900,6 +961,81 @@ function closeInvSheet(){
   el('inv-sheet').classList.remove('on');
 }
 
+/* ADDED: home inventory sheet — independent date picker */
+function openHomeInvSheet(){
+  // Pre-fill with today
+  var d=el('hinv-date');
+  if(d&&!d.value) d.value=todayISO();
+  renderHomeInv();
+  el('hinv-sheet-bg').classList.add('on');
+  el('hinv-sheet').classList.add('on');
+}
+function closeHomeInvSheet(){
+  el('hinv-sheet-bg').classList.remove('on');
+  el('hinv-sheet').classList.remove('on');
+}
+function renderHomeInv(){
+  var fecha=(el('hinv-date')||{value:''}).value;
+  var sub=el('hinv-sub');
+  var rows=el('hinv-rows');
+  if(!rows) return;
+
+  if(sub) sub.textContent = fecha
+    ? 'Disponible para el ' + fmtDate(fecha)
+    : 'Selecciona una fecha para ver disponibilidad';
+
+  if(!fecha){
+    // Show maxes only
+    rows.innerHTML=Object.keys(DAILY_INVENTORY).map(function(key){
+      var max=DAILY_INVENTORY[key];
+      return '<div class="inv-row">'+
+        '<span class="inv-row-name">'+(RESOURCE_NAMES[key]||key)+'</span>'+
+        '<div class="inv-row-nums">'+
+          '<span class="inv-pill inv-pill-ok">'+max+' disp.</span>'+
+          '<span style="font-size:11px;color:var(--mid);min-width:28px;text-align:right">/ '+max+'</span>'+
+        '</div></div>';
+    }).join('');
+    return;
+  }
+
+  // Compute usage from ALL non-cancelled contracts on this date
+  var usage={};
+  loadContracts().filter(function(c){
+    return c.fEvento===fecha && resolveStatus(c)!=='cancelado';
+  }).forEach(function(c){
+    (c.items||[]).forEach(function(r,i){
+      if(!r||!(r.qty>0)) return;
+      ITEM_RESOURCES[i].forEach(function(res){
+        usage[res[0]]=(usage[res[0]]||0)+r.qty*res[1];
+      });
+    });
+  });
+
+  rows.innerHTML=Object.keys(DAILY_INVENTORY).map(function(key){
+    var max  = DAILY_INVENTORY[key];
+    var used = usage[key]||0;
+    var avail= max-used;
+    var pillCls, pillTxt;
+    if(avail<=0){
+      pillCls='inv-pill-out'; pillTxt='Agotado';
+    } else if(avail<=Math.ceil(max*0.25)){
+      pillCls='inv-pill-low'; pillTxt=avail+' disp.';
+    } else {
+      pillCls='inv-pill-ok'; pillTxt=avail+' disp.';
+    }
+    var usedTxt=used>0
+      ? '<span class="inv-pill inv-pill-used">'+used+' usados</span>'
+      : '';
+    return '<div class="inv-row">'+
+      '<span class="inv-row-name">'+(RESOURCE_NAMES[key]||key)+'</span>'+
+      '<div class="inv-row-nums">'+
+        usedTxt+
+        '<span class="inv-pill '+pillCls+'">'+pillTxt+'</span>'+
+        '<span style="font-size:11px;color:var(--mid);min-width:28px;text-align:right">/ '+max+'</span>'+
+      '</div></div>';
+  }).join('');
+}
+
 function mUpdateInvWarn(){
   var iw=el('m-inv-warn'); if(!iw) return;
   var fEvento=gv('m-fevento');
@@ -1126,16 +1262,38 @@ function renderHome(){
 
 /* ── Historial ── */
 function renderHist(){
-  var q=((el('m-search')||{}).value||'').toLowerCase();
-  var list=loadContracts().filter(function(c){
-    if(!q) return true;
-    return (c.nombre||'').toLowerCase().indexOf(q)!==-1||(c.tel||'').indexOf(q)!==-1||
-           (c.dir||'').toLowerCase().indexOf(q)!==-1||fmtDate(c.fEvento).indexOf(q)!==-1;
-  }).sort(function(a,b){ // ADDED: newest event first
+  var q=((el('m-search')||{}).value||'').toLowerCase().trim();
+  var fCdate=(el('hf-cdate')||{value:''}).value;
+  var fFevento=(el('hf-fevento')||{value:''}).value;
+  var all=loadContracts();
+  var list=all.filter(function(c){
+    // nombre / tel text filter
+    if(q){
+      var match=(c.nombre||'').toLowerCase().indexOf(q)!==-1||
+                (c.tel||'').indexOf(q)!==-1;
+      if(!match) return false;
+    }
+    // fecha contrato exact match
+    if(fCdate && c.cDate!==fCdate) return false;
+    // fecha evento exact match
+    if(fFevento && c.fEvento!==fFevento) return false;
+    return true;
+  }).sort(function(a,b){
     return (b.fEvento||'').localeCompare(a.fEvento||'');
   });
+  // update count badge
+  var cnt=el('hf-count');
+  var hasFilter=q||fCdate||fFevento;
+  if(cnt) cnt.textContent=hasFilter
+    ? list.length+' de '+all.length+' contrato'+(all.length!==1?'s':'') : '';
   el('hist-list').innerHTML=list.length?list.map(cardHTML).join(''):
-    mempty('Sin resultados',q?'Nada para: "'+q+'"':'Sin contratos guardados');
+    mempty('Sin resultados',hasFilter?'Sin coincidencias para los filtros aplicados':'Sin contratos guardados');
+}
+function clearHistFilters(){
+  var s=el('m-search'); if(s) s.value='';
+  var d=el('hf-cdate'); if(d) d.value='';
+  var f=el('hf-fevento'); if(f) f.value='';
+  renderHist();
 }
 function cardHTML(c){
   var ni=(c.items||[]).filter(function(r){return r.qty>0;}).length;
