@@ -279,6 +279,74 @@ input[type=date].fi{color-scheme:light}
 .inv-pill-low{background:#fef9c3;color:#854d0e}
 .inv-pill-out{background:#fee2e2;color:#b91c1c}
 .inv-pill-used{background:var(--light);color:var(--mid)}
+/* ADDED: contract detail sheet */
+.det-sheet-bg{display:none;position:fixed;inset:0;background:rgba(0,0,0,.55);z-index:400}
+.det-sheet-bg.on{display:block}
+.det-sheet{position:fixed;left:0;right:0;bottom:0;z-index:401;background:var(--white);
+  border-radius:20px 20px 0 0;padding:0 0 calc(20px + var(--sb));
+  transform:translateY(100%);transition:transform .3s cubic-bezier(.32,.72,0,1);
+  max-height:90vh;display:flex;flex-direction:column}
+.det-sheet.on{transform:translateY(0)}
+.det-sheet-hdr{padding:0 20px;flex-shrink:0}
+.det-sheet-scroll{flex:1;overflow-y:auto;-webkit-overflow-scrolling:touch;padding:0 20px 8px}
+.det-section{margin-bottom:14px}
+.det-sec-lbl{font-size:10px;font-weight:700;text-transform:uppercase;letter-spacing:.07em;
+  color:var(--mid);margin-bottom:8px;padding-bottom:6px;border-bottom:1.5px solid var(--bbg)}
+.det-row{display:flex;justify-content:space-between;align-items:flex-start;
+  padding:7px 0;border-bottom:1px solid var(--border);gap:10px;font-size:13px}
+.det-row:last-child{border-bottom:none}
+.det-lbl{color:var(--mid);font-weight:500;flex-shrink:0;min-width:90px}
+.det-val{font-weight:600;text-align:right;word-break:break-word}
+.det-item-row{display:flex;justify-content:space-between;padding:6px 0;
+  border-bottom:1px solid var(--border);font-size:12px}
+.det-item-row:last-child{border-bottom:none}
+.det-item-name{color:var(--dark);font-weight:500}
+.det-item-amt{font-weight:700;color:var(--blue)}
+.det-fin-row{display:flex;justify-content:space-between;padding:8px 0;
+  border-bottom:1px solid var(--border);font-size:14px}
+.det-fin-row:last-child{border-bottom:none;font-weight:700;font-size:15px}
+.det-actions{display:flex;gap:8px;padding:12px 20px 0;flex-shrink:0}
+.det-action-btn{flex:1;padding:12px 6px;border-radius:12px;border:none;
+  font-family:inherit;font-size:13px;font-weight:700;cursor:pointer;
+  -webkit-tap-highlight-color:transparent;display:flex;align-items:center;
+  justify-content:center;gap:5px}
+.det-btn-wa{background:#dcfce7;color:#15803d}
+.det-btn-map{background:#dbeafe;color:var(--blue)}
+.det-btn-close{background:var(--light);color:var(--mid)}
+/* ADDED: contract detail sheet */
+.det-sheet-bg{display:none;position:fixed;inset:0;background:rgba(0,0,0,.55);z-index:400}
+.det-sheet-bg.on{display:block}
+.det-sheet{position:fixed;left:0;right:0;bottom:0;z-index:401;background:var(--white);
+  border-radius:20px 20px 0 0;padding:0 0 calc(20px + var(--sb));
+  transform:translateY(100%);transition:transform .3s cubic-bezier(.32,.72,0,1);
+  max-height:90vh;display:flex;flex-direction:column}
+.det-sheet.on{transform:translateY(0)}
+.det-sheet-hdr{padding:0 20px;flex-shrink:0}
+.det-sheet-scroll{flex:1;overflow-y:auto;-webkit-overflow-scrolling:touch;padding:0 20px 8px}
+.det-section{margin-bottom:14px}
+.det-sec-lbl{font-size:10px;font-weight:700;text-transform:uppercase;letter-spacing:.07em;
+  color:var(--mid);margin-bottom:8px;padding-bottom:6px;border-bottom:1.5px solid var(--bbg)}
+.det-row{display:flex;justify-content:space-between;align-items:flex-start;
+  padding:7px 0;border-bottom:1px solid var(--border);gap:10px;font-size:13px}
+.det-row:last-child{border-bottom:none}
+.det-lbl{color:var(--mid);font-weight:500;flex-shrink:0;min-width:90px}
+.det-val{font-weight:600;text-align:right;word-break:break-word}
+.det-item-row{display:flex;justify-content:space-between;padding:6px 0;
+  border-bottom:1px solid var(--border);font-size:12px}
+.det-item-row:last-child{border-bottom:none}
+.det-item-name{color:var(--dark);font-weight:500}
+.det-item-amt{font-weight:700;color:var(--blue)}
+.det-fin-row{display:flex;justify-content:space-between;padding:8px 0;
+  border-bottom:1px solid var(--border);font-size:14px}
+.det-fin-row:last-child{border-bottom:none;font-weight:700;font-size:15px}
+.det-actions{display:flex;gap:8px;padding:12px 20px 0;flex-shrink:0}
+.det-action-btn{flex:1;padding:12px 6px;border-radius:12px;border:none;
+  font-family:inherit;font-size:13px;font-weight:700;cursor:pointer;
+  -webkit-tap-highlight-color:transparent;display:flex;align-items:center;
+  justify-content:center;gap:5px;text-decoration:none}
+.det-btn-wa{background:#dcfce7;color:#15803d}
+.det-btn-map{background:#dbeafe;color:var(--blue)}
+.det-btn-close{background:var(--light);color:var(--mid)}
 .mempty{text-align:center;padding:52px 20px;color:var(--mid)}
 .mempty .ei{font-size:48px;margin-bottom:10px}
 .mempty .et{font-size:16px;font-weight:600;margin-bottom:4px}
@@ -455,6 +523,76 @@ if(!/[?&]m=1/.test(location.search) &&
   <div class="stsub" id="inv-sheet-sub">Cargando...</div>
   <div id="inv-sheet-rows"></div>
   <button class="wbtn wbtn-g" onclick="closeInvSheet()" style="margin-top:10px">Cerrar</button>
+</div>
+
+
+<!-- ═══ CONTRACT DETAIL SHEET ════════════════════════════════ -->
+<div class="det-sheet-bg" id="det-sheet-bg" onclick="closeDetailSheet()"></div>
+<div class="det-sheet" id="det-sheet">
+  <div class="det-sheet-hdr">
+    <div class="shandle"></div>
+    <div style="display:flex;justify-content:space-between;align-items:flex-start;margin-bottom:14px">
+      <div>
+        <div style="font-size:17px;font-weight:700" id="det-nombre">—</div>
+        <div style="font-size:12px;color:var(--mid);margin-top:2px" id="det-subtitle">—</div>
+      </div>
+      <div id="det-status-badge" style="flex-shrink:0;margin-top:2px"></div>
+    </div>
+  </div>
+  <div class="det-sheet-scroll">
+    <div class="det-section">
+      <div class="det-sec-lbl">Datos del evento</div>
+      <div id="det-info-rows"></div>
+    </div>
+    <div class="det-section" id="det-items-section">
+      <div class="det-sec-lbl">Mobiliario</div>
+      <div id="det-items-rows"></div>
+    </div>
+    <div class="det-section">
+      <div class="det-sec-lbl">Financiero</div>
+      <div id="det-fin-rows"></div>
+    </div>
+    <div class="det-section" id="det-notas-section" style="display:none">
+      <div class="det-sec-lbl">Notas</div>
+      <div id="det-notas-val" style="font-size:13px;color:var(--dark);line-height:1.5;padding:4px 0"></div>
+    </div>
+  </div>
+  <div class="det-actions" id="det-actions"></div>
+</div>
+
+
+<!-- ═══ CONTRACT DETAIL SHEET ════════════════════════════════ -->
+<div class="det-sheet-bg" id="det-sheet-bg" onclick="closeDetailSheet()"></div>
+<div class="det-sheet" id="det-sheet">
+  <div class="det-sheet-hdr">
+    <div class="shandle"></div>
+    <div style="display:flex;justify-content:space-between;align-items:flex-start;margin-bottom:14px">
+      <div>
+        <div style="font-size:17px;font-weight:700" id="det-nombre">—</div>
+        <div style="font-size:12px;color:var(--mid);margin-top:2px" id="det-subtitle">—</div>
+      </div>
+      <div id="det-status-badge" style="flex-shrink:0;margin-top:2px"></div>
+    </div>
+  </div>
+  <div class="det-sheet-scroll">
+    <div class="det-section">
+      <div class="det-sec-lbl">Datos del evento</div>
+      <div id="det-info-rows"></div>
+    </div>
+    <div class="det-section">
+      <div class="det-sec-lbl">Mobiliario</div>
+      <div id="det-items-rows"></div>
+    </div>
+    <div class="det-section">
+      <div class="det-sec-lbl">Financiero</div>
+      <div id="det-fin-rows"></div>
+    </div>
+    <div class="det-section" id="det-notas-section" style="display:none">
+      <div class="det-sec-lbl">Notas</div>
+      <div id="det-notas-val" style="font-size:13px;color:var(--dark);line-height:1.5;padding:4px 0"></div>
+    </div>
+  </div>
+  <div class="det-actions" id="det-actions"></div>
 </div>
 
 <!-- ═══ EXPORT SHEET ══════════════════════════════════════════════════ -->
@@ -1021,8 +1159,9 @@ function cardHTML(c){
       '<div class="cctotal">$'+(c.total||0).toLocaleString('es-MX',{minimumFractionDigits:2})+'</div>'+
     '</div>'+
     '<div class="ccacts">'+
+      '<button class="ccbtn" style="background:#f0f4f8;color:var(--dark)" onclick="openDetailSheet(\''+c.id+'\')" >&#128065; Ver</button>'+
       '<button class="ccbtn cce" onclick="mEdit(\''+c.id+'\')">&#9999;&#65039; Editar</button>'+
-      '<button class="ccbtn ccx" onclick="qExp(\''+c.id+'\')">&#11015;&#65039; Exportar</button>'+
+      '<button class="ccbtn ccx" onclick="qExp(\''+c.id+'\')">&#11015;&#65039;</button>'+
       '<button class="ccbtn ccd" onclick="askDel(\''+c.id+'\')">&#128465;</button>'+
     '</div></div>';
 }
@@ -1087,6 +1226,114 @@ function mDoImage(fmt){
     showToast('✅ Imagen descargada');
   });
 }
+
+/* ADDED: contract detail sheet */
+function openDetailSheet(id){
+  var c = typeof getById === 'function' ? getById(id) : loadContracts().find(function(x){return x.id===id;});
+  if(!c) return;
+
+  var xe=function(s){return (s||'').replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;');};
+  var statusLabels={abierto:'&#128994; Abierto',cerrado:'&#9899; Cerrado',cancelado:'&#128308; Cancelado'};
+  var statusStyles={abierto:'background:#dcfce7;color:#15803d',cerrado:'background:#f1f5f9;color:#475569',cancelado:'background:#fee2e2;color:#b91c1c'};
+  var s=resolveStatus(c);
+
+  el('det-nombre').textContent=c.nombre||'Sin nombre';
+  el('det-subtitle').textContent=fmtDate(c.fEvento)+' · Contrato: '+fmtDate(c.cDate);
+  el('det-status-badge').innerHTML='<span style="'+statusStyles[s]+';padding:3px 10px;border-radius:10px;font-size:11px;font-weight:700">'+statusLabels[s]+'</span>';
+
+  // Info rows
+  var rows=[];
+  if(c.tel)    rows.push(['Teléfono','<a href="https://wa.me/'+(c.tel+'').replace(/\D/g,'')+'" target="_blank" style="color:#15803d;font-weight:600;text-decoration:none">&#128172; '+xe(c.tel)+'</a>']);
+  if(c.dir)    rows.push(['Dirección', xe(c.dir)]);
+  if(c.hEntregaL||c.hEntrega) rows.push(['Entrega',   xe(c.hEntregaL||c.hEntrega)]);
+  if(c.hRecolL||c.hRecol)     rows.push(['Recolección', xe(c.hRecolL||c.hRecol)]);
+  if(c.traslado>0) rows.push(['Traslado','$'+(c.traslado).toLocaleString('es-MX',{minimumFractionDigits:2})]);
+  el('det-info-rows').innerHTML=rows.map(function(r){
+    return '<div class="det-row"><span class="det-lbl">'+r[0]+'</span><span class="det-val">'+r[1]+'</span></div>';
+  }).join('');
+
+  // Items
+  var itemRows=(c.items||[]).map(function(r,i){
+    if(!r||!(r.qty>0)) return '';
+    return '<div class="det-item-row">'+
+      '<span class="det-item-name">'+ITEMS[i].desc+' ×'+r.qty+'</span>'+
+      '<span class="det-item-amt">$'+r.amt.toFixed(2)+'</span>'+
+    '</div>';
+  }).filter(Boolean).join('');
+  var itemsSec=el('det-items-section');
+  el('det-items-rows').innerHTML=itemRows||'<div style="font-size:13px;color:var(--mid);padding:4px 0">Sin artículos</div>';
+
+  // Financiero
+  el('det-fin-rows').innerHTML=
+    '<div class="det-fin-row"><span style="color:var(--mid)">Subtotal</span><span>$'+((c.total||0)-(c.traslado||0)).toLocaleString('es-MX',{minimumFractionDigits:2})+'</span></div>'+
+    (c.traslado>0?'<div class="det-fin-row"><span style="color:var(--mid)">Traslado</span><span>$'+(c.traslado||0).toLocaleString('es-MX',{minimumFractionDigits:2})+'</span></div>':'')+
+    '<div class="det-fin-row"><span style="color:var(--mid)">Total</span><span>$'+(c.total||0).toLocaleString('es-MX',{minimumFractionDigits:2})+'</span></div>'+
+    '<div class="det-fin-row"><span style="color:var(--mid)">Anticipo</span><span>$'+(c.anticipo||0).toLocaleString('es-MX',{minimumFractionDigits:2})+'</span></div>'+
+    '<div class="det-fin-row"><span>Resta por pagar</span><span style="color:var(--red)">$'+(c.resta||0).toLocaleString('es-MX',{minimumFractionDigits:2})+'</span></div>';
+
+  // Notas
+  var notasSec=el('det-notas-section');
+  if(c.notas){ el('det-notas-val').textContent=c.notas; notasSec.style.display=''; }
+  else        { notasSec.style.display='none'; }
+
+  // Action buttons
+  var btns='<button class="det-action-btn det-btn-close" onclick="closeDetailSheet()">&#10005; Cerrar</button>';
+  if(c.tel)       btns='<a href="https://wa.me/'+(c.tel+'').replace(/\D/g,'')+'" target="_blank" class="det-action-btn det-btn-wa">&#128172; WhatsApp</a>'+btns;
+  if(c.ubicacion) btns='<a href="'+c.ubicacion+'" target="_blank" class="det-action-btn det-btn-map">&#128205; Mapa</a>'+btns;
+  el('det-actions').innerHTML=btns;
+
+  el('det-sheet-bg').classList.add('on');
+  el('det-sheet').classList.add('on');
+}
+function closeDetailSheet(){
+  el('det-sheet-bg').classList.remove('on');
+  el('det-sheet').classList.remove('on');
+}
+
+/* ADDED: contract detail sheet */
+function openDetailSheet(id){
+  var list=loadContracts();
+  var c=list.find(function(x){return x.id===id;});
+  if(!c) return;
+  var xe=function(s){return (s||'').replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;');};
+  var statusLabels={abierto:'&#128994; Abierto',cerrado:'&#9899; Cerrado',cancelado:'&#128308; Cancelado'};
+  var statusStyles={abierto:'background:#dcfce7;color:#15803d',cerrado:'background:#f1f5f9;color:#475569',cancelado:'background:#fee2e2;color:#b91c1c'};
+  var s=resolveStatus(c);
+  el('det-nombre').textContent=c.nombre||'Sin nombre';
+  el('det-subtitle').textContent=fmtDate(c.fEvento)+' · Contrato: '+fmtDate(c.cDate);
+  el('det-status-badge').innerHTML='<span style="'+statusStyles[s]+';padding:3px 10px;border-radius:10px;font-size:11px;font-weight:700">'+statusLabels[s]+'</span>';
+  var rows=[];
+  if(c.tel)    rows.push(['Teléfono','<a href="https://wa.me/'+(c.tel+'').replace(/\D/g,'')+'" target="_blank" style="color:#15803d;font-weight:600;text-decoration:none">&#128172; '+xe(c.tel)+'</a>']);
+  if(c.dir)    rows.push(['Dirección',xe(c.dir)]);
+  if(c.hEntregaL||c.hEntrega) rows.push(['Entrega',xe(c.hEntregaL||c.hEntrega)]);
+  if(c.hRecolL||c.hRecol)     rows.push(['Recolección',xe(c.hRecolL||c.hRecol)]);
+  if(c.traslado>0) rows.push(['Traslado','$'+(c.traslado).toLocaleString('es-MX',{minimumFractionDigits:2})]);
+  el('det-info-rows').innerHTML=rows.map(function(r){
+    return '<div class="det-row"><span class="det-lbl">'+r[0]+'</span><span class="det-val">'+r[1]+'</span></div>';
+  }).join('');
+  var itemRows=(c.items||[]).map(function(r,i){
+    if(!r||!(r.qty>0)) return '';
+    return '<div class="det-item-row"><span class="det-item-name">'+ITEMS[i].desc+' ×'+r.qty+'</span><span class="det-item-amt">$'+r.amt.toFixed(2)+'</span></div>';
+  }).filter(Boolean).join('');
+  el('det-items-rows').innerHTML=itemRows||'<div style="font-size:13px;color:var(--mid);padding:4px 0">Sin artículos</div>';
+  el('det-fin-rows').innerHTML=
+    '<div class="det-fin-row"><span style="color:var(--mid)">Subtotal</span><span>$'+((c.total||0)-(c.traslado||0)).toLocaleString('es-MX',{minimumFractionDigits:2})+'</span></div>'+
+    (c.traslado>0?'<div class="det-fin-row"><span style="color:var(--mid)">Traslado</span><span>$'+(c.traslado||0).toLocaleString('es-MX',{minimumFractionDigits:2})+'</span></div>':'')+
+    '<div class="det-fin-row"><span style="color:var(--mid)">Total</span><span>$'+(c.total||0).toLocaleString('es-MX',{minimumFractionDigits:2})+'</span></div>'+
+    '<div class="det-fin-row"><span style="color:var(--mid)">Anticipo</span><span>$'+(c.anticipo||0).toLocaleString('es-MX',{minimumFractionDigits:2})+'</span></div>'+
+    '<div class="det-fin-row"><span>Resta por pagar</span><span style="color:var(--red)">$'+(c.resta||0).toLocaleString('es-MX',{minimumFractionDigits:2})+'</span></div>';
+  var notasSec=el('det-notas-section');
+  if(c.notas){ el('det-notas-val').textContent=c.notas; notasSec.style.display=''; }
+  else        { notasSec.style.display='none'; }
+  var btns='<button class="det-action-btn det-btn-close" onclick="closeDetailSheet()">&#10005; Cerrar</button>';
+  if(c.tel)       btns='<a href="https://wa.me/'+(c.tel+'').replace(/\D/g,'')+'" target="_blank" class="det-action-btn det-btn-wa">&#128172; WhatsApp</a>'+btns;
+  if(c.ubicacion) btns='<a href="'+c.ubicacion+'" target="_blank" class="det-action-btn det-btn-map">&#128205; Mapa</a>'+btns;
+  el('det-actions').innerHTML=btns;
+  el('det-sheet-bg').classList.add('on');
+  el('det-sheet').classList.add('on');
+}
+function closeDetailSheet(){
+  el('det-sheet-bg').classList.remove('on');
+  el('det-sheet').classList.remove('on');
+}
 </script>
-</body>
-</html>
