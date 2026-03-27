@@ -110,15 +110,48 @@ var PARA={nom:"20CC0E17",dir:"1937404C",hor:"5FD3258A",
    Para activar Firebase el usuario configura su proyecto en Ajustes.
    La config se guarda en localStorage["casvel_fb_cfg"].
    Los contratos se sincronizan en tiempo real vía listener onValue.
+
+   MODIFIED: Capa de caché reactiva unificada.
+   ─────────────────────────────────────────────────────────────────────
+   _memCache es ahora la fuente de verdad en AMBOS modos (local y Firebase).
+   · Modo local : se carga una sola vez al arrancar (o tras cada mutación)
+                  y se mantiene sincronizado sin volver a parsear localStorage.
+   · Modo Firebase: igual que antes — el listener onValue lo actualiza.
+   En ambos modos, saveContract / deleteContract actualizan _memCache de
+   forma inmediata y disparan _listeners, garantizando que cualquier cambio
+   (nuevo contrato, edición, borrado) se refleje en la UI sin re-leer storage.
 ═══════════════════════════════════════════════════════════════════════ */
 
 /* ── Caché interno ─────────────────────────────────────────── */
-var _fbApp   = null;   // Firebase App instance
-var _fbDb    = null;   // Firebase Database instance
-var _fbRef   = null;   // DatabaseRef para /casvel_v1
-var _fbMode  = false;  // true cuando Firebase está activo
-var _memCache= null;   // copia en memoria (siempre actualizada por listener)
-var _listeners=[];     // callbacks registrados para cambios en tiempo real
+var _fbApp    = null;  // Firebase App instance
+var _fbDb     = null;  // Firebase Database instance
+var _fbRef    = null;  // DatabaseRef para /casvel_v1
+var _fbMode   = false; // true cuando Firebase está activo
+var _memCache = null;  // MODIFIED: caché unificado — válido en local Y Firebase
+var _listeners= [];    // callbacks registrados para cambios en tiempo real
+
+/* ── Helpers internos de caché ───────────────────────────────── */
+// ADDED: ordena el caché por fEvento desc (criterio consistente en ambos modos)
+function _sortCache(arr){
+  arr.sort(function(a,b){
+    return (b.fEvento||"").localeCompare(a.fEvento||"") ||
+           (b.updatedAt||"").localeCompare(a.updatedAt||"");
+  });
+}
+
+// ADDED: notifica a todos los listeners con una copia inmutable del caché
+function _notifyListeners(){
+  var snap = _memCache.slice();
+  _listeners.forEach(function(fn){ try{ fn(snap); }catch(e){} });
+}
+
+// ADDED: inicializa el caché local desde localStorage (solo se llama una vez)
+function _initLocalCache(){
+  if(_memCache !== null) return; // ya inicializado
+  try{ _memCache = JSON.parse(localStorage.getItem("casvel_v1")||"[]"); }
+  catch(e){ _memCache = []; }
+  _sortCache(_memCache);
+}
 
 /* ── Config de Firebase (guardada en localStorage) ───────────── */
 function fbGetConfig(){
@@ -134,7 +167,6 @@ function fbClearConfig(){
 
 /* ── Inicializar Firebase (llamado al arrancar si hay config) ─── */
 function fbInit(cfg, onReady){
-  // Carga el SDK de Firebase dinámicamente si no está ya cargado
   if(typeof firebase !== "undefined"){
     _fbSetup(cfg, onReady); return;
   }
@@ -154,20 +186,16 @@ function fbInit(cfg, onReady){
 
 function _fbSetup(cfg, onReady){
   try{
-    // Si ya hay una app inicializada con este nombre, reutilizarla
     try{ _fbApp=firebase.app("casvel"); }
     catch(e){ _fbApp=firebase.initializeApp(cfg,"casvel"); }
     _fbDb  = firebase.database(_fbApp);
     _fbRef = _fbDb.ref("casvel_v1");
-    // Listener en tiempo real: mantiene _memCache actualizado
+    // Listener en tiempo real: actualiza _memCache y notifica vistas
     _fbRef.on("value", function(snap){
       var val=snap.val();
       _memCache = val ? Object.values(val) : [];
-      // Ordenar por updatedAt desc
-      _memCache.sort(function(a,b){
-        return (b.updatedAt||"").localeCompare(a.updatedAt||"");
-      });
-      _listeners.forEach(function(fn){ try{fn(_memCache);}catch(e){} });
+      _sortCache(_memCache);               // MODIFIED: usa _sortCache unificado
+      _notifyListeners();                  // MODIFIED: usa _notifyListeners
     });
     _fbMode=true;
     if(onReady) onReady(null);
@@ -180,54 +208,76 @@ function _fbSetup(cfg, onReady){
 /* ── Registrar listener de cambios en tiempo real ────────────── */
 function onContractsChange(fn){
   _listeners.push(fn);
-  // Si ya tenemos datos en caché, disparar inmediatamente
-  if(_memCache!==null) try{fn(_memCache);}catch(e){}
-  // Devuelve función para desregistrar
+  // MODIFIED: también dispara en modo local si el caché ya está listo
+  if(_memCache!==null) try{ fn(_memCache.slice()); }catch(e){}
   return function(){ _listeners=_listeners.filter(function(x){return x!==fn;}); };
 }
 
 /* ── CRUD ────────────────────────────────────────────────────── */
+// MODIFIED: loadContracts siempre sirve desde _memCache (O(1) tras el primer load)
 function loadContracts(){
-  if(_fbMode && _memCache!==null) return _memCache.slice();
-  try{return JSON.parse(localStorage.getItem("casvel_v1")||"[]");}catch(e){return [];}
+  if(!_fbMode) _initLocalCache();        // garantiza caché inicializado en modo local
+  return _memCache !== null ? _memCache.slice() : [];
 }
 
 function saveContracts(list){
   if(_fbMode && _fbRef){
-    // Firebase RTDB almacena como objeto {id: contrato}
     var obj={};
     list.forEach(function(c){ if(c.id) obj[c.id]=c; });
     _fbRef.set(obj).catch(function(e){console.error("Firebase write error",e);});
     return;
   }
-  localStorage.setItem("casvel_v1",JSON.stringify(list));
+  // MODIFIED: actualiza caché local y notifica listeners antes de escribir a storage
+  _memCache = list.slice();
+  _sortCache(_memCache);
+  _notifyListeners();
+  localStorage.setItem("casvel_v1",JSON.stringify(_memCache));
 }
 
 function saveContract(c){
-  /* Guarda/actualiza un contrato individual de forma atómica (mejor para Firebase) */
   if(_fbMode && _fbRef){
+    // Firebase: el listener onValue actualizará _memCache y notificará
     _fbRef.child(c.id).set(c).catch(function(e){console.error("Firebase write",e);});
     return;
   }
-  var list=loadContracts();
-  var idx=list.findIndex(function(x){return x.id===c.id;});
-  if(idx>=0) list[idx]=c; else list.unshift(c);
-  localStorage.setItem("casvel_v1",JSON.stringify(list));
+  // MODIFIED: modo local — mutar caché en memoria, notificar y persistir
+  _initLocalCache();
+  var idx=_memCache.findIndex(function(x){return x.id===c.id;});
+  if(idx>=0){ _memCache[idx]=c; } else { _memCache.unshift(c); }
+  _sortCache(_memCache);
+  _notifyListeners();                    // ADDED: dispara listeners igual que Firebase
+  localStorage.setItem("casvel_v1",JSON.stringify(_memCache));
 }
 
 function deleteContract(id){
   if(_fbMode && _fbRef){
+    // Firebase: el listener onValue actualizará _memCache y notificará
     _fbRef.child(id).remove().catch(function(e){console.error("Firebase delete",e);});
     return;
   }
-  saveContracts(loadContracts().filter(function(c){return c.id!==id;}));
+  // MODIFIED: modo local — mutar caché, notificar y persistir
+  _initLocalCache();
+  _memCache = _memCache.filter(function(c){return c.id!==id;});
+  _notifyListeners();                    // ADDED: dispara listeners igual que Firebase
+  localStorage.setItem("casvel_v1",JSON.stringify(_memCache));
 }
 
 function getById(id){
-  return loadContracts().find(function(c){return c.id===id;})||null;
+  // MODIFIED: busca en caché, sin re-leer storage
+  if(!_fbMode) _initLocalCache();
+  return (_memCache||[]).find(function(c){return c.id===id;})||null;
 }
 function newId(){return "cv_"+Date.now();}
 function isFbMode(){return _fbMode;}
+
+// ADDED: resetea el caché al desconectarse de Firebase para que _initLocalCache
+// lo recargue limpio desde localStorage. Llamar desde mFbDisconnect antes de renderizar.
+function _resetToLocalCache(){
+  _fbMode  = false;
+  _memCache = null;  // fuerza re-lectura de localStorage en proximo acceso
+  _initLocalCache(); // carga inmediata desde storage
+  _notifyListeners();// notifica vistas con datos locales
+}
 
 /* ── Fechas y formato ── */
 function todayISO(){return new Date().toISOString().split("T")[0];}

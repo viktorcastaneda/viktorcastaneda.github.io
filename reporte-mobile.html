@@ -856,9 +856,12 @@ function mFbConnect(){
   });
 }
 function mFbDisconnect(){
-  fbClearConfig(); updateFbBadge(false); closeFbSheet();
+  fbClearConfig(); closeFbSheet();
+  // MODIFIED: _resetToLocalCache resetea _fbMode, recarga localStorage al caché
+  // y dispara listeners (renderAll) automáticamente.
+  _resetToLocalCache();
+  updateFbBadge(false);
   showToast('⬡ Desconectado');
-  renderAll();
 }
 
 /* ─── Init ──────────────────────────────────────────── */
@@ -996,6 +999,9 @@ document.addEventListener('DOMContentLoaded', function(){
   }).join('');
   if(el('xmes-year')) el('xmes-year').textContent=xmesYear;
   if(el('ent-fecha')) el('ent-fecha').value=todayISO_val;
+  // MODIFIED: registrar listener antes de fbInit. En modo local, onContractsChange
+  // dispara inmediatamente con el caché ya inicializado (_initLocalCache en shared.js).
+  // En modo Firebase, el listener onValue de RTDB llama _notifyListeners con los datos.
   onContractsChange(function(){ renderAll(); });
   var cfg=fbGetConfig();
   if(cfg){
@@ -1004,8 +1010,8 @@ document.addEventListener('DOMContentLoaded', function(){
       else updateFbBadge(true);
     });
   } else {
+    // MODIFIED: modo local — el listener ya disparó renderAll al registrarse.
     updateFbBadge(false);
-    renderAll();
   }
 });
 

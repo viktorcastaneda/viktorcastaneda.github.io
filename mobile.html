@@ -769,7 +769,9 @@ document.addEventListener('DOMContentLoaded', function(){
     this.dataset.manual='1'; mCalcResta();
   });
 
-  // Suscribir a cambios en tiempo real
+  // MODIFIED: registrar listener antes de fbInit. En modo local, onContractsChange
+  // dispara inmediatamente con el caché ya inicializado (_initLocalCache en shared.js).
+  // En modo Firebase, el listener onValue de RTDB llama _notifyListeners con los datos.
   onContractsChange(function(){ renderHome(); renderHist(); });
 
   // Intentar conectar Firebase si hay config guardada
@@ -777,7 +779,10 @@ document.addEventListener('DOMContentLoaded', function(){
   if(cfg){ fbInit(cfg, function(err){
     if(err){ showToast('⚠️ Firebase: '+err.message); mUpdateFbBadge(false); }
     else mUpdateFbBadge(true);
-  }); } else { mUpdateFbBadge(false); renderHome(); }
+  }); } else {
+    // MODIFIED: modo local — el listener ya disparó renderHome/renderHist al registrarse.
+    mUpdateFbBadge(false);
+  }
 });
 
 /* ── Firebase UI (mobile) ── */
@@ -822,9 +827,12 @@ function mFbConnect(){
   });
 }
 function mFbDisconnect(){
-  fbClearConfig(); mUpdateFbBadge(false); closeFbSheet();
+  fbClearConfig(); closeFbSheet();
+  // MODIFIED: _resetToLocalCache resetea _fbMode, recarga localStorage al caché
+  // y dispara listeners (renderHome + renderHist) automáticamente.
+  _resetToLocalCache();
+  mUpdateFbBadge(false);
   showToast('⬡ Desconectado — usando almacenamiento local');
-  renderHome(); renderHist();
 }
 
 /* ── Progress ── */
@@ -1335,9 +1343,8 @@ function askDel(id){
 function closeConfirm(){ el('conf-bg').classList.remove('on'); M_delId=null; }
 function doDelete(){
   if(!M_delId) return;
-  deleteContract(M_delId);
+  deleteContract(M_delId); // MODIFIED: dispara listeners automáticamente (local y Firebase)
   closeConfirm(); M_delId=null;
-  if(!isFbMode()){ renderHome(); renderHist(); }
   showToast('🗑️ Eliminado');
 }
 
