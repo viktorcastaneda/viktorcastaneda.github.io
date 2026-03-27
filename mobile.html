@@ -1427,7 +1427,10 @@ function openDetailSheet(id){
     (c.traslado>0?'<div class="det-fin-row"><span style="color:var(--mid)">Traslado</span><span>$'+(c.traslado||0).toLocaleString('es-MX',{minimumFractionDigits:2})+'</span></div>':'')+
     '<div class="det-fin-row"><span style="color:var(--mid)">Total</span><span>$'+(c.total||0).toLocaleString('es-MX',{minimumFractionDigits:2})+'</span></div>'+
     '<div class="det-fin-row"><span style="color:var(--mid)">Anticipo</span><span>$'+(c.anticipo||0).toLocaleString('es-MX',{minimumFractionDigits:2})+'</span></div>'+
-    '<div class="det-fin-row"><span>Resta por pagar</span><span style="color:var(--red)">$'+(c.resta||0).toLocaleString('es-MX',{minimumFractionDigits:2})+'</span></div>';
+    // MODIFIED: si cerrado, resta efectiva = 0 (pagado al 100%)
+    (s==='cerrado'
+      ? '<div class="det-fin-row"><span>Resta por pagar</span><span style="color:#15803d;font-weight:700">$0.00 ✓ Saldado</span></div>'
+      : '<div class="det-fin-row"><span>Resta por pagar</span><span style="color:var(--red)">$'+(c.resta||0).toLocaleString('es-MX',{minimumFractionDigits:2})+'</span></div>');
 
   // Notas
   var notasSec=el('det-notas-section');
@@ -1479,7 +1482,10 @@ function openDetailSheet(id){
     (c.traslado>0?'<div class="det-fin-row"><span style="color:var(--mid)">Traslado</span><span>$'+(c.traslado||0).toLocaleString('es-MX',{minimumFractionDigits:2})+'</span></div>':'')+
     '<div class="det-fin-row"><span style="color:var(--mid)">Total</span><span>$'+(c.total||0).toLocaleString('es-MX',{minimumFractionDigits:2})+'</span></div>'+
     '<div class="det-fin-row"><span style="color:var(--mid)">Anticipo</span><span>$'+(c.anticipo||0).toLocaleString('es-MX',{minimumFractionDigits:2})+'</span></div>'+
-    '<div class="det-fin-row"><span>Resta por pagar</span><span style="color:var(--red)">$'+(c.resta||0).toLocaleString('es-MX',{minimumFractionDigits:2})+'</span></div>';
+    // MODIFIED: si cerrado, resta efectiva = 0 (pagado al 100%)
+    (s==='cerrado'
+      ? '<div class="det-fin-row"><span>Resta por pagar</span><span style="color:#15803d;font-weight:700">$0.00 ✓ Saldado</span></div>'
+      : '<div class="det-fin-row"><span>Resta por pagar</span><span style="color:var(--red)">$'+(c.resta||0).toLocaleString('es-MX',{minimumFractionDigits:2})+'</span></div>');
   var notasSec=el('det-notas-section');
   if(c.notas){ el('det-notas-val').textContent=c.notas; notasSec.style.display=''; }
   else        { notasSec.style.display='none'; }

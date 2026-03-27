@@ -883,7 +883,8 @@ function renderXMes(){
   var totBruto   =list.reduce(function(s,c){return s+(c.total||0);},0);
   var totAnticipo=list.reduce(function(s,c){return s+(c.anticipo||0);},0);
   var totTrl     =list.reduce(function(s,c){return s+(c.traslado||0);},0);
-  var totResta   =list.reduce(function(s,c){return s+(c.resta||0);},0);
+  // MODIFIED: contratos cerrados se consideran pagados al 100% (resta efectiva = 0)
+  var totResta   =list.reduce(function(s,c){return s+(resolveStatus(c)==='cerrado'?0:(c.resta||0));},0);
   el('xmes-count').textContent=list.length;
   el('xmes-cards').innerHTML=
     mCard('mc-blue','&#128176;','Total',mxn(totBruto),list.length+' contrato'+(list.length!==1?'s':''))+
@@ -920,7 +921,8 @@ function renderXMes(){
         '</div>'+
       '</div>'+
       '<div class="frow-metrics">'+
-        '<div class="fmet"><div class="fmet-lbl">Resta</div><div class="fmet-val">'+mxn(c.resta||0)+'</div></div>'+
+        // MODIFIED: resta efectiva = 0 si contrato cerrado (pagado al 100%)
+        '<div class="fmet"><div class="fmet-lbl">Resta</div><div class="fmet-val">'+mxn(resolveStatus(c)==='cerrado'?0:(c.resta||0))+'</div></div>'+
         '<div class="fmet"><div class="fmet-lbl">Anticipo</div><div class="fmet-val">'+mxn(c.anticipo||0)+'</div></div>'+
       '</div>'+
     '</div>';
@@ -937,7 +939,8 @@ function renderEntregas(){
   }).sort(function(a,b){ return (a.hEntrega||'').localeCompare(b.hEntrega||''); });
   el('ent-count').textContent=list.length;
   var totBruto=list.reduce(function(s,c){return s+(c.total||0);},0);
-  var totResta=list.reduce(function(s,c){return s+(c.resta||0);},0);
+  // MODIFIED: contratos cerrados se consideran pagados al 100% (resta efectiva = 0)
+  var totResta=list.reduce(function(s,c){return s+(resolveStatus(c)==='cerrado'?0:(c.resta||0));},0);
   el('ent-cards').innerHTML=
     mCard('mc-blue','&#128666;','Entregas',list.length,'Para '+fmtDate(fecha))+
     mCard('mc-green','&#128176;','Total',mxn(totBruto),mxn(totResta)+' por cobrar');
@@ -972,7 +975,8 @@ function renderEntregas(){
         '</div>'+
         '<div style="text-align:right;flex-shrink:0;margin-left:8px">'+
           '<div class="frow-total">'+mxn(c.total||0)+'</div>'+
-          '<div style="font-size:11px;color:var(--mid);margin-top:3px">resta '+mxn(c.resta||0)+'</div>'+
+          // MODIFIED: resta efectiva = 0 si contrato cerrado (pagado al 100%)
+          '<div style="font-size:11px;color:var(--mid);margin-top:3px">resta '+mxn(resolveStatus(c)==='cerrado'?0:(c.resta||0))+'</div>'+
           '<button onclick="openDetailSheet(\''+c.id+'\')" style="margin-top:6px;background:var(--light);border:none;border-radius:8px;padding:5px 10px;font-size:11px;font-weight:700;color:var(--mid);cursor:pointer;width:100%">&#128065; Ver</button>'+
         '</div>'+
       '</div>'+
@@ -1037,7 +1041,10 @@ function openDetailSheet(id){
     (c.traslado>0?'<div class="det-fin-row"><span style="color:var(--mid)">Traslado</span><span>$'+(c.traslado||0).toLocaleString('es-MX',{minimumFractionDigits:2})+'</span></div>':'')+
     '<div class="det-fin-row"><span style="color:var(--mid)">Total</span><span>$'+(c.total||0).toLocaleString('es-MX',{minimumFractionDigits:2})+'</span></div>'+
     '<div class="det-fin-row"><span style="color:var(--mid)">Anticipo</span><span>$'+(c.anticipo||0).toLocaleString('es-MX',{minimumFractionDigits:2})+'</span></div>'+
-    '<div class="det-fin-row"><span>Resta por pagar</span><span style="color:var(--red)">$'+(c.resta||0).toLocaleString('es-MX',{minimumFractionDigits:2})+'</span></div>';
+    // MODIFIED: si cerrado, resta efectiva = 0 (pagado al 100%); color verde para indicar saldado
+    (s==='cerrado'
+      ? '<div class="det-fin-row"><span>Resta por pagar</span><span style="color:#15803d;font-weight:700">$0.00 ✓ Saldado</span></div>'
+      : '<div class="det-fin-row"><span>Resta por pagar</span><span style="color:var(--red)">$'+(c.resta||0).toLocaleString('es-MX',{minimumFractionDigits:2})+'</span></div>');
   var notasSec=el('det-notas-section');
   if(c.notas){ el('det-notas-val').textContent=c.notas; notasSec.style.display=''; }
   else        { notasSec.style.display='none'; }
