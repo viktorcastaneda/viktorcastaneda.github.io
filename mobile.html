@@ -261,6 +261,71 @@ input[type=date].fi{color-scheme:light}
 .inv-conflict-nums{font-weight:700;color:var(--red)}
 /* ADDED: disabled next button */
 .wbtn:disabled{opacity:.4;cursor:not-allowed;transform:none!important}
+/* ADDED: extra items section */
+.extra-items-section{margin-top:18px;padding-top:14px;border-top:2px dashed var(--border)}
+.extra-section-ttl{font-size:12px;font-weight:700;color:var(--blue);text-transform:uppercase;
+  letter-spacing:.07em;margin-bottom:12px}
+.extra-row{display:flex;align-items:center;gap:8px;padding:10px 0;border-bottom:1px solid var(--border)}
+.extra-row:last-of-type{border-bottom:none}
+.extra-desc{flex:1;min-width:0;padding:8px 10px;border:1.5px solid var(--border);border-radius:8px;
+  font-size:14px;font-family:'DM Sans',sans-serif;color:var(--dark);outline:none;background:var(--white)}
+.extra-desc:focus{border-color:var(--blue)}
+.extra-price{width:72px;padding:8px 8px;border:1.5px solid var(--border);border-radius:8px;
+  font-size:13px;font-family:'DM Sans',sans-serif;color:var(--dark);outline:none;text-align:right;background:var(--white)}
+.extra-price:focus{border-color:var(--blue)}
+.extra-amt{min-width:52px;text-align:right;font-size:13px;font-weight:700;color:var(--dark)}
+.extra-del{width:32px;height:32px;border:none;background:#fde8e8;border-radius:8px;
+  color:var(--red);font-size:16px;cursor:pointer;display:flex;align-items:center;justify-content:center;flex-shrink:0}
+.add-extra-btn{width:100%;margin-top:10px;padding:11px;border:2px dashed var(--blue);border-radius:10px;
+  background:transparent;color:var(--blue);font-family:'DM Sans',sans-serif;font-size:14px;font-weight:700;
+  cursor:pointer;display:flex;align-items:center;justify-content:center;gap:6px;
+  -webkit-tap-highlight-color:transparent}
+.add-extra-btn:active{background:var(--bbg)}
+/* ADDED: formal PDF container — hidden off-screen */
+#formal-pdf-container{position:fixed;left:-9999px;top:0;z-index:-1;pointer-events:none;width:816px}
+/* fpdf-page: fixed letter size, clips overflow — scale applied by JS to fit content */
+.fpdf-page{width:816px;height:1056px;padding:48px 60px 40px;font-family:'DM Sans',system-ui,sans-serif;
+  font-size:11px;color:#1a1f2e;background:#fff;box-sizing:border-box;
+  display:flex;flex-direction:column;overflow:hidden}
+/* fpdf-inner-wrap: the actual content that gets scaled */
+.fpdf-inner-wrap{display:flex;flex-direction:column;flex:1;transform-origin:top left;width:100%}
+.fpdf-header{display:flex;justify-content:space-between;align-items:flex-start;
+  border-bottom:3px solid #2563a8;padding-bottom:16px;margin-bottom:20px}
+.fpdf-logo-area{display:flex;align-items:center;gap:12px}
+.fpdf-logo{width:60px;height:60px;border-radius:8px;object-fit:cover}
+.fpdf-brand{font-size:20px;font-weight:800;color:#2563a8;line-height:1}
+.fpdf-brand-sub{font-size:10px;color:#5a6580;margin-top:3px;font-weight:500}
+.fpdf-contract-id{text-align:right;font-size:10px;color:#5a6580}
+.fpdf-contract-id strong{display:block;font-size:15px;color:#1a1f2e;font-weight:800}
+.fpdf-section{margin-bottom:20px}
+.fpdf-sec-title{font-size:12px;font-weight:800;color:#fff;background:#2563a8;
+  padding:5px 12px;border-radius:4px;display:inline-block;margin-bottom:12px;
+  letter-spacing:.05em;text-transform:uppercase}
+.fpdf-grid{display:grid;grid-template-columns:1fr 1fr;gap:8px 24px}
+.fpdf-field{padding:6px 0;border-bottom:1px solid #e2e8f0}
+.fpdf-field-lbl{font-size:9px;font-weight:700;color:#5a6580;text-transform:uppercase;letter-spacing:.05em}
+.fpdf-field-val{font-size:12px;font-weight:600;color:#1a1f2e;margin-top:2px}
+.fpdf-table{width:100%;border-collapse:collapse;font-size:11px}
+.fpdf-table th{background:#dce6f1;color:#1a1f2e;font-weight:700;padding:7px 10px;
+  text-align:left;font-size:10px;text-transform:uppercase;letter-spacing:.04em}
+.fpdf-table td{padding:7px 10px;border-bottom:1px solid #f0f4f8}
+.fpdf-table tr:last-child td{border-bottom:none}
+.fpdf-table .num{text-align:right}
+.fpdf-table .tfoot td{background:#f8fafc;font-weight:700;border-top:2px solid #dce6f1}
+.fpdf-table .tfoot-total td{background:#2563a8;color:#fff;font-weight:800}
+.fpdf-clauses{font-size:10px;line-height:1.55;color:#374151}
+.fpdf-clause{margin-bottom:6px}
+.fpdf-clause strong{color:#1a1f2e}
+.fpdf-bullet{font-size:9.5px;line-height:1.5;color:#374151;margin-bottom:2px}
+.fpdf-signatures{margin-top:auto;padding-top:24px;border-top:2px solid #dce6f1;
+  display:grid;grid-template-columns:1fr 1fr;gap:48px}
+.fpdf-sig-block{text-align:center}
+.fpdf-sig-line{border-bottom:1.5px solid #1a1f2e;margin-bottom:6px;height:40px}
+.fpdf-sig-name{font-size:10px;font-weight:700;color:#1a1f2e}
+.fpdf-sig-role{font-size:9px;color:#5a6580;margin-top:2px}
+.fpdf-footer{text-align:center;font-size:9px;color:#5a6580;margin-top:16px;
+  padding-top:10px;border-top:1px solid #e2e8f0}
+.fpdf-et-formal{background:#f0fdf4;color:#15803d}
 /* ADDED: inventory viewer sheet */
 .inv-sheet-bg{display:none;position:fixed;inset:0;background:rgba(0,0,0,.55);z-index:360}
 .inv-sheet-bg.on{display:block}
@@ -511,6 +576,12 @@ if(!/[?&]m=1/.test(location.search) &&
       </div>
       <div class="inv-warn" id="m-inv-warn"></div>
       <div class="card"><div id="m-items"></div></div>
+      <!-- ADDED: extra (non-inventory) items -->
+      <div class="card" id="extra-items-card">
+        <div class="extra-section-ttl">➕ Artículos adicionales</div>
+        <div id="m-extra-items"></div>
+        <button class="add-extra-btn" onclick="addExtraItem()">＋ Agregar artículo no listado</button>
+      </div>
     </div>
 
     <!-- step 4 -->
@@ -667,6 +738,8 @@ if(!/[?&]m=1/.test(location.search) &&
     <button class="etile et-pdf"  onclick="closeSheet();mDoPDF()"><span class="eti">📄</span>PDF</button>
     <button class="etile et-png"  onclick="closeSheet();mDoImage('png')"><span class="eti">🖼️</span>PNG</button>
     <button class="etile et-jpg"  onclick="closeSheet();mDoImage('jpg')"><span class="eti">📷</span>JPG</button>
+    <!-- ADDED: formal contract PDF button -->
+    <button class="etile fpdf-et-formal" onclick="closeSheet();mDoPDFFormal()" style="grid-column:span 2"><span class="eti">📋</span>Contrato Formal (PDF A4)</button>
     <button class="etile et-cal"  onclick="closeSheet();mDoCal()"><span class="eti">📅</span>Agregar al Calendario</button>
   </div>
 </div>
@@ -717,6 +790,9 @@ if(!/[?&]m=1/.test(location.search) &&
 <!-- ═══ TOAST ══════════════════════════════════════════════════════════ -->
 <div id="mtoast"></div>
 
+<!-- ADDED: off-screen container for formal PDF rendering -->
+<div id="formal-pdf-container"></div>
+
 <script src="shared.js"></script>
 <script>
 "use strict";
@@ -727,6 +803,8 @@ var M_steps  = 5;
 var M_names  = ['Cliente','Fechas','Mobiliario','Totales','Resumen'];
 var M_editId = null;
 var M_delId  = null;
+// ADDED: extra (non-inventory) items state
+var M_extraItems = []; // [{desc:'', qty:1, price:0}]
 
 /* ── Helpers ── */
 function el(id){ return document.getElementById(id); }
@@ -1096,6 +1174,64 @@ function buildItems(){
     '</div>';
   }).join('');
 }
+// ADDED: render extra items rows
+function renderExtraItems(){
+  var c=el('m-extra-items'); if(!c) return;
+  if(M_extraItems.length===0){ c.innerHTML=''; return; }
+  c.innerHTML=M_extraItems.map(function(ex,i){
+    var amt=(ex.qty||0)*(ex.price||0);
+    return '<div class="extra-row" id="exrow'+i+'">' +
+      '<input class="extra-desc" type="text" placeholder="Descripción..." value="'+_xe(ex.desc||'')+'" oninput="updateExtra('+i+',\'desc\',this.value)">' +
+      '<div class="qctrl" style="border-radius:8px">' +
+        '<button class="qbtn" style="width:34px;height:34px;font-size:18px" onclick="extraQty('+i+',-1)">−</button>' +
+        '<div class="qnum" style="font-size:14px;min-width:28px" id="exq'+i+'">'+( ex.qty||0 )+'</div>' +
+        '<button class="qbtn" style="width:34px;height:34px;font-size:18px" onclick="extraQty('+i+',1)">+</button>' +
+      '</div>' +
+      '<input class="extra-price" type="number" min="0" step="0.01" placeholder="$" value="'+(ex.price||'')+'" oninput="updateExtra('+i+',\'price\',this.value)">' +
+      '<div class="extra-amt" id="exa'+i+'">$'+( amt>0?amt.toFixed(0):'0' )+'</div>' +
+      '<button class="extra-del" onclick="removeExtra('+i+')">✕</button>' +
+    '</div>';
+  }).join('');
+}
+// ADDED: add a blank extra item
+function addExtraItem(){
+  M_extraItems.push({desc:'', qty:1, price:0});
+  renderExtraItems();
+  mCalc();
+  // focus the new description input
+  setTimeout(function(){
+    var inputs=document.querySelectorAll('.extra-desc');
+    if(inputs.length) inputs[inputs.length-1].focus();
+  },50);
+}
+// ADDED: remove an extra item by index
+function removeExtra(i){
+  M_extraItems.splice(i,1);
+  renderExtraItems();
+  mCalc();
+}
+// ADDED: update field on an extra item
+function updateExtra(i,field,val){
+  if(!M_extraItems[i]) return;
+  if(field==='price') M_extraItems[i].price=parseFloat(val)||0;
+  else M_extraItems[i][field]=val;
+  var amt=(M_extraItems[i].qty||0)*(M_extraItems[i].price||0);
+  var ae=el('exa'+i); if(ae) ae.textContent='$'+(amt>0?amt.toFixed(0):'0');
+  mCalc();
+}
+// ADDED: +/- qty for extra item
+function extraQty(i,d){
+  if(!M_extraItems[i]) return;
+  M_extraItems[i].qty=Math.max(0,(M_extraItems[i].qty||0)+d);
+  var qe=el('exq'+i); if(qe) qe.textContent=M_extraItems[i].qty;
+  var amt=M_extraItems[i].qty*(M_extraItems[i].price||0);
+  var ae=el('exa'+i); if(ae) ae.textContent='$'+(amt>0?amt.toFixed(0):'0');
+  mCalc();
+  if(navigator.vibrate) navigator.vibrate(8);
+}
+// ADDED: XSS-safe string for rendering in attributes
+function _xe(s){ return (s||'').replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;'); }
+
 function mQty(i,d){
   var e=el('mq'+i); if(!e) return;
   var n=Math.max(0,(parseInt(e.textContent)||0)+d);
@@ -1116,6 +1252,10 @@ function mCalc(){
     var q=parseInt((el('mq'+i)||{textContent:'0'}).textContent)||0;
     var p=parseFloat((el('mp'+i)||{value:it.price}).value)||it.price;
     sub+=q*p;
+  });
+  // ADDED: include extra items in subtotal
+  M_extraItems.forEach(function(ex){
+    sub+=(ex.qty||0)*(ex.price||0);
   });
   var tr=parseFloat(gv('m-traslado'))||0;
   var g=sub+tr;
@@ -1147,6 +1287,10 @@ function mCollect(){
     hRecol:gv('m-hrecol'), hRecolL:sl('m-hrecol'),
     traslado:parseFloat(gv('m-traslado'))||0,
     anticipo:ant, total:total, resta:total-ant, items:items,
+    // ADDED: extra items (non-inventory)
+    extraItems: M_extraItems.filter(function(ex){ return ex.qty>0 || ex.desc; }).map(function(ex){
+      return {desc:ex.desc||'', qty:ex.qty||0, price:ex.price||0, amt:(ex.qty||0)*(ex.price||0)};
+    }),
     status:gv('m-status')||'abierto',
     ubicacion:(gv('m-ubicacion')||'').trim(),
     notas:(gv('m-notas')||'').trim()
@@ -1169,6 +1313,9 @@ function mPopulate(d){
     if(pe) pe.value=(r.price||ITEMS[i].price).toFixed(2);
     mUpdAmt(i);
   });
+  // ADDED: restore extra items
+  M_extraItems = (d.extraItems||[]).map(function(ex){ return {desc:ex.desc||'',qty:ex.qty||0,price:ex.price||0}; });
+  renderExtraItems();
   mCalc();
   if(ai){ ai.value=(d.anticipo||0).toFixed(2); ai.dataset.manual='1'; }
   mCalcResta();
@@ -1183,6 +1330,10 @@ function renderSummary(){
     if(!d.items[i]||!d.items[i].qty) return '';
     return '<li><span>'+it.desc+' ×'+d.items[i].qty+'</span><span>$'+d.items[i].amt.toFixed(2)+'</span></li>';
   }).filter(Boolean).join('');
+  // ADDED: extra items in summary
+  var xl=(d.extraItems||[]).filter(function(ex){return ex.qty>0&&ex.desc;}).map(function(ex){
+    return '<li><span>'+_xe(ex.desc)+' ×'+ex.qty+'</span><span>$'+ex.amt.toFixed(2)+'</span></li>';
+  }).join('');
   function sr(l,v){ return '<div class="srow"><span class="slbl">'+l+'</span><span class="sval">'+v+'</span></div>'; }
   g.innerHTML=
     '<div class="card"><div class="card-ttl">Cliente</div>'+
@@ -1191,7 +1342,7 @@ function renderSummary(){
       sr('Entrega',sl('m-hentrega'))+sr('Recolección',sl('m-hrecol'))+
     '</div>'+
     '<div class="card"><div class="card-ttl">Mobiliario</div>'+
-      (il?'<ul class="sitems">'+il+'</ul>':'<p style="color:var(--mid);font-size:14px">Sin artículos</p>')+
+      ((il||xl)?'<ul class="sitems">'+(il||'')+(xl||'')+'</ul>':'<p style="color:var(--mid);font-size:14px">Sin artículos</p>')+
     '</div>'+
     '<div class="card"><div class="card-ttl">Resumen Financiero</div>'+
       sr('Subtotal',gt('m-sub')||'$0.00')+
@@ -1235,6 +1386,7 @@ function startNew(){
   sv('m-notas','');
   var iw=el('m-inv-warn'); if(iw){ iw.textContent=''; iw.classList.remove('on'); }
   M_invConflicts=[]; // ADDED: reset conflicts
+  M_extraItems=[]; renderExtraItems(); // ADDED: reset extra items
   var ai=el('m-anticipo'); if(ai){ ai.value='0'; ai.removeAttribute('data-manual'); }
   ITEMS.forEach(function(it,i){
     var qe=el('mq'+i), pe=el('mp'+i), ae=el('ma'+i);
@@ -1390,6 +1542,208 @@ function mDoImage(fmt){
     dlDataURL(dataURL, 'CASVEL_'+(d.nombre||'contrato').replace(/\s+/g,'_')+'.'+fmt);
     showToast('✅ Imagen descargada');
   });
+}
+
+// ADDED: Formal contract PDF — 4 sections (A: datos, B: mobiliario, C: cláusulas, D: firmas)
+// Strategy: render all content freely, measure natural height, apply CSS scale to fit
+// exactly one letter page (816×1056px) regardless of number of items.
+function mDoPDFFormal(){
+  var d = mCollect();
+  showLoad('Generando contrato formal...');
+
+  var logoSrc = 'data:image/jpeg;base64,' + LOGO_B64;
+  var contratoNum = (d.cDate||'').replace(/-/g,'') + '-' + (d.nombre||'').replace(/\s+/g,'').substring(0,6).toUpperCase();
+
+  // -- Section A: Datos generales (compact inline layout) --
+  function infoCell(lbl, val){
+    return '<td style="padding:5px 10px 5px 0;vertical-align:top;white-space:nowrap">'+
+      '<span style="font-size:8px;font-weight:700;color:#5a6580;text-transform:uppercase;letter-spacing:.05em;display:block">'+lbl+'</span>'+
+      '<span style="font-size:11px;font-weight:600;color:#1a1f2e">'+(val||'—')+'</span>'+
+    '</td>';
+  }
+  var secA =
+    '<div class="fpdf-section" style="margin-bottom:14px">'+
+      '<div class="fpdf-sec-title">A &nbsp;·&nbsp; Datos Generales</div>'+
+      '<table style="width:100%;border-collapse:collapse;border:1px solid #dce6f1;border-radius:6px;overflow:hidden">'+
+        '<tr style="background:#f8fafc">'+
+          infoCell('No. Contrato', contratoNum)+
+          infoCell('Fecha Contrato', fmtDate(d.cDate))+
+          infoCell('Fecha Evento', fmtDate(d.fEvento))+
+          infoCell('Entrega', d.hEntregaL||d.hEntrega)+
+          infoCell('Recolección', d.hRecolL||d.hRecol)+
+        '</tr>'+
+        '<tr style="background:#fff;border-top:1px solid #dce6f1">'+
+          '<td colspan="2" style="padding:5px 10px 5px 0;vertical-align:top">'+
+            '<span style="font-size:8px;font-weight:700;color:#5a6580;text-transform:uppercase;letter-spacing:.05em;display:block">Arrendatario</span>'+
+            '<span style="font-size:11px;font-weight:700;color:#1a1f2e">'+(d.nombre||'—')+'</span>'+
+            (d.tel?'<span style="font-size:10px;color:#5a6580"> &nbsp;·&nbsp; '+_xe(d.tel)+'</span>':'')+
+          '</td>'+
+          '<td colspan="3" style="padding:5px 0;vertical-align:top">'+
+            '<span style="font-size:8px;font-weight:700;color:#5a6580;text-transform:uppercase;letter-spacing:.05em;display:block">Dirección del Evento</span>'+
+            '<span style="font-size:11px;font-weight:600;color:#1a1f2e">'+(d.dir||'—')+'</span>'+
+          '</td>'+
+        '</tr>'+
+      '</table>'+
+    '</div>';
+
+  // -- Section B: Mobiliario table --
+  var tableRows = '';
+  var hasAny = false;
+  ITEMS.forEach(function(it, i){
+    var r = d.items[i];
+    if(!r || !r.qty) return;
+    hasAny = true;
+    tableRows += '<tr><td>'+_xe(it.desc)+'</td><td class="num">'+r.qty+'</td><td class="num">$'+r.price.toFixed(2)+'</td><td class="num">$'+r.amt.toFixed(2)+'</td></tr>';
+  });
+  (d.extraItems||[]).forEach(function(ex){
+    if(!ex.qty || !ex.desc) return;
+    hasAny = true;
+    tableRows += '<tr><td>'+_xe(ex.desc)+' <em style="font-size:9px;color:#5a6580">(adicional)</em></td><td class="num">'+ex.qty+'</td><td class="num">$'+ex.price.toFixed(2)+'</td><td class="num">$'+ex.amt.toFixed(2)+'</td></tr>';
+  });
+  if(!hasAny) tableRows = '<tr><td colspan="4" style="text-align:center;color:#5a6580;font-style:italic">Sin artículos registrados</td></tr>';
+  var subtotal = d.total - d.traslado;
+  var secB =
+    '<div class="fpdf-section">'+
+      '<div class="fpdf-sec-title">B &nbsp;·&nbsp; Mobiliario a Arrendar</div>'+
+      '<table class="fpdf-table">'+
+        '<thead><tr><th>Descripción del Artículo</th><th style="text-align:right">Cant.</th><th style="text-align:right">P. Unitario</th><th style="text-align:right">Importe</th></tr></thead>'+
+        '<tbody>'+tableRows+'</tbody>'+
+        '<tfoot>'+
+          (d.traslado>0?'<tr class="tfoot"><td colspan="3">Subtotal artículos</td><td class="num">$'+subtotal.toFixed(2)+'</td></tr>':'')+
+          (d.traslado>0?'<tr class="tfoot"><td colspan="3">Traslado</td><td class="num">$'+d.traslado.toFixed(2)+'</td></tr>':'')+
+          '<tr class="tfoot-total"><td colspan="3">TOTAL</td><td class="num">$'+d.total.toFixed(2)+'</td></tr>'+
+          '<tr class="tfoot"><td colspan="3">Anticipo recibido</td><td class="num">$'+d.anticipo.toFixed(2)+'</td></tr>'+
+          '<tr class="tfoot"><td colspan="3">Saldo por pagar</td><td class="num">$'+d.resta.toFixed(2)+'</td></tr>'+
+        '</tfoot>'+
+      '</table>'+
+    '</div>';
+
+  // -- Section C: Cláusulas exactas del cliente --
+  var secC =
+    '<div class="fpdf-section">'+
+      '<div class="fpdf-sec-title">C &nbsp;·&nbsp; Cláusulas para Alquiler y Condiciones de Uso</div>'+
+      '<div class="fpdf-clauses">'+
+        '<div style="font-size:9px;font-weight:700;color:#1a1f2e;margin-bottom:4px;text-transform:uppercase;letter-spacing:.04em">Cláusulas para Alquiler:</div>'+
+        '<ul style="margin:0 0 8px 14px;padding:0;list-style:disc">'+
+          '<li class="fpdf-bullet">El mobiliario se alquila por día, se entrega el día del evento y se retira el mismo día o al día siguiente a más tardar las 12:00 pm.</li>'+
+          '<li class="fpdf-bullet">El costo del alquiler no incluye Traslado.</li>'+
+          '<li class="fpdf-bullet">El pago debe de hacerse al momento de la entrega del mobiliario.</li>'+
+          '<li class="fpdf-bullet">El mobiliario solo debe ser trasladado por el arrendador, se entrega en el lugar donde se realizará el evento, no debe de ser trasladado a otro sitio, ya que puede sufrir daños y esto tendría un costo adicional.</li>'+
+          '<li class="fpdf-bullet">El mobiliario debe de entregarse en las condiciones físicas en las cuales se haya recibido, no faltar piezas, ni evidenciar quebraduras, roturas o quemaduras, ya que esto correrá por cuenta del arrendatario.</li>'+
+          '<li class="fpdf-bullet">En caso de algún daño al brinca brinca, el cliente deberá pagar el importe acordado de acuerdo con el mismo.</li>'+
+          '<li class="fpdf-bullet">EVENTOS CASVEL NO se hace responsable de algún accidente o incidente dentro o fuera del inflable.</li>'+
+          '<li class="fpdf-bullet">En caso de suspensión del evento por parte del cliente no hay devolución del anticipo.</li>'+
+          '<li class="fpdf-bullet">Cada contrato requiere un anticipo del 25%.</li>'+
+          '<li class="fpdf-bullet">En caso de posponer el evento, el cliente deberá elegir otra fecha siempre y cuando el mobiliario se encuentre disponible y se dé aviso a "EVENTOS CASVEL" al menos 7 días antes de la fecha de dicho evento.</li>'+
+          '<li class="fpdf-bullet">Al firmar el presente contrato se dan por aceptadas todas las condiciones antes mencionadas, así como las condiciones de uso listadas a continuación.</li>'+
+        '</ul>'+
+        '<div style="font-size:9px;font-weight:700;color:#1a1f2e;margin-bottom:4px;text-transform:uppercase;letter-spacing:.04em">Condiciones de uso <span style="font-weight:400;text-transform:none;font-style:italic">(por razones de higiene, seguridad de los niños y deterioro del juego inflable):</span></div>'+
+        '<ul style="margin:0 0 0 14px;padding:0;list-style:disc">'+
+          '<li class="fpdf-bullet">No usar dentro del juego: confeti, serpentinas, papel de china, espuma, luces de bengala, restos de piñata, alimentos y/o bebidas.</li>'+
+          '<li class="fpdf-bullet">No usar zapatos dentro del inflable.</li>'+
+          '<li class="fpdf-bullet">No se permite fumar o colocar inflables cerca de fogatas o parrillas calientes.</li>'+
+        '</ul>'+
+      '</div>'+
+    '</div>';
+
+  // -- Section D: Signatures — flex spacer pushes these to the bottom --
+  var secD =
+    '<div style="flex:1;min-height:8px"></div>'+
+    '<div class="fpdf-signatures">'+
+      '<div class="fpdf-sig-block"><div class="fpdf-sig-line"></div>'+
+        '<div class="fpdf-sig-name">EVENTOS CASVEL</div>'+
+        '<div class="fpdf-sig-role">Representante / Arrendador</div></div>'+
+      '<div class="fpdf-sig-block"><div class="fpdf-sig-line"></div>'+
+        '<div class="fpdf-sig-name">'+(d.nombre||'Arrendatario')+'</div>'+
+        '<div class="fpdf-sig-role">Arrendatario · Tel: '+(d.tel||'—')+'</div></div>'+
+    '</div>'+
+    '<div class="fpdf-footer">EVENTOS CASVEL &nbsp;·&nbsp; Contrato No. '+contratoNum+' &nbsp;·&nbsp; Generado el '+fmtDate(d.cDate)+'</div>';
+
+  // -- Assemble: outer clip-page wraps a freely-growing inner-wrap that gets scaled --
+  var pageHTML =
+    '<div class="fpdf-page" id="fpdf-outer">'+
+      '<div class="fpdf-header">'+
+        '<div class="fpdf-logo-area">'+
+          '<img class="fpdf-logo" src="'+logoSrc+'" onerror="this.style.display=\'none\'" alt="">'+
+          '<div><div class="fpdf-brand">EVENTOS CASVEL</div><div class="fpdf-brand-sub">Renta de Mobiliario para Eventos</div></div>'+
+        '</div>'+
+        '<div class="fpdf-contract-id"><strong>CONTRATO DE ARRENDAMIENTO</strong>No. '+contratoNum+'</div>'+
+      '</div>'+
+      '<div class="fpdf-inner-wrap" id="fpdf-inner">'+
+        secA + secB + secC + secD +
+      '</div>'+
+    '</div>';
+
+  var container = el('formal-pdf-container');
+  container.innerHTML = pageHTML;
+
+  // Give browser time to lay out, then measure and scale
+  setTimeout(function(){
+    var outer = el('fpdf-outer');
+    var inner = el('fpdf-inner');
+    if(!outer || !inner){ hideLoad(); showToast('❌ Error al preparar el PDF'); return; }
+
+    // Available height inside the page (total 1056 minus header)
+    var outerH   = 1056;
+    var headerEl = outer.querySelector('.fpdf-header');
+    var headerH  = headerEl ? headerEl.offsetHeight + 16 : 90; // 16 = gap
+    var available = outerH - 48 - 40 - headerH; // padding-top + padding-bottom + header
+
+    // Natural height of the inner content
+    var naturalH = inner.scrollHeight;
+
+    // Scale down if needed; never scale up (max 1.0)
+    var scale = naturalH > available ? (available / naturalH) : 1.0;
+    // Clamp: don't shrink below 55% (extremely pathological cases)
+    scale = Math.max(0.55, scale);
+
+    inner.style.transform = 'scale(' + scale + ')';
+    inner.style.transformOrigin = 'top left';
+    // Compensate width so scaled content doesn't leave gap
+    inner.style.width = (100 / scale) + '%';
+    // Fix height so outer doesn't expand
+    inner.style.height = (available / scale) + 'px';
+    inner.style.overflow = 'hidden';
+
+    function doCapture(){
+      html2canvas(outer, {
+        scale: 2,
+        useCORS: true,
+        allowTaint: true,
+        backgroundColor: '#ffffff',
+        width:  816,
+        height: 1056,
+        windowWidth: 816
+      }).then(function(canvas){
+        var imgData = canvas.toDataURL('image/jpeg', 0.95);
+        var jsPDFClass = window.jspdf ? window.jspdf.jsPDF : window.jsPDF;
+        if(!jsPDFClass){ hideLoad(); showToast('❌ jsPDF no disponible'); return; }
+        var pdf = new jsPDFClass({ orientation:'portrait', unit:'pt', format:'letter' });
+        var pW = pdf.internal.pageSize.getWidth();
+        var pH = pdf.internal.pageSize.getHeight();
+        pdf.addImage(imgData, 'JPEG', 0, 0, pW, pH);
+        var fname = 'CASVEL_Contrato_'+(d.nombre||'').replace(/\s+/g,'_')+'_'+contratoNum+'.pdf';
+        pdf.save(fname);
+        container.innerHTML = '';
+        hideLoad();
+        showToast('✅ Contrato formal descargado');
+      }).catch(function(err){
+        container.innerHTML = '';
+        hideLoad();
+        showToast('❌ Error: '+err.message);
+      });
+    }
+
+    if(!window.jspdf && !window.jsPDF){
+      var s = document.createElement('script');
+      s.src = 'https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js';
+      s.onload = function(){ setTimeout(doCapture, 100); };
+      s.onerror = function(){ hideLoad(); showToast('❌ No se pudo cargar jsPDF'); };
+      document.head.appendChild(s);
+    } else {
+      doCapture();
+    }
+  }, 400);
 }
 
 /* ADDED: contract detail sheet */
