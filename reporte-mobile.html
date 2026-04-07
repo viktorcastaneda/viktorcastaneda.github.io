@@ -476,6 +476,11 @@ body{-webkit-text-size-adjust:100%;overscroll-behavior-y:none}
       <div class="det-sec-lbl">Mobiliario</div>
       <div id="det-items-rows"></div>
     </div>
+    <!-- ADDED: artículos adicionales -->
+    <div class="det-section" id="det-extra-section" style="display:none">
+      <div class="det-sec-lbl">Artículos adicionales</div>
+      <div id="det-extra-rows"></div>
+    </div>
     <div class="det-section">
       <div class="det-sec-lbl">Financiero</div>
       <div id="det-fin-rows"></div>
@@ -1042,6 +1047,18 @@ function openDetailSheet(id){
     return '<div class="det-item-row"><span class="det-item-name">'+ITEMS[i].desc+' ×'+r.qty+'</span><span class="det-item-amt">$'+r.amt.toFixed(2)+'</span></div>';
   }).filter(Boolean).join('');
   el('det-items-rows').innerHTML=itemRows||'<div style="font-size:13px;color:var(--mid);padding:4px 0">Sin artículos</div>';
+  // ADDED: artículos adicionales
+  var extraRows=(c.extraItems||[]).filter(function(ex){return ex.qty>0&&ex.desc;}).map(function(ex){
+    var amt=(ex.qty||0)*(ex.price||0);
+    return '<div class="det-item-row">'+
+      '<span class="det-item-name">'+xe(ex.desc)+' ×'+ex.qty+'</span>'+
+      '<span class="det-item-amt">$'+amt.toFixed(2)+'</span>'+
+    '</div>';
+  }).join('');
+  var extraSec=el('det-extra-section');
+  if(extraSec){ extraSec.style.display=extraRows?'':'none'; }
+  var extraRowsEl=el('det-extra-rows');
+  if(extraRowsEl){ extraRowsEl.innerHTML=extraRows; }
   el('det-fin-rows').innerHTML=
     '<div class="det-fin-row"><span style="color:var(--mid)">Subtotal</span><span>$'+((c.total||0)-(c.traslado||0)).toLocaleString('es-MX',{minimumFractionDigits:2})+'</span></div>'+
     (c.traslado>0?'<div class="det-fin-row"><span style="color:var(--mid)">Traslado</span><span>$'+(c.traslado||0).toLocaleString('es-MX',{minimumFractionDigits:2})+'</span></div>':'')+

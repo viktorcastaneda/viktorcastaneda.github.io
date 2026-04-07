@@ -265,9 +265,11 @@ input[type=date].fi{color-scheme:light}
 .extra-items-section{margin-top:18px;padding-top:14px;border-top:2px dashed var(--border)}
 .extra-section-ttl{font-size:12px;font-weight:700;color:var(--blue);text-transform:uppercase;
   letter-spacing:.07em;margin-bottom:12px}
-.extra-row{display:flex;align-items:center;gap:8px;padding:10px 0;border-bottom:1px solid var(--border)}
+/* MODIFIED: extra-row layout — descripción en línea 1, controles en línea 2 */
+.extra-row{display:flex;flex-direction:column;gap:8px;padding:10px 0;border-bottom:1px solid var(--border)}
 .extra-row:last-of-type{border-bottom:none}
-.extra-desc{flex:1;min-width:0;padding:8px 10px;border:1.5px solid var(--border);border-radius:8px;
+.extra-row-controls{display:flex;align-items:center;gap:8px}
+.extra-desc{width:100%;padding:8px 10px;border:1.5px solid var(--border);border-radius:8px;
   font-size:14px;font-family:'DM Sans',sans-serif;color:var(--dark);outline:none;background:var(--white)}
 .extra-desc:focus{border-color:var(--blue)}
 .extra-price{width:72px;padding:8px 8px;border:1.5px solid var(--border);border-radius:8px;
@@ -680,6 +682,11 @@ if(!/[?&]m=1/.test(location.search) &&
       <div class="det-sec-lbl">Mobiliario</div>
       <div id="det-items-rows"></div>
     </div>
+    <!-- ADDED: artículos adicionales -->
+    <div class="det-section" id="det-extra-section" style="display:none">
+      <div class="det-sec-lbl">Artículos adicionales</div>
+      <div id="det-extra-rows"></div>
+    </div>
     <div class="det-section">
       <div class="det-sec-lbl">Financiero</div>
       <div id="det-fin-rows"></div>
@@ -714,6 +721,11 @@ if(!/[?&]m=1/.test(location.search) &&
     <div class="det-section">
       <div class="det-sec-lbl">Mobiliario</div>
       <div id="det-items-rows"></div>
+    </div>
+    <!-- ADDED: artículos adicionales -->
+    <div class="det-section" id="det-extra-section" style="display:none">
+      <div class="det-sec-lbl">Artículos adicionales</div>
+      <div id="det-extra-rows"></div>
     </div>
     <div class="det-section">
       <div class="det-sec-lbl">Financiero</div>
@@ -1180,16 +1192,19 @@ function renderExtraItems(){
   if(M_extraItems.length===0){ c.innerHTML=''; return; }
   c.innerHTML=M_extraItems.map(function(ex,i){
     var amt=(ex.qty||0)*(ex.price||0);
+    // MODIFIED: descripción en línea 1, controles en línea 2
     return '<div class="extra-row" id="exrow'+i+'">' +
       '<input class="extra-desc" type="text" placeholder="Descripción..." value="'+_xe(ex.desc||'')+'" oninput="updateExtra('+i+',\'desc\',this.value)">' +
-      '<div class="qctrl" style="border-radius:8px">' +
-        '<button class="qbtn" style="width:34px;height:34px;font-size:18px" onclick="extraQty('+i+',-1)">−</button>' +
-        '<div class="qnum" style="font-size:14px;min-width:28px" id="exq'+i+'">'+( ex.qty||0 )+'</div>' +
-        '<button class="qbtn" style="width:34px;height:34px;font-size:18px" onclick="extraQty('+i+',1)">+</button>' +
+      '<div class="extra-row-controls">' +
+        '<div class="qctrl" style="border-radius:8px">' +
+          '<button class="qbtn" style="width:34px;height:34px;font-size:18px" onclick="extraQty('+i+',-1)">−</button>' +
+          '<div class="qnum" style="font-size:14px;min-width:28px" id="exq'+i+'">'+( ex.qty||0 )+'</div>' +
+          '<button class="qbtn" style="width:34px;height:34px;font-size:18px" onclick="extraQty('+i+',1)">+</button>' +
+        '</div>' +
+        '<input class="extra-price" type="number" min="0" step="0.01" placeholder="$" value="'+(ex.price||'')+'" oninput="updateExtra('+i+',\'price\',this.value)">' +
+        '<div class="extra-amt" id="exa'+i+'">$'+( amt>0?amt.toFixed(0):'0' )+'</div>' +
+        '<button class="extra-del" onclick="removeExtra('+i+')">✕</button>' +
       '</div>' +
-      '<input class="extra-price" type="number" min="0" step="0.01" placeholder="$" value="'+(ex.price||'')+'" oninput="updateExtra('+i+',\'price\',this.value)">' +
-      '<div class="extra-amt" id="exa'+i+'">$'+( amt>0?amt.toFixed(0):'0' )+'</div>' +
-      '<button class="extra-del" onclick="removeExtra('+i+')">✕</button>' +
     '</div>';
   }).join('');
 }
@@ -1782,6 +1797,19 @@ function openDetailSheet(id){
   var itemsSec=el('det-items-section');
   el('det-items-rows').innerHTML=itemRows||'<div style="font-size:13px;color:var(--mid);padding:4px 0">Sin artículos</div>';
 
+  // ADDED: artículos adicionales
+  var extraRows=(c.extraItems||[]).filter(function(ex){return ex.qty>0&&ex.desc;}).map(function(ex){
+    var amt=(ex.qty||0)*(ex.price||0);
+    return '<div class="det-item-row">'+
+      '<span class="det-item-name">'+xe(ex.desc)+' ×'+ex.qty+'</span>'+
+      '<span class="det-item-amt">$'+amt.toFixed(2)+'</span>'+
+    '</div>';
+  }).join('');
+  var extraSec=el('det-extra-section');
+  if(extraSec){ extraSec.style.display=extraRows?'':'none'; }
+  var extraRowsEl=el('det-extra-rows');
+  if(extraRowsEl){ extraRowsEl.innerHTML=extraRows; }
+
   // Financiero
   el('det-fin-rows').innerHTML=
     '<div class="det-fin-row"><span style="color:var(--mid)">Subtotal</span><span>$'+((c.total||0)-(c.traslado||0)).toLocaleString('es-MX',{minimumFractionDigits:2})+'</span></div>'+
@@ -1838,12 +1866,19 @@ function openDetailSheet(id){
     return '<div class="det-item-row"><span class="det-item-name">'+ITEMS[i].desc+' ×'+r.qty+'</span><span class="det-item-amt">$'+r.amt.toFixed(2)+'</span></div>';
   }).filter(Boolean).join('');
   el('det-items-rows').innerHTML=itemRows||'<div style="font-size:13px;color:var(--mid);padding:4px 0">Sin artículos</div>';
+  // ADDED: artículos adicionales
+  var extraRows2=(c.extraItems||[]).filter(function(ex){return ex.qty>0&&ex.desc;}).map(function(ex){
+    var amt=(ex.qty||0)*(ex.price||0);
+    return '<div class="det-item-row">'+
+      '<span class="det-item-name">'+xe(ex.desc)+' ×'+ex.qty+'</span>'+
+      '<span class="det-item-amt">$'+amt.toFixed(2)+'</span>'+
+    '</div>';
+  }).join('');
+  var extraSec2=el('det-extra-section');
+  if(extraSec2){ extraSec2.style.display=extraRows2?'':'none'; }
+  var extraRowsEl2=el('det-extra-rows');
+  if(extraRowsEl2){ extraRowsEl2.innerHTML=extraRows2; }
   el('det-fin-rows').innerHTML=
-    '<div class="det-fin-row"><span style="color:var(--mid)">Subtotal</span><span>$'+((c.total||0)-(c.traslado||0)).toLocaleString('es-MX',{minimumFractionDigits:2})+'</span></div>'+
-    (c.traslado>0?'<div class="det-fin-row"><span style="color:var(--mid)">Traslado</span><span>$'+(c.traslado||0).toLocaleString('es-MX',{minimumFractionDigits:2})+'</span></div>':'')+
-    '<div class="det-fin-row"><span style="color:var(--mid)">Total</span><span>$'+(c.total||0).toLocaleString('es-MX',{minimumFractionDigits:2})+'</span></div>'+
-    '<div class="det-fin-row"><span style="color:var(--mid)">Anticipo</span><span>$'+(c.anticipo||0).toLocaleString('es-MX',{minimumFractionDigits:2})+'</span></div>'+
-    // MODIFIED: si cerrado, resta efectiva = 0 (pagado al 100%)
     (s==='cerrado'
       ? '<div class="det-fin-row"><span>Resta por pagar</span><span style="color:#15803d;font-weight:700">$0.00 ✓ Saldado</span></div>'
       : '<div class="det-fin-row"><span>Resta por pagar</span><span style="color:var(--red)">$'+(c.resta||0).toLocaleString('es-MX',{minimumFractionDigits:2})+'</span></div>');
