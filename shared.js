@@ -636,7 +636,7 @@ function savePDF(d, filename){
 /* ── Inventario disponible por día (unidades totales por recurso) ── */
 var DAILY_INVENTORY={
   mantel_rect:10, mantel_camino:10, sillas_negras:72, mesa_180:10,
-  mesa_inf:9, sillas_tiffany:48, sillas_colors:48,
+  mesa_inf:10, sillas_tiffany:48, sillas_colors:48,
   bb_bebes:0, bb_castillo_colors:1, bb_caramelo:1,
   bb_resbaladilla:1, area_infantil:1
 };
