@@ -442,6 +442,22 @@ input[type=date].fi{color-scheme:light}
 .mempty .ei{font-size:48px;margin-bottom:10px}
 .mempty .et{font-size:16px;font-weight:600;margin-bottom:4px}
 .mempty .es{font-size:14px}
+/* ── ADDED: Quotation module styles ── */
+.qot-badge{display:inline-flex;align-items:center;gap:4px;padding:3px 9px;border-radius:10px;font-size:10px;font-weight:700;background:#fef3c7;color:#92400e;border:1px solid #fde68a}
+.qot-card{background:var(--white);border-radius:var(--r);padding:16px 18px;border:1.5px dashed #fbbf24;margin-bottom:12px;box-shadow:0 1px 4px rgba(0,0,0,.05)}
+.qot-card .ccname{font-size:15px;font-weight:700;color:var(--dark)}
+.qot-card .cctop{display:flex;justify-content:space-between;align-items:flex-start;margin-bottom:10px}
+.qot-card .ccmeta{font-size:12px;color:var(--mid);display:flex;flex-wrap:wrap;gap:6px;margin-top:4px}
+.qot-card .cctotal{font-size:15px;font-weight:700;color:#92400e}
+.qot-card .ccacts{display:flex;gap:8px;flex-wrap:wrap}
+.qot-card .ccbtn{padding:7px 13px;border:none;border-radius:9px;font-size:12px;font-weight:700;cursor:pointer;font-family:inherit;-webkit-tap-highlight-color:transparent}
+.qot-convert-btn{background:#dcfce7;color:#15803d}
+.qot-del-btn{background:#fee2e2;color:#b91c1c}
+.qot-exp-btn{background:#dbeafe;color:#1d4ed8}
+.qot-view-btn{background:#f0f4f8;color:var(--dark)}
+/* Cotization PDF footer note */
+.fpdf-quot-note{margin-top:14px;padding:10px 14px;background:#fffbeb;border:1px solid #fde68a;border-radius:6px;font-size:8.5px;color:#78350f;line-height:1.5}
+.fpdf-quot-note strong{font-weight:800}
 </style>
 </head>
 <body>
@@ -473,7 +489,7 @@ if(!/[?&]m=1/.test(location.search) &&
   <nav class="bnav">
     <button class="bn on" id="bn-home" onclick="goTo('sc-home')"><span class="bi">🏠</span><span class="bl">Inicio</span></button>
     <button class="bn" id="bn-hist" onclick="goTo('sc-hist')"><span class="bi">📋</span><span class="bl">Historial</span></button>
-    <button class="bn" onclick="startNew()"><span class="bi">✏️</span><span class="bl">Nuevo</span></button>
+    <button class="bn" id="bn-quot" onclick="goTo('sc-quot')"><span class="bi">🗒</span><span class="bl">Cotizaciones</span></button><!-- ADDED: quotations tab -->
   </nav>
 </div>
 
@@ -510,8 +526,126 @@ if(!/[?&]m=1/.test(location.search) &&
   <nav class="bnav">
     <button class="bn" id="bn-home2" onclick="goTo('sc-home')"><span class="bi">🏠</span><span class="bl">Inicio</span></button>
     <button class="bn on" id="bn-hist2" onclick="goTo('sc-hist')"><span class="bi">📋</span><span class="bl">Historial</span></button>
-    <button class="bn" onclick="startNew()"><span class="bi">✏️</span><span class="bl">Nuevo</span></button>
+    <button class="bn" id="bn-quot2" onclick="goTo('sc-quot')"><span class="bi">🗒</span><span class="bl">Cotizaciones</span></button><!-- ADDED: quotations tab -->
   </nav>
+</div>
+
+<!-- ═══ COTIZACIONES ════════════════════════════════════════════════════ -->
+<!-- ADDED: Quotation management screen -->
+<div class="sc" id="sc-quot">
+  <div class="tb" style="padding-bottom:14px">
+    <span style="font-size:20px">🗒</span>
+    <span class="tb-ttl">Cotizaciones</span>
+    <button class="tb-act" onclick="startNewQuot()">+ Nueva</button>
+  </div>
+  <div class="hcont" style="padding-top:14px">
+    <div style="margin-bottom:12px;padding:0 2px">
+      <input type="search" class="hf-inp" id="quot-search"
+        placeholder="🔍 Buscar cotización…" oninput="renderQuot()">
+    </div>
+    <div id="quot-list"></div>
+  </div>
+  <nav class="bnav">
+    <button class="bn" id="bn-home3" onclick="goTo('sc-home')"><span class="bi">🏠</span><span class="bl">Inicio</span></button>
+    <button class="bn" id="bn-hist3" onclick="goTo('sc-hist')"><span class="bi">📋</span><span class="bl">Historial</span></button>
+    <button class="bn on" id="bn-quot3" onclick="goTo('sc-quot')"><span class="bi">🗒</span><span class="bl">Cotizaciones</span></button>
+  </nav>
+</div>
+
+<!-- ═══ WIZARD COTIZACIÓN ══════════════════════════════════════════════ -->
+<!-- ADDED: Quotation wizard — same 5 steps but saves to casvel_cot_v1 -->
+<div class="sc" id="sc-qwiz">
+  <div class="tb">
+    <button class="tb-bk" onclick="goTo('sc-quot')">←</button>
+    <img class="tb-logo" id="qwiz-logo" src="" alt="">
+    <span class="tb-ttl" id="qwiz-ttl">Nueva Cotización</span>
+    <button class="tb-act" onclick="qSave()">Guardar</button>
+  </div>
+  <div class="prog-wrap">
+    <div class="prog-bars" id="qprog-bars"></div>
+    <div class="prog-labels"><span id="qprog-cur" class="cl">Paso 1 de 5</span><span id="qprog-name"></span></div>
+  </div>
+  <div class="sarea" id="qwiz-scroll">
+
+    <!-- step 1 -->
+    <div id="qws1">
+      <div class="shdr"><div class="snum">1</div>
+        <div><div class="sttl">Datos del Cliente</div><div class="ssub">Información para la cotización</div></div>
+      </div>
+      <div class="card">
+        <div class="fg"><label class="flb">Nombre completo *</label>
+          <input type="text" class="fi" id="q-nombre" autocomplete="name" placeholder="Nombre del cliente"></div>
+        <div class="fg"><label class="flb">Teléfono</label>
+          <input type="tel" class="fi" id="q-tel" autocomplete="tel" placeholder="614 123 4567"></div>
+        <div class="fg"><label class="flb">Dirección del evento</label>
+          <input type="text" class="fi" id="q-dir" placeholder="Calle, colonia, ciudad"></div>
+        <div class="fg"><label class="flb">Notas</label>
+          <input type="text" class="fi" id="q-notas" placeholder="Observaciones o requisitos especiales..."></div>
+      </div>
+    </div>
+
+    <!-- step 2 -->
+    <div id="qws2" style="display:none">
+      <div class="shdr"><div class="snum">2</div>
+        <div><div class="sttl">Fecha y Horarios</div><div class="ssub">¿Cuándo es el evento?</div></div>
+      </div>
+      <div class="card">
+        <div class="fg"><label class="flb">Fecha de cotización</label>
+          <input type="date" class="fi" id="q-cdate" style="color-scheme:light"></div>
+        <div class="fg"><label class="flb">Fecha del evento</label>
+          <input type="date" class="fi" id="q-fevento" onchange="qUpdateInvWarn()" style="color-scheme:light"></div>
+        <div class="fg"><label class="flb">Hora de entrega</label>
+          <select class="fi" id="q-hentrega"></select></div>
+        <div class="fg"><label class="flb">Hora de recolección</label>
+          <select class="fi" id="q-hrecol"></select></div>
+      </div>
+    </div>
+
+    <!-- step 3 -->
+    <div id="qws3" style="display:none">
+      <div class="shdr" style="display:flex;justify-content:space-between;align-items:flex-start">
+        <div style="display:flex;align-items:flex-start;gap:12px">
+          <div class="snum">3</div>
+          <div><div class="sttl">Mobiliario</div><div class="ssub">Artículos a cotizar</div></div>
+        </div>
+        <button onclick="openQInvSheet()" style="flex-shrink:0;padding:9px 13px;border:none;border-radius:10px;background:var(--bbg);color:var(--blue);font-family:inherit;font-size:12px;font-weight:700;cursor:pointer;margin-top:4px">📦 Inventario</button>
+      </div>
+      <div class="inv-warn" id="q-inv-warn"></div>
+      <div class="card" style="padding:8px 16px" id="q-items"></div>
+      <div class="card" style="padding:14px 16px">
+        <div class="card-ttl">Artículos Adicionales</div>
+        <div id="q-extra-items"></div>
+        <button onclick="addQExtraItem()" style="width:100%;padding:11px;border:1.5px dashed var(--border);border-radius:10px;background:none;color:var(--blue);font-family:inherit;font-size:13px;font-weight:700;cursor:pointer;margin-top:10px">+ Artículo adicional</button>
+      </div>
+    </div>
+
+    <!-- step 4 -->
+    <div id="qws4" style="display:none">
+      <div class="shdr"><div class="snum">4</div>
+        <div><div class="sttl">Totales</div><div class="ssub">Resumen financiero de la cotización</div></div>
+      </div>
+      <div class="tc">
+        <div class="tr"><span class="tlbl">Subtotal artículos</span><span class="tval" id="q-sub">$0.00</span></div>
+        <div class="tr"><span class="tlbl">Traslado</span>
+          <input type="number" class="tinp" id="q-traslado" min="0" step="0.01" value="0" oninput="qCalc()"></div>
+        <div class="tr tot"><span class="tlbl">Total</span><span class="tval" id="q-total">$0.00</span></div>
+      </div>
+    </div>
+
+    <!-- step 5 -->
+    <div id="qws5" style="display:none">
+      <div class="shdr"><div class="snum">5</div>
+        <div><div class="sttl">Resumen</div><div class="ssub">Revisa antes de guardar</div></div>
+      </div>
+      <div id="q-summary"></div>
+    </div>
+
+  </div><!-- /sarea -->
+
+  <div class="wbtns" id="qwiz-btns">
+    <button class="wbtn wbtn-prev" id="qwbtn-prev" onclick="qWizPrev()">← Anterior</button>
+    <button class="wbtn wbtn-next" id="qwbtn-next" onclick="qWizNext()">Siguiente →</button>
+  </div>
 </div>
 
 <!-- ═══ WIZARD ════════════════════════════════════════════════════════ -->
@@ -756,6 +890,17 @@ if(!/[?&]m=1/.test(location.search) &&
   </div>
 </div>
 
+<!-- ADDED: Quotation export sheet -->
+<div class="sbg" id="qexp-sbg" onclick="closeQSheet()"></div>
+<div class="sheet" id="qexp-sheet">
+  <div class="shandle"></div>
+  <div class="sttitle">Exportar Cotización</div>
+  <div class="stsub">Descarga el PDF formal de la cotización</div>
+  <div class="egrid">
+    <button class="etile fpdf-et-formal" onclick="mDoPDFCotizacion(true)" style="grid-column:span 2"><span class="eti">📋</span>Cotización Formal (PDF)</button>
+  </div>
+</div>
+
 <!-- ═══ FIREBASE SHEET ══════════════════════════════════════════════════ -->
 <div class="fb-sbg" id="fb-sbg" onclick="closeFbSheet()"></div>
 <div class="fb-sheet" id="fb-sheet">
@@ -837,6 +982,14 @@ function goTo(id){
   document.querySelectorAll('.sc').forEach(function(s){ s.classList.toggle('on', s.id===id); });
   if(id==='sc-home') renderHome();
   if(id==='sc-hist') renderHist();
+  if(id==='sc-quot') renderQuot(); // ADDED: render quotations list
+  // ADDED: sync bottom nav active state across all nav bars
+  ['home','hist','quot'].forEach(function(tab){
+    var active = (id==='sc-'+tab);
+    ['','2','3'].forEach(function(sfx){
+      var b=el('bn-'+tab+sfx); if(b) b.classList.toggle('on', active);
+    });
+  });
   window.scrollTo(0,0);
 }
 
@@ -844,16 +997,23 @@ function goTo(id){
 document.addEventListener('DOMContentLoaded', function(){
   var src='data:image/jpeg;base64,'+LOGO_B64;
   el('m-logo').src=src; el('wiz-logo').src=src;
+  if(el('qwiz-logo')) el('qwiz-logo').src=src; // ADDED: quotation wizard logo
 
   var opts=TIME_OPTIONS.map(function(t){
     return '<option value="'+t.value+'">'+t.label+'</option>';
   }).join('');
   el('m-hentrega').innerHTML=opts;
   el('m-hrecol').innerHTML=opts;
+  // ADDED: populate quotation wizard time selects
+  if(el('q-hentrega')) el('q-hentrega').innerHTML=opts;
+  if(el('q-hrecol'))   el('q-hrecol').innerHTML=opts;
 
   buildItems();
+  buildQItems(); // ADDED: build quotation items list
   sv('m-cdate', todayISO());
+  sv('q-cdate', todayISO()); // ADDED: default quotation date
   buildProg();
+  buildQProg(); // ADDED: build quotation progress bars
 
   el('m-anticipo').addEventListener('input', function(){
     this.dataset.manual='1'; mCalcResta();
@@ -1424,12 +1584,14 @@ function mEdit(id){
 /* ── Home ── */
 function renderHome(){
   var list=loadContracts();
-  var total=list.reduce(function(s,c){return s+(c.total||0);},0);
+  // MODIFIED: exclude cancelled contracts from monetary stats
+  var active=list.filter(function(c){return resolveStatus(c)!=='cancelado';});
+  var total=active.reduce(function(s,c){return s+(c.total||0);},0);
   var mo=new Date().toISOString().substring(0,7);
-  var mc=list.filter(function(c){return(c.fEvento||c.createdAt||'').startsWith(mo);});
+  var mc=active.filter(function(c){return(c.fEvento||c.createdAt||'').startsWith(mo);});
   var mt=mc.reduce(function(s,c){return s+(c.total||0);},0);
   function sc(l,v){ return '<div class="scard"><div class="sclbl">'+l+'</div><div class="scval">'+v+'</div></div>'; }
-  el('home-stats').innerHTML=sc('Contratos',list.length)+sc('Este mes',mc.length)+
+  el('home-stats').innerHTML=sc('Contratos',active.length)+sc('Este mes',mc.length)+
     sc('Total','$'+total.toLocaleString('es-MX',{minimumFractionDigits:0}))+
     sc('Mes','$'+mt.toLocaleString('es-MX',{minimumFractionDigits:0}));
   el('home-recent').innerHTML=list.length?list.slice(0,3).map(cardHTML).join(''):mempty('Sin contratos','Crea el primero');
@@ -1895,5 +2057,613 @@ function openDetailSheet(id){
 function closeDetailSheet(){
   el('det-sheet-bg').classList.remove('on');
   el('det-sheet').classList.remove('on');
+}
+
+/* ═══════════════════════════════════════════════════════════════
+   ADDED: COTIZACIONES MODULE
+   - Storage key: 'casvel_cot_v1' (independent of Firebase)
+   - Quotation object shape mirrors contract but has no status/ubicacion
+     and adds type:'cotizacion'
+   - Convert to contract: copies fields to new contract, opens wizard
+═══════════════════════════════════════════════════════════════ */
+
+/* ── Quotation storage helpers ── */
+var COT_KEY = 'casvel_cot_v1';
+
+function loadQuots(){
+  try{ return JSON.parse(localStorage.getItem(COT_KEY)||'[]'); }
+  catch(e){ return []; }
+}
+function saveQuot(q){
+  var list=loadQuots();
+  var idx=list.findIndex(function(x){return x.id===q.id;});
+  if(idx>=0) list[idx]=q; else list.push(q);
+  list.sort(function(a,b){return (b.cDate||'').localeCompare(a.cDate||'');});
+  localStorage.setItem(COT_KEY, JSON.stringify(list));
+}
+function deleteQuot(id){
+  var list=loadQuots().filter(function(q){return q.id!==id;});
+  localStorage.setItem(COT_KEY, JSON.stringify(list));
+}
+function getQuotById(id){
+  return loadQuots().find(function(q){return q.id===id;})||null;
+}
+
+/* ── Quotation wizard state ── */
+var Q_step=1, Q_steps=5;
+var Q_names=['Cliente','Fechas','Mobiliario','Totales','Resumen'];
+var Q_editId=null;
+var Q_delId=null;
+var Q_extraItems=[];
+var Q_invConflicts=[];
+
+/* ── Quotation progress bars ── */
+function buildQProg(){
+  var w=el('qprog-bars'); if(!w) return;
+  var h='';
+  for(var i=1;i<=Q_steps;i++) h+='<div class="pb" id="qpb'+i+'"></div>';
+  w.innerHTML=h; updateQProg();
+}
+function updateQProg(){
+  for(var i=1;i<=Q_steps;i++){
+    var e=el('qpb'+i); if(!e) continue;
+    e.className='pb'+(i<Q_step?' done':i===Q_step?' cur':'');
+  }
+  st('qprog-cur','Paso '+Q_step+' de '+Q_steps);
+  st('qprog-name',Q_names[Q_step-1]||'');
+  var prev=el('qwbtn-prev'), next=el('qwbtn-next');
+  if(prev) prev.style.display=Q_step===1?'none':'flex';
+  if(next){
+    if(Q_step===Q_steps){ next.textContent='⬇ Exportar'; next.className='wbtn wbtn-exp'; }
+    else                { next.textContent='Siguiente →'; next.className='wbtn wbtn-next'; }
+  }
+}
+
+/* ── Quotation wizard step navigation ── */
+function goQStep(n){
+  for(var i=1;i<=Q_steps;i++){ var e=el('qws'+i); if(e) e.style.display='none'; }
+  Q_step=n;
+  var c=el('qws'+n); if(c) c.style.display='block';
+  updateQProg();
+  if(n===3) qUpdateInvWarn();
+  if(n===4) qCalc();
+  if(n===5) renderQSummary();
+  var sa=el('qwiz-scroll'); if(sa) sa.scrollTop=0;
+}
+function qWizNext(){
+  if(Q_step===1 && !gv('q-nombre').trim()){ showToast('⚠️ Ingresa el nombre del cliente'); el('q-nombre').focus(); return; }
+  if(Q_step===3 && Q_invConflicts.length>0){ openQInvModal(); return; }
+  if(Q_step===Q_steps){ openQSheet(); return; }
+  goQStep(Q_step+1);
+}
+function qWizPrev(){
+  if(Q_step>1) goQStep(Q_step-1); else goTo('sc-quot');
+}
+
+/* ── Quotation items list (mirrors buildItems) ── */
+function buildQItems(){
+  var c=el('q-items'); if(!c) return;
+  c.innerHTML=ITEMS.map(function(it,i){
+    return '<div class="irow">'+
+      '<div class="iinfo">'+
+        '<div class="iname">'+it.desc+'</div>'+
+        '<div class="prow"><span class="plbl">Precio $</span>'+
+          '<input class="pinp" type="number" min="0" step="0.01" value="'+it.price.toFixed(2)+'" id="qqp'+i+'" oninput="qUpdAmt('+i+')">'+
+        '</div>'+
+      '</div>'+
+      '<div class="qctrl">'+
+        '<button class="qbtn" onclick="qQty('+i+',-1)">−</button>'+
+        '<div class="qnum" id="qqq'+i+'">0</div>'+
+        '<button class="qbtn" onclick="qQty('+i+',1)">+</button>'+
+      '</div>'+
+      '<div class="iamt" id="qqa'+i+'">$0</div>'+
+    '</div>';
+  }).join('');
+}
+function qQty(i,d){
+  var e=el('qqq'+i); if(!e) return;
+  var n=Math.max(0,(parseInt(e.textContent)||0)+d);
+  e.textContent=n; qUpdAmt(i);
+  if(navigator.vibrate) navigator.vibrate(8);
+  qUpdateInvWarn();
+}
+function qUpdAmt(i){
+  var q=parseInt((el('qqq'+i)||{textContent:'0'}).textContent)||0;
+  var p=parseFloat((el('qqp'+i)||{value:'0'}).value)||0;
+  var a=el('qqa'+i); if(a) a.textContent=q>0?'$'+(q*p).toFixed(0):'$0';
+}
+
+/* ── Quotation extra items ── */
+function renderQExtraItems(){
+  var c=el('q-extra-items'); if(!c) return;
+  if(Q_extraItems.length===0){ c.innerHTML=''; return; }
+  c.innerHTML=Q_extraItems.map(function(ex,i){
+    var amt=(ex.qty||0)*(ex.price||0);
+    return '<div class="extra-row" id="qexrow'+i+'">'+
+      '<input class="extra-desc" type="text" placeholder="Descripción..." value="'+_xe(ex.desc||'')+'" oninput="updateQExtra('+i+',\'desc\',this.value)">'+
+      '<div class="extra-row-controls">'+
+        '<div class="qctrl" style="border-radius:8px">'+
+          '<button class="qbtn" style="width:34px;height:34px;font-size:18px" onclick="qExtraQty('+i+',-1)">−</button>'+
+          '<div class="qnum" style="font-size:14px;min-width:28px" id="qexq'+i+'">'+(ex.qty||0)+'</div>'+
+          '<button class="qbtn" style="width:34px;height:34px;font-size:18px" onclick="qExtraQty('+i+',1)">+</button>'+
+        '</div>'+
+        '<input class="extra-price" type="number" min="0" step="0.01" placeholder="$" value="'+(ex.price||'')+'" oninput="updateQExtra('+i+',\'price\',this.value)">'+
+        '<div class="extra-amt" id="qexa'+i+'">'+'$'+(amt>0?amt.toFixed(0):'0')+'</div>'+
+        '<button class="extra-del" onclick="removeQExtra('+i+')">✕</button>'+
+      '</div>'+
+    '</div>';
+  }).join('');
+}
+function addQExtraItem(){ Q_extraItems.push({desc:'',qty:1,price:0}); renderQExtraItems(); qCalc(); setTimeout(function(){ var inp=document.querySelectorAll('#q-extra-items .extra-desc'); if(inp.length) inp[inp.length-1].focus(); },50); }
+function removeQExtra(i){ Q_extraItems.splice(i,1); renderQExtraItems(); qCalc(); }
+function updateQExtra(i,field,val){
+  if(!Q_extraItems[i]) return;
+  if(field==='price') Q_extraItems[i].price=parseFloat(val)||0;
+  else Q_extraItems[i][field]=val;
+  var amt=(Q_extraItems[i].qty||0)*(Q_extraItems[i].price||0);
+  var ae=el('qexa'+i); if(ae) ae.textContent='$'+(amt>0?amt.toFixed(0):'0');
+  qCalc();
+}
+function qExtraQty(i,d){
+  if(!Q_extraItems[i]) return;
+  Q_extraItems[i].qty=Math.max(0,(Q_extraItems[i].qty||0)+d);
+  var qe=el('qexq'+i); if(qe) qe.textContent=Q_extraItems[i].qty;
+  var amt=Q_extraItems[i].qty*(Q_extraItems[i].price||0);
+  var ae=el('qexa'+i); if(ae) ae.textContent='$'+(amt>0?amt.toFixed(0):'0');
+  qCalc();
+  if(navigator.vibrate) navigator.vibrate(8);
+}
+
+/* ── Quotation totals ── */
+function qCalc(){
+  var sub=0;
+  ITEMS.forEach(function(it,i){
+    var q=parseInt((el('qqq'+i)||{textContent:'0'}).textContent)||0;
+    var p=parseFloat((el('qqp'+i)||{value:it.price}).value)||it.price;
+    sub+=q*p;
+  });
+  Q_extraItems.forEach(function(ex){ sub+=(ex.qty||0)*(ex.price||0); });
+  var tr=parseFloat(gv('q-traslado'))||0;
+  var g=sub+tr;
+  st('q-sub','$'+sub.toFixed(2));
+  st('q-total','$'+g.toFixed(2));
+}
+
+/* ── Quotation inventory warning ── */
+function qGetCurrentItems(){
+  return ITEMS.map(function(it,i){
+    var q=parseInt((el('qqq'+i)||{textContent:'0'}).textContent)||0;
+    var p=parseFloat((el('qqp'+i)||{value:it.price}).value)||it.price;
+    return {qty:q,price:p,amt:q*p};
+  });
+}
+function qUpdateInvWarn(){
+  var iw=el('q-inv-warn'); if(!iw) return;
+  var fEvento=gv('q-fevento');
+  if(!fEvento){ iw.textContent=''; iw.classList.remove('on'); Q_invConflicts=[]; return; }
+  var prev=Q_invConflicts.length;
+  Q_invConflicts=checkInventory(qGetCurrentItems(),fEvento,null);
+  if(Q_invConflicts.length>0){
+    iw.innerHTML='&#9888;&#65039; <strong>Inventario excedido</strong> — ajusta cantidades antes de continuar.';
+    iw.classList.add('on');
+    if(prev===0) openQInvModal();
+  } else {
+    iw.textContent=''; iw.classList.remove('on'); Q_invConflicts=[];
+  }
+}
+
+/* ── Quotation inventory modal ── */
+function openQInvModal(){
+  var fEvento=gv('q-fevento');
+  var cl=el('inv-conflict-list');
+  var sub=el('inv-modal-sub');
+  if(sub) sub.textContent='La cotización del '+fmtDate(fEvento)+' supera el inventario en:';
+  if(cl) cl.innerHTML=Q_invConflicts.map(function(x){
+    var over=x.used-x.max;
+    return '<div class="inv-conflict-item">'+
+      '<span class="inv-conflict-name">'+x.name+'</span>'+
+      '<span class="inv-conflict-nums">'+x.used+'/'+x.max+' &nbsp;(+'+over+' de m&#225;s)</span>'+
+    '</div>';
+  }).join('');
+  el('inv-modal-bg').classList.add('on');
+}
+
+/* ── Quotation inventory sheet ── */
+function openQInvSheet(){
+  var fEvento=gv('q-fevento');
+  var sub=el('inv-sheet-sub');
+  var rows=el('inv-sheet-rows');
+  if(!rows) return;
+  var usageOthers={};
+  if(fEvento){
+    loadContracts().filter(function(c){
+      return c.fEvento===fEvento && resolveStatus(c)!=='cancelado';
+    }).forEach(function(c){
+      (c.items||[]).forEach(function(r,i){
+        if(!r||!(r.qty>0)) return;
+        ITEM_RESOURCES[i].forEach(function(res){ usageOthers[res[0]]=(usageOthers[res[0]]||0)+r.qty*res[1]; });
+      });
+    });
+  }
+  var usageMine={};
+  qGetCurrentItems().forEach(function(r,i){
+    if(!r||!(r.qty>0)) return;
+    ITEM_RESOURCES[i].forEach(function(res){ usageMine[res[0]]=(usageMine[res[0]]||0)+r.qty*res[1]; });
+  });
+  if(sub) sub.textContent=fEvento?'Para el evento del '+fmtDate(fEvento):'Sin fecha — mostrando máximos';
+  var keys=Object.keys(DAILY_INVENTORY);
+  rows.innerHTML=keys.map(function(key){
+    var max=DAILY_INVENTORY[key], others=usageOthers[key]||0, mine=usageMine[key]||0, avail=max-others-mine;
+    var pillCls=avail<=0?'inv-pill-out':avail<=Math.ceil(max*0.25)?'inv-pill-low':'inv-pill-ok';
+    var pillTxt=avail<=0?'Agotado':avail+' disp.';
+    var usedTxt=(others+mine)>0?'<span class="inv-pill inv-pill-used">'+(others+mine)+' usados</span>':'';
+    return '<div class="inv-row"><span class="inv-row-name">'+(RESOURCE_NAMES[key]||key)+'</span>'+
+      '<div class="inv-row-nums">'+usedTxt+'<span class="inv-pill '+pillCls+'">'+pillTxt+'</span>'+
+      '<span style="font-size:11px;color:var(--mid);min-width:28px;text-align:right">/ '+max+'</span></div></div>';
+  }).join('');
+  el('inv-sheet-bg').classList.add('on');
+  el('inv-sheet').classList.add('on');
+}
+
+/* ── Quotation collect ── */
+function qCollect(){
+  var items=ITEMS.map(function(it,i){
+    var q=parseInt((el('qqq'+i)||{textContent:'0'}).textContent)||0;
+    var p=parseFloat((el('qqp'+i)||{value:it.price}).value)||it.price;
+    return {qty:q,price:p,amt:q*p};
+  });
+  var total=parseFloat((gt('q-total')||'$0').replace('$',''))||0;
+  function sl(id){ var e=el(id); return (e&&e.options&&e.options[e.selectedIndex])?e.options[e.selectedIndex].text:''; }
+  return {
+    type:'cotizacion',
+    cDate:gv('q-cdate'), nombre:gv('q-nombre'), tel:gv('q-tel'), dir:gv('q-dir'),
+    fEvento:gv('q-fevento'), hEntrega:gv('q-hentrega'), hEntregaL:sl('q-hentrega'),
+    hRecol:gv('q-hrecol'), hRecolL:sl('q-hrecol'),
+    traslado:parseFloat(gv('q-traslado'))||0,
+    total:total, items:items,
+    extraItems: Q_extraItems.filter(function(ex){return ex.qty>0||ex.desc;}).map(function(ex){
+      return {desc:ex.desc||'',qty:ex.qty||0,price:ex.price||0,amt:(ex.qty||0)*(ex.price||0)};
+    }),
+    notas:(gv('q-notas')||'').trim()
+  };
+}
+
+/* ── Quotation populate ── */
+function qPopulate(d){
+  sv('q-nombre',d.nombre||''); sv('q-tel',d.tel||'');
+  sv('q-dir',d.dir||'');       sv('q-cdate',d.cDate||todayISO());
+  sv('q-fevento',d.fEvento||''); sv('q-hentrega',d.hEntrega||'');
+  sv('q-hrecol',d.hRecol||'');   sv('q-traslado',d.traslado||0);
+  sv('q-notas',d.notas||'');
+  if(d.items) d.items.forEach(function(r,i){
+    var qe=el('qqq'+i), pe=el('qqp'+i);
+    if(qe) qe.textContent=r.qty||0;
+    if(pe) pe.value=(r.price||ITEMS[i].price).toFixed(2);
+    qUpdAmt(i);
+  });
+  Q_extraItems=(d.extraItems||[]).map(function(ex){return {desc:ex.desc||'',qty:ex.qty||0,price:ex.price||0};});
+  renderQExtraItems();
+  qCalc();
+}
+
+/* ── Quotation summary ── */
+function renderQSummary(){
+  var g=el('q-summary'); if(!g) return;
+  var d=qCollect();
+  function sl(id){ var e=el(id); return (e&&e.options&&e.options[e.selectedIndex])?e.options[e.selectedIndex].text:'—'; }
+  var il=ITEMS.map(function(it,i){
+    if(!d.items[i]||!d.items[i].qty) return '';
+    return '<li><span>'+it.desc+' ×'+d.items[i].qty+'</span><span>$'+d.items[i].amt.toFixed(2)+'</span></li>';
+  }).filter(Boolean).join('');
+  var xl=(d.extraItems||[]).filter(function(ex){return ex.qty>0&&ex.desc;}).map(function(ex){
+    return '<li><span>'+_xe(ex.desc)+' ×'+ex.qty+'</span><span>$'+ex.amt.toFixed(2)+'</span></li>';
+  }).join('');
+  function sr(l,v){ return '<div class="srow"><span class="slbl">'+l+'</span><span class="sval">'+v+'</span></div>'; }
+  g.innerHTML=
+    '<div class="card"><div class="card-ttl">Cliente</div>'+
+      sr('Nombre',d.nombre||'—')+sr('Teléfono',d.tel||'—')+sr('Dirección',d.dir||'—')+
+      sr('Fecha evento',fmtDate(d.fEvento))+sr('Fecha cotización',fmtDate(d.cDate))+
+      sr('Entrega',sl('q-hentrega'))+sr('Recolección',sl('q-hrecol'))+
+    '</div>'+
+    '<div class="card"><div class="card-ttl">Mobiliario</div>'+
+      ((il||xl)?'<ul class="sitems">'+(il||'')+(xl||'')+'</ul>':'<p style="color:var(--mid);font-size:14px">Sin artículos</p>')+
+    '</div>'+
+    '<div class="card"><div class="card-ttl">Resumen Financiero</div>'+
+      sr('Subtotal',gt('q-sub')||'$0.00')+
+      sr('Traslado','$'+d.traslado.toFixed(2))+
+      sr('Total estimado','$'+d.total.toFixed(2))+
+    '</div>'+
+    (d.notas?'<div class="card"><div class="card-ttl">Notas</div><p style="font-size:14px;color:var(--dark)">'+_xe(d.notas)+'</p></div>':'');
+}
+
+/* ── Quotation save ── */
+function qSave(){
+  if(Q_step===3 && Q_invConflicts.length>0){ openQInvModal(); return; }
+  var data=qCollect();
+  if(!data.nombre.trim()){ showToast('⚠️ Ingresa el nombre del cliente'); return; }
+  var now=new Date().toISOString();
+  if(Q_editId){
+    var existing=getQuotById(Q_editId);
+    var updated=Object.assign({},existing||{},data,{id:Q_editId,updatedAt:now});
+    if(!updated.createdAt) updated.createdAt=now;
+    saveQuot(updated);
+    showToast('✅ Cotización actualizada');
+  } else {
+    Q_editId=newId();
+    var c=Object.assign({},data,{id:Q_editId,createdAt:now,updatedAt:now});
+    saveQuot(c);
+    showToast('✅ Cotización guardada');
+  }
+  var wt=el('qwiz-ttl'); if(wt) wt.textContent=data.nombre||'Cotización';
+}
+
+/* ── Start new quotation ── */
+function startNewQuot(){
+  Q_editId=null;
+  sv('q-nombre',''); sv('q-tel',''); sv('q-dir','');
+  sv('q-cdate',todayISO()); sv('q-fevento','');
+  sv('q-hentrega',''); sv('q-hrecol',''); sv('q-traslado',0);
+  sv('q-notas','');
+  var iw=el('q-inv-warn'); if(iw){ iw.textContent=''; iw.classList.remove('on'); }
+  Q_invConflicts=[]; Q_extraItems=[]; renderQExtraItems();
+  ITEMS.forEach(function(it,i){
+    var qe=el('qqq'+i), pe=el('qqp'+i), ae=el('qqa'+i);
+    if(qe) qe.textContent='0'; if(pe) pe.value=it.price.toFixed(2); if(ae) ae.textContent='$0';
+  });
+  st('q-sub','$0.00'); st('q-total','$0.00');
+  var wt=el('qwiz-ttl'); if(wt) wt.textContent='Nueva Cotización';
+  // hide bottom nav on wizard screen, show back arrow to sc-quot
+  goQStep(1);
+  document.querySelectorAll('.sc').forEach(function(s){ s.classList.toggle('on', s.id==='sc-qwiz'); });
+  window.scrollTo(0,0);
+}
+
+/* ── Edit quotation ── */
+function qEdit(id){
+  var q=getQuotById(id); if(!q) return;
+  Q_editId=id; qPopulate(q);
+  var wt=el('qwiz-ttl'); if(wt) wt.textContent=q.nombre||'Cotización';
+  goQStep(1);
+  document.querySelectorAll('.sc').forEach(function(s){ s.classList.toggle('on', s.id==='sc-qwiz'); });
+  window.scrollTo(0,0);
+}
+
+/* ── Delete quotation ── */
+function askDelQuot(id){
+  Q_delId=id; var q=getQuotById(id);
+  el('conf-msg').textContent='¿Eliminar la cotización de "'+(q?q.nombre:'?')+'"? No se puede deshacer.';
+  el('conf-bg').classList.add('on');
+}
+// Override doDelete to handle both contracts and quotations
+var _origDoDelete = doDelete;
+doDelete = function(){
+  if(Q_delId){
+    deleteQuot(Q_delId);
+    closeConfirm(); Q_delId=null;
+    renderQuot();
+    showToast('🗑️ Cotización eliminada');
+  } else {
+    _origDoDelete();
+  }
+};
+
+/* ── Convert quotation to contract ── */
+function convertToContract(id){
+  var q=getQuotById(id); if(!q) return;
+  if(!confirm('¿Convertir esta cotización en contrato? Se creará un nuevo contrato con los datos de la cotización.')) return;
+  // Pre-fill contract wizard with quotation data
+  M_editId=null;
+  mPopulate(Object.assign({},q,{status:'abierto',anticipo:0,resta:q.total||0}));
+  // Force anticipo to 25%
+  var ai=el('m-anticipo');
+  if(ai){ ai.value=((q.total||0)*0.25).toFixed(2); ai.removeAttribute('data-manual'); }
+  var wt=el('wiz-ttl'); if(wt) wt.textContent=(q.nombre||'Contrato')+' (de cotización)';
+  goStep(1);
+  document.querySelectorAll('.sc').forEach(function(s){ s.classList.toggle('on', s.id==='sc-wiz'); });
+  window.scrollTo(0,0);
+  showToast('📋 Completa y guarda el contrato');
+}
+
+/* ── Render quotation list ── */
+function renderQuot(){
+  var q=((el('quot-search')||{}).value||'').toLowerCase().trim();
+  var all=loadQuots();
+  var list=all.filter(function(c){
+    if(!q) return true;
+    return (c.nombre||'').toLowerCase().indexOf(q)!==-1||(c.tel||'').indexOf(q)!==-1;
+  }).sort(function(a,b){return (b.cDate||'').localeCompare(a.cDate||'');});
+  var cont=el('quot-list'); if(!cont) return;
+  if(list.length===0){
+    cont.innerHTML=mempty('Sin cotizaciones','Crea la primera con el botón "+ Nueva"');
+    return;
+  }
+  cont.innerHTML=list.map(function(c){
+    var ni=(c.items||[]).filter(function(r){return r.qty>0;}).length;
+    return '<div class="qot-card">'+
+      '<div class="cctop">'+
+        '<div>'+
+          '<div class="ccname">'+_xe(c.nombre||'Sin nombre')+'</div>'+
+          '<div class="ccmeta">'+
+            '<span>&#128197; '+fmtDate(c.fEvento)+'</span>'+
+            (c.tel?'<span>'+c.tel+'</span>':'')+
+            '<span>&#128230; '+ni+' artículos</span>'+
+            '<span class="qot-badge">📄 Cotización</span>'+
+          '</div>'+
+        '</div>'+
+        '<div class="cctotal">$'+(c.total||0).toLocaleString('es-MX',{minimumFractionDigits:2})+'</div>'+
+      '</div>'+
+      '<div class="ccacts">'+
+        '<button class="ccbtn qot-convert-btn" onclick="convertToContract(\''+c.id+'\')">🔄 A contrato</button>'+
+        '<button class="ccbtn qot-exp-btn" onclick="qExp_quot(\''+c.id+'\')">⬇ PDF</button>'+
+        '<button class="ccbtn qot-view-btn" onclick="qEdit(\''+c.id+'\')">✏️ Editar</button>'+
+        '<button class="ccbtn qot-del-btn" onclick="askDelQuot(\''+c.id+'\')">🗑</button>'+
+      '</div>'+
+    '</div>';
+  }).join('');
+}
+
+/* ── Quotation export sheet ── */
+var Q_expId=null;
+function qExp_quot(id){ Q_expId=id; el('qexp-sbg').classList.add('on'); el('qexp-sheet').classList.add('on'); }
+function closeQSheet(){ el('qexp-sbg').classList.remove('on'); el('qexp-sheet').classList.remove('on'); Q_expId=null; }
+
+/* ── Quotation export as opening sheet (reuse export popup) ── */
+function openQSheet(){ Q_expId=Q_editId; el('qexp-sbg').classList.add('on'); el('qexp-sheet').classList.add('on'); }
+
+/* ── Quotation PDF — formal format, no clauses, no signatures, footer note ── */
+function mDoPDFCotizacion(fromSheet){
+  var d;
+  if(fromSheet && Q_expId){
+    d=getQuotById(Q_expId);
+    if(!d) d=qCollect();
+  } else {
+    d=qCollect();
+  }
+  closeQSheet();
+  showLoad('Generando cotización PDF...');
+
+  var logoSrc='data:image/jpeg;base64,'+LOGO_B64;
+  var cotNum=(d.cDate||'').replace(/-/g,'')+'C-'+(d.nombre||'').replace(/\s+/g,'').substring(0,6).toUpperCase();
+
+  function infoCell(lbl,val){
+    return '<td style="padding:5px 10px 5px 0;vertical-align:top;white-space:nowrap">'+
+      '<span style="font-size:8px;font-weight:700;color:#5a6580;text-transform:uppercase;letter-spacing:.05em;display:block">'+lbl+'</span>'+
+      '<span style="font-size:11px;font-weight:600;color:#1a1f2e">'+(val||'—')+'</span>'+
+    '</td>';
+  }
+
+  // Section A: datos generales
+  var secA=
+    '<div class="fpdf-section" style="margin-bottom:14px">'+
+      '<div class="fpdf-sec-title">A &nbsp;·&nbsp; Datos Generales</div>'+
+      '<table style="width:100%;border-collapse:collapse;border:1px solid #dce6f1;border-radius:6px;overflow:hidden">'+
+        '<tr style="background:#f8fafc">'+
+          infoCell('No. Cotización',cotNum)+
+          infoCell('Fecha Cotización',fmtDate(d.cDate))+
+          infoCell('Fecha Evento',fmtDate(d.fEvento))+
+          infoCell('Entrega',d.hEntregaL||d.hEntrega)+
+          infoCell('Recolección',d.hRecolL||d.hRecol)+
+        '</tr>'+
+        '<tr style="background:#fff;border-top:1px solid #dce6f1">'+
+          '<td colspan="2" style="padding:5px 10px 5px 0;vertical-align:top">'+
+            '<span style="font-size:8px;font-weight:700;color:#5a6580;text-transform:uppercase;letter-spacing:.05em;display:block">Cliente</span>'+
+            '<span style="font-size:11px;font-weight:700;color:#1a1f2e">'+(d.nombre||'—')+'</span>'+
+            (d.tel?'<span style="font-size:10px;color:#5a6580"> &nbsp;·&nbsp; '+_xe(d.tel)+'</span>':'')+
+          '</td>'+
+          '<td colspan="3" style="padding:5px 0;vertical-align:top">'+
+            '<span style="font-size:8px;font-weight:700;color:#5a6580;text-transform:uppercase;letter-spacing:.05em;display:block">Dirección del Evento</span>'+
+            '<span style="font-size:11px;font-weight:600;color:#1a1f2e">'+(d.dir||'—')+'</span>'+
+          '</td>'+
+        '</tr>'+
+      '</table>'+
+    '</div>';
+
+  // Section B: mobiliario table
+  var tableRows=''; var hasAny=false;
+  ITEMS.forEach(function(it,i){
+    var r=d.items[i];
+    if(!r||!r.qty) return;
+    hasAny=true;
+    tableRows+='<tr><td>'+_xe(it.desc)+'</td><td class="num">'+r.qty+'</td><td class="num">$'+r.price.toFixed(2)+'</td><td class="num">$'+r.amt.toFixed(2)+'</td></tr>';
+  });
+  (d.extraItems||[]).forEach(function(ex){
+    if(!ex.qty||!ex.desc) return;
+    hasAny=true;
+    tableRows+='<tr><td>'+_xe(ex.desc)+' <em style="font-size:9px;color:#5a6580">(adicional)</em></td><td class="num">'+ex.qty+'</td><td class="num">$'+ex.price.toFixed(2)+'</td><td class="num">$'+ex.amt.toFixed(2)+'</td></tr>';
+  });
+  if(!hasAny) tableRows='<tr><td colspan="4" style="text-align:center;color:#5a6580;font-style:italic">Sin artículos registrados</td></tr>';
+  var subtotal=d.total-d.traslado;
+  var secB=
+    '<div class="fpdf-section">'+
+      '<div class="fpdf-sec-title">B &nbsp;·&nbsp; Mobiliario Cotizado</div>'+
+      '<table class="fpdf-table">'+
+        '<thead><tr><th>Descripción del Artículo</th><th style="text-align:right">Cant.</th><th style="text-align:right">P. Unitario</th><th style="text-align:right">Importe</th></tr></thead>'+
+        '<tbody>'+tableRows+'</tbody>'+
+        '<tfoot>'+
+          (d.traslado>0?'<tr class="tfoot"><td colspan="3">Subtotal artículos</td><td class="num">$'+subtotal.toFixed(2)+'</td></tr>':'')+
+          (d.traslado>0?'<tr class="tfoot"><td colspan="3">Traslado estimado</td><td class="num">$'+d.traslado.toFixed(2)+'</td></tr>':'')+
+          '<tr class="tfoot-total"><td colspan="3">TOTAL ESTIMADO</td><td class="num">$'+d.total.toFixed(2)+'</td></tr>'+
+        '</tfoot>'+
+      '</table>'+
+    '</div>';
+
+  // Notas section (if any)
+  var secNotas=d.notas
+    ? '<div class="fpdf-section" style="margin-top:12px">'+
+        '<div class="fpdf-sec-title">Notas</div>'+
+        '<p style="font-size:10px;color:#1a1f2e;line-height:1.5;margin:0">'+_xe(d.notas)+'</p>'+
+      '</div>'
+    : '';
+
+  // Footer note — validity disclaimer
+  var secFooter=
+    '<div style="flex:1;min-height:12px"></div>'+
+    '<div class="fpdf-quot-note">'+
+      '<strong>NOTA IMPORTANTE:</strong> Esta cotización es informativa y está sujeta a la disponibilidad del mobiliario para la fecha solicitada. '+
+      'Los precios y disponibilidad pueden cambiar sin previo aviso. Para confirmar la reservación es necesario celebrar el contrato formal y cubrir el anticipo correspondiente. '+
+      'Cotización válida por 15 días a partir de la fecha de emisión.'+
+    '</div>'+
+    '<div class="fpdf-footer">EVENTOS CASVEL &nbsp;·&nbsp; Cotización No. '+cotNum+' &nbsp;·&nbsp; Generada el '+fmtDate(d.cDate)+'</div>';
+
+  var pageHTML=
+    '<div class="fpdf-page" id="fpdf-outer">'+
+      '<div class="fpdf-header">'+
+        '<div class="fpdf-logo-area">'+
+          '<img class="fpdf-logo" src="'+logoSrc+'" onerror="this.style.display=\'none\'" alt="">'+
+          '<div><div class="fpdf-brand">EVENTOS CASVEL</div><div class="fpdf-brand-sub">Renta de Mobiliario para Eventos</div></div>'+
+        '</div>'+
+        '<div class="fpdf-contract-id"><strong>COTIZACIÓN</strong>No. '+cotNum+'</div>'+
+      '</div>'+
+      '<div class="fpdf-inner-wrap" id="fpdf-inner">'+
+        secA+secB+secNotas+secFooter+
+      '</div>'+
+    '</div>';
+
+  var container=el('formal-pdf-container');
+  container.innerHTML=pageHTML;
+
+  setTimeout(function(){
+    var outer=el('fpdf-outer');
+    var inner=el('fpdf-inner');
+    if(!outer||!inner){ hideLoad(); showToast('❌ Error al preparar PDF'); return; }
+
+    var outerH=1056;
+    var headerEl=outer.querySelector('.fpdf-header');
+    var headerH=headerEl?headerEl.offsetHeight+16:90;
+    var available=outerH-48-40-headerH;
+    var naturalH=inner.scrollHeight;
+    var scale=naturalH>available?(available/naturalH):1.0;
+    scale=Math.max(0.55,scale);
+    inner.style.transform='scale('+scale+')';
+    inner.style.transformOrigin='top left';
+    inner.style.width=(100/scale)+'%';
+    inner.style.height=(available/scale)+'px';
+    inner.style.overflow='hidden';
+
+    function doCapture(){
+      html2canvas(outer,{scale:2,useCORS:true,allowTaint:true,backgroundColor:'#ffffff',width:816,height:1056,windowWidth:816}).then(function(canvas){
+        var imgData=canvas.toDataURL('image/jpeg',0.95);
+        var jsPDFClass=window.jspdf?window.jspdf.jsPDF:window.jsPDF;
+        if(!jsPDFClass){ hideLoad(); showToast('❌ jsPDF no disponible'); return; }
+        var pdf=new jsPDFClass({orientation:'portrait',unit:'pt',format:'letter'});
+        var pW=pdf.internal.pageSize.getWidth();
+        var pH=pdf.internal.pageSize.getHeight();
+        pdf.addImage(imgData,'JPEG',0,0,pW,pH);
+        var fname='CASVEL_Cotizacion_'+(d.nombre||'').replace(/\s+/g,'_')+'_'+cotNum+'.pdf';
+        pdf.save(fname);
+        container.innerHTML='';
+        hideLoad();
+        showToast('✅ Cotización PDF descargada');
+      }).catch(function(err){ container.innerHTML=''; hideLoad(); showToast('❌ Error: '+err.message); });
+    }
+
+    if(!window.jspdf&&!window.jsPDF){
+      var s=document.createElement('script');
+      s.src='https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js';
+      s.onload=function(){ setTimeout(doCapture,100); };
+      s.onerror=function(){ hideLoad(); showToast('❌ No se pudo cargar jsPDF'); };
+      document.head.appendChild(s);
+    } else { doCapture(); }
+  },400);
 }
 </script>

@@ -598,6 +598,8 @@ function renderMensual(){
     if(y !== currentYear) return;
     var b = months[mo-1];
     b.contracts.push(c);
+    // MODIFIED: exclude cancelled contracts from monetary totals
+    if(resolveStatus(c)==='cancelado') return;
     b.total   += c.total    || 0;
     b.sinTrl  += (c.total||0) - (c.traslado||0);
   });
@@ -692,6 +694,8 @@ function renderFuturo(){
 
   var future = list.filter(function(c){
     if(!c.fEvento||c.fEvento.length<10) return false;
+    // MODIFIED: exclude cancelled contracts from future projections
+    if(resolveStatus(c)==='cancelado') return false;
     return c.fEvento >= todayISO_val;
   }).sort(function(a,b){
     return (a.fEvento||'').localeCompare(b.fEvento||'');
@@ -888,14 +892,18 @@ function renderXMes(){
   var list=loadContracts().filter(function(c){
     return (c.fEvento||'').startsWith(moKey);
   }).sort(function(a,b){ return (a.fEvento||'').localeCompare(b.fEvento||''); });
-  var totBruto   =list.reduce(function(s,c){return s+(c.total||0);},0);
-  var totAnticipo=list.reduce(function(s,c){return s+(c.anticipo||0);},0);
-  var totTrl     =list.reduce(function(s,c){return s+(c.traslado||0);},0);
+  // MODIFIED: only sum non-cancelled contracts in monetary totals
+  var active=list.filter(function(c){return resolveStatus(c)!=='cancelado';});
+  var totBruto   =active.reduce(function(s,c){return s+(c.total||0);},0);
+  var totAnticipo=active.reduce(function(s,c){return s+(c.anticipo||0);},0);
+  var totTrl     =active.reduce(function(s,c){return s+(c.traslado||0);},0);
   // MODIFIED: contratos cerrados se consideran pagados al 100% (resta efectiva = 0)
-  var totResta   =list.reduce(function(s,c){return s+(resolveStatus(c)==='cerrado'?0:(c.resta||0));},0);
+  var totResta   =active.reduce(function(s,c){return s+(resolveStatus(c)==='cerrado'?0:(c.resta||0));},0);
   el('xmes-count').textContent=list.length;
+  var cancelCount=list.length-active.length;
+  var activeSub=active.length+' contrato'+(active.length!==1?'s':'')+(cancelCount>0?' · '+cancelCount+' cancelado'+(cancelCount!==1?'s':''):'');
   el('xmes-cards').innerHTML=
-    mCard('mc-blue','&#128176;','Total',mxn(totBruto),list.length+' contrato'+(list.length!==1?'s':''))+
+    mCard('mc-blue','&#128176;','Total activos',mxn(totBruto),activeSub)+
     mCard('mc-teal','&#128179;','Por cobrar',mxn(totResta),'Resta pendiente')+
     mCard('mc-green','&#9989;','Anticipos',mxn(totAnticipo),'Recibidos')+
     mCard('mc-gold','&#128666;','Traslados',mxn(totTrl),'Del mes');
