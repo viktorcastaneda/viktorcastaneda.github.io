@@ -1,0 +1,571 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Inventario — CASVEL</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
+<script src="shared.js"></script>
+<style>
+*,*::before,*::after{box-sizing:border-box;margin:0;padding:0;}
+body{font-family:'Inter',sans-serif;background:#f1f5f9;color:#1e293b;min-height:100vh;}
+
+/* ── Layout ── */
+.topbar{background:#1e293b;color:#fff;display:flex;align-items:center;gap:12px;padding:0 20px;height:52px;position:sticky;top:0;z-index:100;}
+.topbar a{color:#94a3b8;text-decoration:none;font-size:13px;display:flex;align-items:center;gap:5px;}
+.topbar a:hover{color:#fff;}
+.topbar h1{font-size:16px;font-weight:600;flex:1;}
+.fb-badge{font-size:11px;padding:2px 8px;border-radius:99px;background:#334155;color:#94a3b8;}
+.fb-badge.live{background:#166534;color:#bbf7d0;}
+
+.page{max-width:960px;margin:0 auto;padding:20px 16px 60px;}
+
+/* ── Tabs ── */
+.tabs{display:flex;gap:2px;background:#e2e8f0;border-radius:10px;padding:3px;margin-bottom:20px;}
+.tab-btn{flex:1;padding:8px 0;border:none;background:transparent;border-radius:8px;font-size:13px;font-weight:500;cursor:pointer;color:#64748b;transition:all .15s;}
+.tab-btn.on{background:#fff;color:#1e293b;box-shadow:0 1px 3px rgba(0,0,0,.1);}
+
+.tab-pane{display:none;}
+.tab-pane.on{display:block;}
+
+/* ── Cards / Sections ── */
+.section-hdr{display:flex;align-items:center;justify-content:space-between;margin-bottom:12px;}
+.section-hdr h2{font-size:15px;font-weight:600;}
+.btn-add{background:#2563eb;color:#fff;border:none;border-radius:8px;padding:7px 14px;font-size:13px;font-weight:500;cursor:pointer;display:flex;align-items:center;gap:5px;}
+.btn-add:hover{background:#1d4ed8;}
+
+/* ── Table ── */
+.inv-table{width:100%;border-collapse:collapse;background:#fff;border-radius:10px;overflow:hidden;box-shadow:0 1px 3px rgba(0,0,0,.07);}
+.inv-table th{background:#f8fafc;padding:10px 12px;text-align:left;font-size:12px;font-weight:600;color:#64748b;text-transform:uppercase;letter-spacing:.04em;border-bottom:1px solid #e2e8f0;}
+.inv-table td{padding:10px 12px;font-size:13px;border-bottom:1px solid #f1f5f9;vertical-align:middle;}
+.inv-table tr:last-child td{border-bottom:none;}
+.inv-table tr:hover td{background:#f8fafc;}
+.tag{display:inline-block;font-size:11px;padding:2px 7px;border-radius:99px;background:#dbeafe;color:#1d4ed8;margin:1px 2px 1px 0;}
+.tag.resource{background:#dcfce7;color:#166534;}
+
+.act-btns{display:flex;gap:6px;}
+.btn-icon{border:none;background:transparent;cursor:pointer;padding:4px 6px;border-radius:6px;font-size:14px;color:#64748b;}
+.btn-icon:hover{background:#f1f5f9;color:#1e293b;}
+.btn-icon.danger:hover{background:#fee2e2;color:#b91c1c;}
+
+/* ── Resource stock cards ── */
+.res-grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(200px,1fr));gap:10px;}
+.res-card{background:#fff;border-radius:10px;padding:14px;box-shadow:0 1px 3px rgba(0,0,0,.07);}
+.res-card-name{font-size:13px;font-weight:600;color:#1e293b;margin-bottom:6px;}
+.res-card-key{font-size:11px;color:#94a3b8;margin-bottom:10px;font-family:monospace;}
+.res-stock-row{display:flex;align-items:center;gap:8px;}
+.res-stock-row label{font-size:12px;color:#64748b;flex:1;}
+.res-stock-input{width:70px;padding:4px 8px;border:1px solid #e2e8f0;border-radius:6px;font-size:13px;text-align:center;}
+.btn-save-res{padding:4px 10px;font-size:12px;background:#2563eb;color:#fff;border:none;border-radius:6px;cursor:pointer;}
+.btn-save-res:hover{background:#1d4ed8;}
+
+/* ── Modal ── */
+.modal-bg{display:none;position:fixed;inset:0;background:rgba(0,0,0,.45);z-index:200;align-items:center;justify-content:center;}
+.modal-bg.on{display:flex;}
+.modal{background:#fff;border-radius:14px;width:min(520px,95vw);max-height:90vh;overflow-y:auto;padding:24px;}
+.modal-hdr{display:flex;align-items:center;justify-content:space-between;margin-bottom:18px;}
+.modal-hdr h3{font-size:16px;font-weight:700;}
+.modal-close{background:none;border:none;cursor:pointer;font-size:18px;color:#94a3b8;}
+.modal-close:hover{color:#1e293b;}
+
+.form-row{margin-bottom:14px;}
+.form-row label{display:block;font-size:12px;font-weight:500;color:#64748b;margin-bottom:4px;}
+.form-row input,.form-row textarea{width:100%;padding:8px 10px;border:1px solid #e2e8f0;border-radius:8px;font-size:13px;font-family:inherit;}
+.form-row input:focus,.form-row textarea:focus{outline:none;border-color:#2563eb;box-shadow:0 0 0 2px rgba(37,99,235,.15);}
+.form-row-2{display:grid;grid-template-columns:1fr 1fr;gap:10px;}
+
+/* ── Resources editor inside modal ── */
+.res-editor{border:1px solid #e2e8f0;border-radius:8px;overflow:hidden;}
+.res-editor-hdr{background:#f8fafc;padding:8px 12px;font-size:12px;font-weight:600;color:#64748b;display:flex;align-items:center;justify-content:space-between;}
+.res-editor-row{display:grid;grid-template-columns:1fr 90px 34px;gap:6px;padding:6px 10px;border-top:1px solid #f1f5f9;align-items:center;}
+.res-editor-row select,.res-editor-row input[type="number"]{padding:5px 8px;border:1px solid #e2e8f0;border-radius:6px;font-size:12px;width:100%;}
+.btn-del-res{background:none;border:none;cursor:pointer;font-size:14px;color:#94a3b8;}
+.btn-del-res:hover{color:#b91c1c;}
+.btn-add-res{font-size:12px;background:#f1f5f9;border:none;border-radius:6px;padding:5px 10px;cursor:pointer;color:#475569;margin:8px 10px;}
+.btn-add-res:hover{background:#e2e8f0;}
+
+/* ── Modal footer ── */
+.modal-footer{display:flex;gap:10px;justify-content:flex-end;margin-top:20px;padding-top:16px;border-top:1px solid #f1f5f9;}
+.btn-cancel{background:#f1f5f9;border:none;border-radius:8px;padding:8px 18px;font-size:13px;font-weight:500;cursor:pointer;color:#64748b;}
+.btn-cancel:hover{background:#e2e8f0;}
+.btn-save{background:#2563eb;color:#fff;border:none;border-radius:8px;padding:8px 18px;font-size:13px;font-weight:500;cursor:pointer;}
+.btn-save:hover{background:#1d4ed8;}
+
+/* ── Toast ── */
+#toast{position:fixed;bottom:24px;left:50%;transform:translateX(-50%) translateY(80px);background:#1e293b;color:#fff;padding:10px 20px;border-radius:99px;font-size:13px;opacity:0;transition:all .25s;z-index:999;white-space:nowrap;}
+#toast.show{opacity:1;transform:translateX(-50%) translateY(0);}
+
+/* ── Confirm modal ── */
+#conf-modal .modal{max-width:360px;}
+#conf-modal p{font-size:14px;color:#475569;margin-bottom:4px;}
+#conf-modal strong{color:#b91c1c;}
+.btn-danger{background:#ef4444;color:#fff;border:none;border-radius:8px;padding:8px 18px;font-size:13px;font-weight:500;cursor:pointer;}
+.btn-danger:hover{background:#dc2626;}
+
+.empty-msg{text-align:center;padding:32px 0;color:#94a3b8;font-size:14px;}
+</style>
+</head>
+<body>
+
+<div class="topbar">
+  <a href="index.html">← Desktop</a>
+  <span style="color:#334155">|</span>
+  <a href="mobile.html">Mobile</a>
+  <h1>📦 Inventario</h1>
+  <span class="fb-badge" id="fb-badge">Local</span>
+</div>
+
+<div class="page">
+
+  <!-- Tabs -->
+  <div class="tabs">
+    <button class="tab-btn on" onclick="showTab('articulos')">Artículos</button>
+    <button class="tab-btn" onclick="showTab('recursos')">Recursos / Stock</button>
+  </div>
+
+  <!-- Tab: Artículos -->
+  <div class="tab-pane on" id="tab-articulos">
+    <div class="section-hdr">
+      <h2>Artículos del catálogo</h2>
+      <button class="btn-add" onclick="openItemModal()">＋ Nuevo artículo</button>
+    </div>
+    <table class="inv-table" id="items-table">
+      <thead>
+        <tr>
+          <th>#</th>
+          <th>Descripción</th>
+          <th>Abrev.</th>
+          <th>Precio</th>
+          <th>Recursos que consume</th>
+          <th></th>
+        </tr>
+      </thead>
+      <tbody id="items-tbody"></tbody>
+    </table>
+  </div>
+
+  <!-- Tab: Recursos -->
+  <div class="tab-pane" id="tab-recursos">
+    <div class="section-hdr">
+      <h2>Stock total disponible por día</h2>
+      <button class="btn-add" onclick="openResourceModal()">＋ Nuevo recurso</button>
+    </div>
+    <p style="font-size:13px;color:#64748b;margin-bottom:16px;">Cantidad máxima de cada recurso que puede usarse en un mismo día (afecta el cálculo de disponibilidad en todos los contratos).</p>
+    <div class="res-grid" id="res-grid"></div>
+  </div>
+
+</div><!-- /page -->
+
+<!-- Modal: Artículo -->
+<div class="modal-bg" id="item-modal">
+  <div class="modal">
+    <div class="modal-hdr">
+      <h3 id="item-modal-title">Nuevo artículo</h3>
+      <button class="modal-close" onclick="closeItemModal()">✕</button>
+    </div>
+    <div class="form-row">
+      <label>Descripción (aparece en el contrato impreso)</label>
+      <input type="text" id="f-desc" placeholder="Ej. Sillas negras metálicas">
+    </div>
+    <div class="form-row">
+      <label>Abreviatura (para resúmenes y reportes)</label>
+      <input type="text" id="f-abbrev" placeholder="Ej. Sillas met">
+    </div>
+    <div class="form-row-2">
+      <div class="form-row">
+        <label>Precio unitario ($)</label>
+        <input type="number" id="f-price" min="0" step="0.01" placeholder="0.00">
+      </div>
+      <div class="form-row">
+        <label>IDs OOXML (pq/pa, separados por coma)</label>
+        <input type="text" id="f-ooxml" placeholder="AAAABBBB,CCCCDDDD">
+      </div>
+    </div>
+
+    <div class="form-row">
+      <label>Recursos que consume (por unidad del artículo)</label>
+      <div class="res-editor">
+        <div class="res-editor-hdr">
+          <span>Recurso → Cantidad consumida</span>
+        </div>
+        <div id="res-rows"></div>
+      </div>
+      <button class="btn-add-res" onclick="addResRow()">＋ Agregar recurso</button>
+    </div>
+
+    <div class="modal-footer">
+      <button class="btn-cancel" onclick="closeItemModal()">Cancelar</button>
+      <button class="btn-save" onclick="saveItem()">Guardar artículo</button>
+    </div>
+  </div>
+</div>
+
+<!-- Modal: Recurso -->
+<div class="modal-bg" id="resource-modal">
+  <div class="modal" style="max-width:360px;">
+    <div class="modal-hdr">
+      <h3 id="res-modal-title">Nuevo recurso</h3>
+      <button class="modal-close" onclick="closeResourceModal()">✕</button>
+    </div>
+    <div class="form-row">
+      <label>Nombre del recurso</label>
+      <input type="text" id="rf-name" placeholder="Ej. Sillas Tiffany inf.">
+    </div>
+    <div class="form-row">
+      <label>Clave interna (minúsculas, sin espacios)</label>
+      <input type="text" id="rf-key" placeholder="Ej. sillas_tiffany">
+    </div>
+    <div class="form-row">
+      <label>Stock total disponible por día</label>
+      <input type="number" id="rf-total" min="0" step="1" placeholder="0">
+    </div>
+    <div class="modal-footer">
+      <button class="btn-cancel" onclick="closeResourceModal()">Cancelar</button>
+      <button class="btn-save" onclick="saveResource()">Guardar recurso</button>
+    </div>
+  </div>
+</div>
+
+<!-- Modal: Confirmar eliminar -->
+<div class="modal-bg" id="conf-modal">
+  <div class="modal">
+    <div class="modal-hdr">
+      <h3>Confirmar eliminación</h3>
+      <button class="modal-close" onclick="closeConf()">✕</button>
+    </div>
+    <p id="conf-msg">¿Eliminar este elemento?</p>
+    <p style="font-size:12px;color:#94a3b8;margin-top:6px;">Esta acción no se puede deshacer. Los contratos existentes no se verán afectados.</p>
+    <div class="modal-footer">
+      <button class="btn-cancel" onclick="closeConf()">Cancelar</button>
+      <button class="btn-danger" id="conf-ok-btn">Eliminar</button>
+    </div>
+  </div>
+</div>
+
+<div id="toast"></div>
+
+<script>
+/* ══════════════════════════════════════════════════════
+   inventario.html — lógica de gestión de catálogo
+══════════════════════════════════════════════════════ */
+
+var _editItemId  = null; // id del artículo siendo editado (null = nuevo)
+var _editResKey  = null; // clave del recurso siendo editado (null = nuevo)
+var _confFn      = null; // función a ejecutar al confirmar
+
+/* ── Tabs ── */
+function showTab(name){
+  document.querySelectorAll('.tab-btn').forEach(function(b,i){
+    b.classList.toggle('on', ['articulos','recursos'][i]===name);
+  });
+  document.querySelectorAll('.tab-pane').forEach(function(p){
+    p.classList.toggle('on', p.id==='tab-'+name);
+  });
+}
+
+/* ── Firebase badge ── */
+function updateFbBadge(){
+  var badge=document.getElementById('fb-badge');
+  if(isFbMode()){
+    badge.textContent='Firebase 🔴 Live';
+    badge.className='fb-badge live';
+  } else {
+    badge.textContent='Local';
+    badge.className='fb-badge';
+  }
+}
+
+/* ══════════════════════════════════════════════════════
+   RENDER ARTÍCULOS
+══════════════════════════════════════════════════════ */
+function renderItems(){
+  var cat=loadCatalog();
+  var tbody=document.getElementById('items-tbody');
+  if(!cat.items||cat.items.length===0){
+    tbody.innerHTML='<tr><td colspan="6"><div class="empty-msg">Sin artículos en el catálogo.</div></td></tr>';
+    return;
+  }
+  tbody.innerHTML=cat.items.map(function(it,idx){
+    var resHtml=(it.resources||[]).map(function(r){
+      var rname=(cat.resources[r.key]&&cat.resources[r.key].name)||r.key;
+      return '<span class="tag resource">'+rname+' ×'+r.qty+'</span>';
+    }).join('');
+    return '<tr>'
+      +'<td style="color:#94a3b8;font-size:12px;">'+(idx+1)+'</td>'
+      +'<td><strong>'+xe(it.desc)+'</strong></td>'
+      +'<td><span class="tag">'+xe(it.abbrev)+'</span></td>'
+      +'<td>$'+Number(it.price).toFixed(2)+'</td>'
+      +'<td>'+(resHtml||'<span style="color:#94a3b8;font-size:12px;">Sin recursos</span>')+'</td>'
+      +'<td><div class="act-btns">'
+        +'<button class="btn-icon" title="Editar" onclick="openItemModal(\''+it.id+'\')">✏️</button>'
+        +'<button class="btn-icon danger" title="Eliminar" onclick="askDeleteItem(\''+it.id+'\',\''+xe(it.desc).replace(/'/g,"\\'")+'\')" >🗑</button>'
+      +'</div></td>'
+      +'</tr>';
+  }).join('');
+}
+
+/* ── Modal artículo ── */
+function openItemModal(id){
+  _editItemId=id||null;
+  document.getElementById('item-modal-title').textContent=id?'Editar artículo':'Nuevo artículo';
+  document.getElementById('f-desc').value='';
+  document.getElementById('f-abbrev').value='';
+  document.getElementById('f-price').value='';
+  document.getElementById('f-ooxml').value='';
+  document.getElementById('res-rows').innerHTML='';
+
+  if(id){
+    var cat=loadCatalog();
+    var it=cat.items.find(function(x){return x.id===id;});
+    if(it){
+      document.getElementById('f-desc').value=it.desc;
+      document.getElementById('f-abbrev').value=it.abbrev;
+      document.getElementById('f-price').value=it.price;
+      document.getElementById('f-ooxml').value=[it.pq||'',it.pa||''].filter(Boolean).join(',');
+      (it.resources||[]).forEach(function(r){addResRow(r.key,r.qty);});
+    }
+  }
+  document.getElementById('item-modal').classList.add('on');
+  document.getElementById('f-desc').focus();
+}
+
+function closeItemModal(){
+  document.getElementById('item-modal').classList.remove('on');
+  _editItemId=null;
+}
+
+/* ── Fila de recurso dentro del modal ── */
+function addResRow(key,qty){
+  var cat=loadCatalog();
+  var keys=Object.keys(cat.resources);
+  var opts=keys.map(function(k){
+    var selected=k===(key||'')?'selected':'';
+    return '<option value="'+k+'" '+selected+'>'+xe(cat.resources[k].name)+' ('+k+')</option>';
+  }).join('');
+  var row=document.createElement('div');
+  row.className='res-editor-row';
+  row.innerHTML=
+    '<select>'+opts+'</select>'
+    +'<input type="number" min="1" step="1" value="'+(qty||1)+'" placeholder="Cant.">'
+    +'<button class="btn-del-res" onclick="this.parentNode.remove()" title="Quitar">✕</button>';
+  document.getElementById('res-rows').appendChild(row);
+}
+
+function saveItem(){
+  var desc=document.getElementById('f-desc').value.trim();
+  var abbrev=document.getElementById('f-abbrev').value.trim();
+  var price=parseFloat(document.getElementById('f-price').value)||0;
+  var ooxml=(document.getElementById('f-ooxml').value||'').split(',').map(function(s){return s.trim();});
+  if(!desc){toast('La descripción es obligatoria.'); return;}
+  if(!abbrev){toast('La abreviatura es obligatoria.'); return;}
+
+  var resources=[];
+  document.querySelectorAll('#res-rows .res-editor-row').forEach(function(row){
+    var sel=row.querySelector('select');
+    var inp=row.querySelector('input[type="number"]');
+    if(sel&&inp){
+      var k=sel.value, q=parseInt(inp.value)||1;
+      if(k) resources.push({key:k,qty:q});
+    }
+  });
+
+  var cat=loadCatalog();
+  if(_editItemId){
+    var idx=cat.items.findIndex(function(x){return x.id===_editItemId;});
+    if(idx>=0){
+      cat.items[idx].desc=desc;
+      cat.items[idx].abbrev=abbrev;
+      cat.items[idx].price=price;
+      if(ooxml[0]) cat.items[idx].pq=ooxml[0];
+      if(ooxml[1]) cat.items[idx].pa=ooxml[1];
+      cat.items[idx].resources=resources;
+    }
+  } else {
+    var newId='item_new_'+Date.now();
+    cat.items.push({id:newId,desc:desc,abbrev:abbrev,price:price,
+      pq:ooxml[0]||'',pa:ooxml[1]||'',resources:resources});
+  }
+  saveCatalog(cat);
+  closeItemModal();
+  renderItems();
+  toast(_editItemId?'Artículo actualizado.':'Artículo agregado.');
+}
+
+function askDeleteItem(id,desc){
+  document.getElementById('conf-msg').innerHTML='¿Eliminar el artículo <strong>'+xe(desc)+'</strong>?';
+  _confFn=function(){
+    var cat=loadCatalog();
+    cat.items=cat.items.filter(function(x){return x.id!==id;});
+    saveCatalog(cat);
+    renderItems();
+    toast('Artículo eliminado.');
+  };
+  document.getElementById('conf-modal').classList.add('on');
+}
+
+/* ══════════════════════════════════════════════════════
+   RENDER RECURSOS
+══════════════════════════════════════════════════════ */
+function renderResources(){
+  var cat=loadCatalog();
+  var grid=document.getElementById('res-grid');
+  var keys=Object.keys(cat.resources||{});
+  if(keys.length===0){
+    grid.innerHTML='<div class="empty-msg" style="grid-column:1/-1">Sin recursos definidos.</div>';
+    return;
+  }
+  grid.innerHTML=keys.map(function(k){
+    var r=cat.resources[k];
+    return '<div class="res-card">'
+      +'<div class="res-card-name">'+xe(r.name)+'</div>'
+      +'<div class="res-card-key">'+k+'</div>'
+      +'<div class="res-stock-row">'
+        +'<label>Stock / día</label>'
+        +'<input class="res-stock-input" type="number" min="0" step="1" value="'+r.total+'" id="rs-'+k+'">'
+        +'<button class="btn-save-res" onclick="saveResStock(\''+k+'\')">✓</button>'
+      +'</div>'
+      +'<div style="display:flex;gap:6px;margin-top:10px;">'
+        +'<button class="btn-icon" style="flex:1;font-size:12px;border:1px solid #e2e8f0;border-radius:6px;" onclick="openResourceModal(\''+k+'\')">✏️ Editar</button>'
+        +'<button class="btn-icon danger" style="font-size:12px;border:1px solid #e2e8f0;border-radius:6px;" onclick="askDeleteResource(\''+k+'\',\''+xe(r.name).replace(/'/g,"\\'")+'\')" >🗑</button>'
+      +'</div>'
+      +'</div>';
+  }).join('');
+}
+
+function saveResStock(key){
+  var inp=document.getElementById('rs-'+key);
+  if(!inp) return;
+  var val=parseInt(inp.value)||0;
+  var cat=loadCatalog();
+  if(cat.resources[key]) cat.resources[key].total=val;
+  saveCatalog(cat);
+  renderResources();
+  toast('Stock actualizado.');
+}
+
+/* ── Modal recurso ── */
+function openResourceModal(key){
+  _editResKey=key||null;
+  document.getElementById('res-modal-title').textContent=key?'Editar recurso':'Nuevo recurso';
+  document.getElementById('rf-name').value='';
+  document.getElementById('rf-key').value='';
+  document.getElementById('rf-total').value='';
+  if(key){
+    var cat=loadCatalog();
+    var r=cat.resources[key];
+    if(r){
+      document.getElementById('rf-name').value=r.name;
+      document.getElementById('rf-key').value=key;
+      document.getElementById('rf-key').readOnly=true;
+      document.getElementById('rf-total').value=r.total;
+    }
+  } else {
+    document.getElementById('rf-key').readOnly=false;
+  }
+  document.getElementById('resource-modal').classList.add('on');
+  document.getElementById('rf-name').focus();
+}
+
+function closeResourceModal(){
+  document.getElementById('resource-modal').classList.remove('on');
+  _editResKey=null;
+}
+
+function saveResource(){
+  var name=document.getElementById('rf-name').value.trim();
+  var key=document.getElementById('rf-key').value.trim().toLowerCase().replace(/\s+/g,'_');
+  var total=parseInt(document.getElementById('rf-total').value)||0;
+  if(!name){toast('El nombre es obligatorio.'); return;}
+  if(!key){toast('La clave es obligatoria.'); return;}
+  var cat=loadCatalog();
+  if(_editResKey){
+    if(cat.resources[_editResKey]){
+      cat.resources[_editResKey].name=name;
+      cat.resources[_editResKey].total=total;
+    }
+  } else {
+    if(cat.resources[key]){toast('Ya existe un recurso con esa clave.'); return;}
+    cat.resources[key]={name:name,total:total};
+  }
+  saveCatalog(cat);
+  closeResourceModal();
+  renderResources();
+  toast(_editResKey?'Recurso actualizado.':'Recurso agregado.');
+}
+
+function askDeleteResource(key,name){
+  document.getElementById('conf-msg').innerHTML='¿Eliminar el recurso <strong>'+xe(name)+'</strong>?<br><span style="font-size:12px;color:#94a3b8;">Los artículos que lo usen quedarán sin ese recurso.</span>';
+  _confFn=function(){
+    var cat=loadCatalog();
+    delete cat.resources[key];
+    // Limpiar referencias en artículos
+    cat.items.forEach(function(it){
+      it.resources=(it.resources||[]).filter(function(r){return r.key!==key;});
+    });
+    saveCatalog(cat);
+    renderResources();
+    renderItems();
+    toast('Recurso eliminado.');
+  };
+  document.getElementById('conf-modal').classList.add('on');
+}
+
+/* ── Confirm modal ── */
+function closeConf(){
+  document.getElementById('conf-modal').classList.remove('on');
+  _confFn=null;
+}
+document.getElementById('conf-ok-btn').addEventListener('click',function(){
+  if(_confFn) _confFn();
+  closeConf();
+});
+
+/* ── Toast ── */
+var _toastTimer=null;
+function toast(msg){
+  var el=document.getElementById('toast');
+  el.textContent=msg;
+  el.classList.add('show');
+  clearTimeout(_toastTimer);
+  _toastTimer=setTimeout(function(){el.classList.remove('show');},2400);
+}
+
+/* ── Cerrar modales al click en backdrop ── */
+['item-modal','resource-modal','conf-modal'].forEach(function(id){
+  document.getElementById(id).addEventListener('click',function(e){
+    if(e.target===this){
+      if(id==='conf-modal') closeConf();
+      else if(id==='item-modal') closeItemModal();
+      else closeResourceModal();
+    }
+  });
+});
+
+/* ── Init ── */
+document.addEventListener('DOMContentLoaded',function(){
+  // Registrar en listener del catálogo para re-render automático
+  onCatalogChange(function(){
+    renderItems();
+    renderResources();
+    updateFbBadge();
+  });
+
+  // Firebase si hay config guardada
+  var fbCfg=fbGetConfig();
+  if(fbCfg){
+    fbInit(fbCfg,function(err){
+      if(err){
+        console.warn('Firebase error:',err);
+      }
+      updateFbBadge();
+    });
+  } else {
+    updateFbBadge();
+    renderItems();
+    renderResources();
+  }
+});
+</script>
+</body>
+</html>
