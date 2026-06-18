@@ -1015,6 +1015,15 @@ document.addEventListener('DOMContentLoaded', function(){
   buildProg();
   buildQProg(); // ADDED: build quotation progress bars
 
+  // ADDED: re-construir lista de artículos cuando el catálogo cambie
+  // (cubre carga inicial de Firebase y ediciones desde inventario.html)
+  onCatalogChange(function(){
+    buildItems();
+    if(typeof buildQItems==='function') buildQItems();
+    // Si wizard está en paso 3, actualizar advertencia de inventario
+    if(typeof mUpdateInvWarn==='function') mUpdateInvWarn();
+  });
+
   el('m-anticipo').addEventListener('input', function(){
     this.dataset.manual='1'; mCalcResta();
   });
@@ -1485,7 +1494,8 @@ function mPopulate(d){
   if(d.items) d.items.forEach(function(r,i){
     var qe=el('mq'+i), pe=el('mp'+i);
     if(qe) qe.textContent=r.qty||0;
-    if(pe) pe.value=(r.price||ITEMS[i].price).toFixed(2);
+    // MODIFIED: usa getItemByIndex para compatibilidad con contratos pasados
+    if(pe) pe.value=(r.price||getItemByIndex(i).price||0).toFixed(2);
     mUpdAmt(i);
   });
   // ADDED: restore extra items
@@ -1951,8 +1961,9 @@ function openDetailSheet(id){
   // Items
   var itemRows=(c.items||[]).map(function(r,i){
     if(!r||!(r.qty>0)) return '';
+    // MODIFIED: usa getItemByIndex para compatibilidad con contratos pasados
     return '<div class="det-item-row">'+
-      '<span class="det-item-name">'+ITEMS[i].desc+' ×'+r.qty+'</span>'+
+      '<span class="det-item-name">'+getItemByIndex(i).desc+' ×'+r.qty+'</span>'+
       '<span class="det-item-amt">$'+r.amt.toFixed(2)+'</span>'+
     '</div>';
   }).filter(Boolean).join('');
@@ -2025,7 +2036,8 @@ function openDetailSheet(id){
   }).join('');
   var itemRows=(c.items||[]).map(function(r,i){
     if(!r||!(r.qty>0)) return '';
-    return '<div class="det-item-row"><span class="det-item-name">'+ITEMS[i].desc+' ×'+r.qty+'</span><span class="det-item-amt">$'+r.amt.toFixed(2)+'</span></div>';
+    // MODIFIED: usa getItemByIndex para compatibilidad con contratos pasados
+    return '<div class="det-item-row"><span class="det-item-name">'+getItemByIndex(i).desc+' ×'+r.qty+'</span><span class="det-item-amt">$'+r.amt.toFixed(2)+'</span></div>';
   }).filter(Boolean).join('');
   el('det-items-rows').innerHTML=itemRows||'<div style="font-size:13px;color:var(--mid);padding:4px 0">Sin artículos</div>';
   // ADDED: artículos adicionales
@@ -2338,7 +2350,8 @@ function qPopulate(d){
   if(d.items) d.items.forEach(function(r,i){
     var qe=el('qqq'+i), pe=el('qqp'+i);
     if(qe) qe.textContent=r.qty||0;
-    if(pe) pe.value=(r.price||ITEMS[i].price).toFixed(2);
+    // MODIFIED: usa getItemByIndex para compatibilidad con catálogo dinámico
+    if(pe) pe.value=(r.price||getItemByIndex(i).price||0).toFixed(2);
     qUpdAmt(i);
   });
   Q_extraItems=(d.extraItems||[]).map(function(ex){return {desc:ex.desc||'',qty:ex.qty||0,price:ex.price||0};});
