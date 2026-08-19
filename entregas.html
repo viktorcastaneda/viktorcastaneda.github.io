@@ -1,0 +1,664 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width,initial-scale=1,maximum-scale=1,user-scalable=no">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="theme-color" content="#1a1f2e">
+<title>CASVEL – Entregas</title>
+<link href="https://fonts.googleapis.com/css2?family=DM+Sans:wght@400;500;600;700&family=DM+Mono:wght@400;500&display=swap" rel="stylesheet">
+<link rel="icon" type="image/x-icon" href="eventos_casvel_favicon.ico">
+<link rel="apple-touch-icon" sizes="180x180" href="apple-touch-icon.png">
+<style>
+/* ═══ Estilos tomados de reporte-mobile.html para mantener consistencia visual ═══ */
+*{box-sizing:border-box;margin:0;padding:0}
+:root{
+  --blue:#2563a8;--blt:#4F81BD;--bbg:#dce6f1;
+  --dark:#1a1f2e;--mid:#5a6580;--light:#f0f4f8;
+  --white:#fff;--red:#c0392b;--green:#1a7a44;--border:#d1dde8;
+  --gold:#b8860b;--gold-lt:#fdf3d0;
+  --teal:#0e7490;--teal-lt:#e0f2f7;
+  --r:14px;--sb:env(safe-area-inset-bottom,16px);--st:env(safe-area-inset-top,0px);
+  --fm:'DM Mono',monospace;
+}
+html,body{height:100%;font-family:'DM Sans',system-ui,sans-serif;background:var(--light);color:var(--dark)}
+body{-webkit-text-size-adjust:100%;overscroll-behavior-y:none}
+.sc{min-height:100vh;display:flex;flex-direction:column}
+
+.tb{background:var(--dark);color:#fff;display:flex;align-items:center;gap:10px;
+  padding:14px 16px;padding-top:calc(14px + var(--st));position:sticky;top:0;z-index:100;flex-shrink:0}
+
+.hhero{background:var(--dark);padding:20px 18px 18px;padding-top:calc(20px + var(--st));
+  display:flex;align-items:center;gap:14px;flex-shrink:0}
+.hhero img{width:48px;border-radius:8px}
+.hbrand{font-size:20px;font-weight:700;color:#fff}
+.hsub{font-size:12px;color:rgba(255,255,255,.4);margin-top:2px}
+.fb-sync{display:inline-flex;align-items:center;gap:5px;font-size:11px;font-weight:600;
+  padding:3px 9px;border-radius:10px;cursor:pointer;border:none;font-family:inherit;
+  margin-left:auto;-webkit-tap-highlight-color:transparent}
+.fb-sync.local{background:rgba(255,255,255,.08);color:rgba(255,255,255,.4)}
+.fb-sync.live{background:rgba(26,122,68,.25);color:#6ee7b7}
+.fb-sync.live::before{content:"●";margin-right:2px;animation:fbpulse 2s infinite}
+@keyframes fbpulse{0%,100%{opacity:1}50%{opacity:.4}}
+
+/* ── Barra de sincronización offline ── */
+.sync-bar{background:rgba(255,255,255,.06);margin:0 16px 14px;border-radius:12px;
+  padding:12px 14px;display:flex;align-items:center;justify-content:space-between;gap:10px;flex-shrink:0}
+.sync-info{font-size:11px;color:rgba(255,255,255,.55);line-height:1.4}
+.sync-info strong{color:#fff;display:block;font-size:12px;margin-bottom:1px}
+.sync-btn{background:var(--blue);color:#fff;border:none;border-radius:10px;
+  padding:9px 14px;font-family:inherit;font-size:12px;font-weight:700;cursor:pointer;
+  display:flex;align-items:center;gap:5px;white-space:nowrap;-webkit-tap-highlight-color:transparent}
+.sync-btn:active{transform:scale(.97)}
+.sync-btn.syncing{opacity:.6;pointer-events:none}
+.sync-btn .spin{display:inline-block;animation:spin 1s linear infinite}
+@keyframes spin{from{transform:rotate(0)}to{transform:rotate(360deg)}}
+
+.sarea{flex:1;overflow-y:auto;-webkit-overflow-scrolling:touch;
+  padding:14px 16px calc(84px + var(--sb))}
+
+.year-nav{display:flex;align-items:center;justify-content:space-between;
+  background:var(--white);border-radius:12px;border:1px solid var(--border);
+  padding:12px 16px;margin-bottom:12px;gap:10px;flex-wrap:wrap}
+.ynav-lbl{font-size:12px;font-weight:700;text-transform:uppercase;letter-spacing:.06em;color:var(--mid)}
+
+/* ── Campo de orden configurable ── */
+.order-card{background:var(--white);border-radius:12px;border:1px solid var(--border);
+  padding:12px 16px;margin-bottom:12px}
+.order-card-hdr{font-size:12px;font-weight:700;text-transform:uppercase;letter-spacing:.06em;
+  color:var(--mid);margin-bottom:10px}
+.order-choices{display:flex;gap:8px}
+.order-choice{flex:1;padding:9px 8px;border-radius:9px;border:1.5px solid var(--border);
+  background:var(--light);font-family:inherit;font-size:12px;font-weight:700;color:var(--mid);
+  cursor:pointer;text-align:center;-webkit-tap-highlight-color:transparent}
+.order-choice.on{background:var(--blue);color:#fff;border-color:var(--blue)}
+.order-hint{font-size:11px;color:var(--mid);margin-top:8px;line-height:1.4}
+
+.mgrid{display:grid;grid-template-columns:1fr 1fr;gap:10px;margin-bottom:12px}
+.mcard{background:var(--white);border-radius:12px;padding:14px 15px;
+  border:1px solid var(--border);position:relative;overflow:hidden}
+.mcard::before{content:'';position:absolute;top:0;left:0;right:0;height:3px;border-radius:3px 3px 0 0}
+.mc-blue::before{background:var(--blue)}
+.mc-teal::before{background:var(--teal)}
+.mc-green::before{background:var(--green)}
+.mc-gold::before{background:var(--gold)}
+.mcard-icon{font-size:20px;margin-bottom:6px}
+.mcard-lbl{font-size:10px;font-weight:700;text-transform:uppercase;letter-spacing:.06em;
+  color:var(--mid);margin-bottom:4px;line-height:1.3}
+.mcard-val{font-family:var(--fm);font-size:18px;font-weight:500;color:var(--dark);
+  letter-spacing:-.3px;line-height:1}
+.mcard-sub{font-size:10px;color:var(--mid);margin-top:4px;line-height:1.3}
+
+.sec-hdr{display:flex;align-items:center;justify-content:space-between;
+  margin-bottom:10px;padding:0 2px}
+.sec-lbl{font-size:12px;font-weight:700;text-transform:uppercase;letter-spacing:.07em;color:var(--mid)}
+.sec-count{font-size:11px;font-weight:600;background:var(--bbg);color:var(--blue);
+  padding:2px 8px;border-radius:8px}
+
+.frow{background:var(--white);border-radius:12px;border:1px solid var(--border);
+  padding:14px 16px;margin-bottom:10px;box-shadow:0 1px 4px rgba(0,0,0,.04)}
+.frow-top{display:flex;justify-content:space-between;align-items:flex-start;margin-bottom:10px}
+.frow-name{font-size:15px;font-weight:700;line-height:1.2}
+.frow-total{font-family:var(--fm);font-size:16px;font-weight:500;color:var(--blue)}
+
+.order-input-wrap{display:flex;align-items:center;gap:6px;margin-top:8px;
+  background:var(--light);border-radius:8px;padding:5px 8px}
+.order-input-wrap label{font-size:10px;font-weight:700;color:var(--mid);text-transform:uppercase}
+.order-input{width:48px;border:1.5px solid var(--border);border-radius:6px;padding:4px 6px;
+  font-family:var(--fm);font-size:13px;text-align:center;outline:none;background:#fff}
+.order-input:focus{border-color:var(--blue)}
+.order-tag{background:var(--dark);color:#fff;flex-shrink:0;
+  font-family:var(--fm);font-size:12px;font-weight:600;border-radius:8px;
+  width:26px;height:26px;display:flex;align-items:center;justify-content:center;
+  margin-right:10px;margin-top:1px}
+.frow-top{align-items:flex-start}
+
+.empty{text-align:center;padding:48px 20px;color:var(--mid)}
+.empty-icon{font-size:44px;margin-bottom:12px}
+.empty-title{font-size:15px;font-weight:700;color:var(--dark);margin-bottom:6px}
+.empty-sub{font-size:13px;line-height:1.5}
+
+.bnav{position:fixed;bottom:0;left:0;right:0;background:var(--dark);
+  padding:10px 0 calc(10px + var(--sb));display:flex;z-index:90;
+  box-shadow:0 -2px 16px rgba(0,0,0,.25)}
+.bn{flex:1;display:flex;flex-direction:column;align-items:center;gap:3px;
+  padding:6px 4px;cursor:pointer;color:rgba(255,255,255,.4);border:none;background:none;
+  font-family:'DM Sans',sans-serif;-webkit-tap-highlight-color:transparent;text-decoration:none}
+.bn.on{color:#fff}
+.bi{font-size:22px}.bl{font-size:10px;font-weight:600}
+
+#mtoast{position:fixed;bottom:calc(80px + var(--sb));left:16px;right:16px;
+  background:var(--dark);color:#acd4f5;padding:13px 18px;border-radius:12px;
+  font-size:14px;font-weight:500;border-left:4px solid var(--blt);
+  transform:translateY(20px);opacity:0;transition:all .25s;z-index:600;pointer-events:none}
+#mtoast.show{transform:translateY(0);opacity:1}
+
+.fb-sheet{position:fixed;left:0;right:0;bottom:0;z-index:500;background:var(--white);
+  border-radius:20px 20px 0 0;padding:0 20px calc(20px + var(--sb));
+  transform:translateY(100%);transition:transform .3s cubic-bezier(.32,.72,0,1)}
+.fb-sheet.on{transform:translateY(0)}
+.fb-sbg{display:none;position:fixed;inset:0;background:rgba(0,0,0,.5);z-index:499}
+.fb-sbg.on{display:block}
+.fb-field{margin-bottom:14px}
+.fb-field label{display:block;font-size:12px;font-weight:700;color:var(--mid);
+  text-transform:uppercase;letter-spacing:.05em;margin-bottom:6px}
+.fb-field input{width:100%;padding:13px 14px;border:1.5px solid var(--border);border-radius:10px;
+  font-family:inherit;font-size:16px;outline:none;-webkit-appearance:none}
+.fb-field input:focus{border-color:var(--blue)}
+.fb-steps{font-size:12px;color:var(--mid);line-height:1.7;background:var(--light);
+  border-radius:var(--r);padding:12px 14px;margin-bottom:14px}
+.fb-steps a{color:var(--blue)}
+.shandle{width:40px;height:4px;background:#ddd;border-radius:2px;margin:12px auto 18px}
+.sttitle{font-size:18px;font-weight:700;margin-bottom:6px}
+.stsub{font-size:13px;color:var(--mid);margin-bottom:18px}
+.wbtn{width:100%;padding:15px;border-radius:12px;border:none;font-family:'DM Sans',sans-serif;
+  font-size:16px;font-weight:700;cursor:pointer;display:flex;align-items:center;
+  justify-content:center;gap:8px;-webkit-tap-highlight-color:transparent;margin-bottom:10px}
+.wbtn:active{transform:scale(.98)}
+.wbtn-p{background:var(--blue);color:#fff}
+.wbtn-d{background:var(--red);color:#fff}
+.wbtn-g{background:var(--light);color:var(--mid)}
+
+/* ── Ficha detalle (idéntica a reporte-mobile.html) ── */
+.det-sheet-bg{display:none;position:fixed;inset:0;background:rgba(0,0,0,.55);z-index:400}
+.det-sheet-bg.on{display:block}
+.det-sheet{position:fixed;left:0;right:0;bottom:0;z-index:401;background:var(--white);
+  border-radius:20px 20px 0 0;padding:0 0 calc(20px + var(--sb));
+  transform:translateY(100%);transition:transform .3s cubic-bezier(.32,.72,0,1);
+  max-height:90vh;display:flex;flex-direction:column}
+.det-sheet.on{transform:translateY(0)}
+.det-sheet-hdr{padding:0 20px;flex-shrink:0}
+.det-sheet-scroll{flex:1;overflow-y:auto;-webkit-overflow-scrolling:touch;padding:0 20px 8px}
+.det-section{margin-bottom:14px}
+.det-sec-lbl{font-size:10px;font-weight:700;text-transform:uppercase;letter-spacing:.07em;
+  color:var(--mid);margin-bottom:8px;padding-bottom:6px;border-bottom:1.5px solid var(--bbg)}
+.det-row{display:flex;justify-content:space-between;align-items:flex-start;
+  padding:7px 0;border-bottom:1px solid var(--border);gap:10px;font-size:13px}
+.det-row:last-child{border-bottom:none}
+.det-lbl{color:var(--mid);font-weight:500;flex-shrink:0;min-width:90px}
+.det-val{font-weight:600;text-align:right;word-break:break-word}
+.det-item-row{display:flex;justify-content:space-between;padding:6px 0;
+  border-bottom:1px solid var(--border);font-size:12px}
+.det-item-row:last-child{border-bottom:none}
+.det-item-name{color:var(--dark);font-weight:500}
+.det-item-amt{font-weight:700;color:var(--blue)}
+.det-fin-row{display:flex;justify-content:space-between;padding:8px 0;
+  border-bottom:1px solid var(--border);font-size:14px}
+.det-fin-row:last-child{border-bottom:none;font-weight:700;font-size:15px}
+.det-actions{display:flex;gap:8px;padding:12px 20px 0;flex-shrink:0}
+.det-action-btn{flex:1;padding:12px 6px;border-radius:12px;border:none;
+  font-family:inherit;font-size:13px;font-weight:700;cursor:pointer;
+  -webkit-tap-highlight-color:transparent;display:flex;align-items:center;
+  justify-content:center;gap:5px;text-decoration:none}
+.det-btn-wa{background:#dcfce7;color:#15803d}
+.det-btn-map{background:#dbeafe;color:var(--blue)}
+.det-btn-close{background:var(--light);color:var(--mid)}
+</style>
+</head>
+<body>
+
+<div class="sc">
+  <div class="hhero">
+    <img id="hero-logo" src="" alt="CASVEL">
+    <div><div class="hbrand">Entregas</div><div class="hsub">Modo fuera de línea</div></div>
+    <button class="fb-sync local" id="fb-btn" onclick="openFbSheet()">⬡ Local</button>
+  </div>
+
+  <!-- ADDED: barra de sincronización offline -->
+  <div class="sync-bar">
+    <div class="sync-info">
+      <strong id="sync-status-txt">Sin copia local</strong>
+      <span id="sync-last-txt">Toca sincronizar para descargar contratos</span>
+    </div>
+    <button class="sync-btn" id="sync-btn" onclick="doSync()">
+      <span id="sync-icon">🔄</span> Sincronizar
+    </button>
+  </div>
+
+  <div class="sarea">
+    <!-- Selector de fecha (misma estructura que reporte-mobile.html → sc-entregas) -->
+    <div class="year-nav">
+      <div class="ynav-lbl">Fecha de entrega</div>
+      <input type="date" id="ent-fecha" onchange="renderEntregas()"
+        style="padding:6px 12px;border:1.5px solid var(--border);border-radius:8px;font-family:inherit;font-size:14px;background:var(--white);outline:none;color-scheme:light">
+    </div>
+
+    <!-- ADDED: campo configurable de orden de entrega (100% local) -->
+    <div class="order-card">
+      <div class="order-card-hdr">Orden de entrega</div>
+      <div class="order-choices">
+        <button class="order-choice on" id="ord-hora" onclick="setOrderMode('hora')">🕐 Por hora</button>
+        <button class="order-choice" id="ord-manual" onclick="setOrderMode('manual')">✋ Manual</button>
+      </div>
+      <div class="order-hint" id="order-hint">Ordenado por hora de entrega registrada en el contrato.</div>
+    </div>
+
+    <div class="mgrid" id="ent-cards"></div>
+    <div class="sec-hdr">
+      <div class="sec-lbl">Contratos a entregar</div>
+      <div class="sec-count" id="ent-count">0</div>
+    </div>
+    <div id="ent-contracts"></div>
+  </div>
+</div>
+
+<nav class="bnav">
+  <a class="bn" href="mobile.html">
+    <span class="bi">📋</span><span class="bl">Contratos</span></a>
+  <a class="bn on" href="entregas.html">
+    <span class="bi">🚚</span><span class="bl">Entregas</span></a>
+  <a class="bn" href="reporte-mobile.html">
+    <span class="bi">💰</span><span class="bl">Reportes</span></a>
+</nav>
+
+<!-- ── FICHA DE DETALLE (igual a reporte-mobile.html) ── -->
+<div class="det-sheet-bg" id="det-sheet-bg" onclick="closeDetailSheet()"></div>
+<div class="det-sheet" id="det-sheet">
+  <div class="det-sheet-hdr">
+    <div class="shandle"></div>
+    <div style="display:flex;justify-content:space-between;align-items:flex-start;margin-bottom:14px">
+      <div>
+        <div style="font-size:17px;font-weight:700" id="det-nombre">—</div>
+        <div style="font-size:12px;color:var(--mid);margin-top:2px" id="det-subtitle">—</div>
+      </div>
+      <div id="det-status-badge" style="flex-shrink:0;margin-top:2px"></div>
+    </div>
+  </div>
+  <div class="det-sheet-scroll">
+    <div class="det-section">
+      <div class="det-sec-lbl">Datos del evento</div>
+      <div id="det-info-rows"></div>
+    </div>
+    <div class="det-section">
+      <div class="det-sec-lbl">Mobiliario</div>
+      <div id="det-items-rows"></div>
+    </div>
+    <div class="det-section" id="det-extra-section" style="display:none">
+      <div class="det-sec-lbl">Artículos adicionales</div>
+      <div id="det-extra-rows"></div>
+    </div>
+    <div class="det-section">
+      <div class="det-sec-lbl">Financiero</div>
+      <div id="det-fin-rows"></div>
+    </div>
+    <div class="det-section" id="det-notas-section" style="display:none">
+      <div class="det-sec-lbl">Notas</div>
+      <div id="det-notas-val" style="font-size:13px;color:var(--dark);line-height:1.5;padding:4px 0"></div>
+    </div>
+  </div>
+  <div class="det-actions" id="det-actions"></div>
+</div>
+
+<!-- ── FICHA FIREBASE (igual a reporte-mobile.html) ── -->
+<div class="fb-sbg" id="fb-sbg" onclick="closeFbSheet()"></div>
+<div class="fb-sheet" id="fb-sheet">
+  <div class="shandle"></div>
+  <div class="sttitle">☁️ Sincronización</div>
+  <div class="stsub" id="fb-sheet-sub">Conecta Firebase para descargar una copia local de tus contratos.</div>
+  <div class="fb-steps">
+    1. <a href="https://console.firebase.google.com" target="_blank">console.firebase.google.com</a><br>
+    2. Realtime Database → Crear → Modo de prueba<br>
+    3. Copiar URL de DB y API Key
+  </div>
+  <div class="fb-field"><label>API Key</label>
+    <input type="text" id="m-fb-apikey" placeholder="AIzaSy..."></div>
+  <div class="fb-field"><label>Database URL</label>
+    <input type="url" id="m-fb-dburl" placeholder="https://tu-proyecto-rtdb.firebaseio.com"></div>
+  <div class="fb-field"><label>Project ID</label>
+    <input type="text" id="m-fb-projid" placeholder="tu-proyecto-12345"></div>
+  <button class="wbtn wbtn-p" onclick="mFbConnect()">Conectar y sincronizar</button>
+  <button class="wbtn wbtn-d" id="m-fb-disc" style="display:none" onclick="mFbDisconnect()">Desconectar</button>
+  <button class="wbtn wbtn-g" onclick="closeFbSheet()">Cancelar</button>
+</div>
+
+<div id="mtoast"></div>
+
+<script src="shared.js"></script>
+<script>
+"use strict";
+
+/* ══════════════════════════════════════════════════════════════
+   ENTREGAS — página offline-first con sincronización manual.
+   Reutiliza shared.js (mismas funciones que reporte-mobile.html:
+   fbGetConfig, fbSaveConfig, fbClearConfig, fbInit, isFbMode,
+   onContractsChange, loadContracts, resolveStatus, itemsSummary,
+   fmtDate, todayISO, ITEMS) para no duplicar lógica de negocio.
+
+   Diferencia clave: esta página NO depende del caché en vivo de
+   shared.js para renderizar. Mantiene su PROPIA copia local
+   ("casvel_entregas_offline") que sólo se actualiza cuando el
+   usuario presiona "Sincronizar". Así funciona 100% sin conexión.
+   ══════════════════════════════════════════════════════════════ */
+
+var OFFLINE_KEY = 'casvel_entregas_offline';
+var LASTSYNC_KEY = 'casvel_entregas_last_sync';
+var ORDER_KEY = 'casvel_entregas_order';   // {mode:'hora'|'manual', manual:{ "fecha|id": n }}
+
+var todayISO_val = todayISO();
+var orderState = loadOrderState();
+
+function el(id){ return document.getElementById(id); }
+function mxn(n){
+  var v = Number(n);
+  if(v >= 1000) return '$'+v.toLocaleString('es-MX',{minimumFractionDigits:0,maximumFractionDigits:0});
+  return '$'+v.toLocaleString('es-MX',{minimumFractionDigits:2,maximumFractionDigits:2});
+}
+function showToast(msg){
+  var t=el('mtoast'); t.textContent=msg; t.classList.add('show');
+  clearTimeout(t._t); t._t=setTimeout(function(){t.classList.remove('show');},3000);
+}
+function mCard(colorClass, icon, lbl, val, sub){
+  return '<div class="mcard '+colorClass+'">'+
+    '<div class="mcard-icon">'+icon+'</div>'+
+    '<div class="mcard-lbl">'+lbl+'</div>'+
+    '<div class="mcard-val">'+val+'</div>'+
+    (sub?'<div class="mcard-sub">'+sub+'</div>':'')+
+  '</div>';
+}
+
+/* ─── Copia local offline (independiente del caché en vivo) ──── */
+function loadOffline(){
+  try{
+    var raw = localStorage.getItem(OFFLINE_KEY);
+    return raw ? JSON.parse(raw) : [];
+  }catch(e){ return []; }
+}
+function saveOffline(list){
+  localStorage.setItem(OFFLINE_KEY, JSON.stringify(list));
+  localStorage.setItem(LASTSYNC_KEY, new Date().toISOString());
+}
+function fmtLastSync(){
+  var raw = localStorage.getItem(LASTSYNC_KEY);
+  if(!raw) return 'Toca sincronizar para descargar contratos';
+  var d = new Date(raw);
+  var pad=function(n){return (n<10?'0':'')+n;};
+  return 'Última sincronización: '+pad(d.getDate())+'/'+pad(d.getMonth()+1)+'/'+d.getFullYear()+
+    ' '+pad(d.getHours())+':'+pad(d.getMinutes());
+}
+function updateSyncBar(){
+  var list = loadOffline();
+  el('sync-status-txt').textContent = list.length
+    ? list.length+' contrato'+(list.length!==1?'s':'')+' en caché local'
+    : 'Sin copia local';
+  el('sync-last-txt').textContent = fmtLastSync();
+}
+
+/* ─── Orden de entrega configurable (sólo local) ──────────────── */
+function loadOrderState(){
+  try{
+    var raw = localStorage.getItem(ORDER_KEY);
+    return raw ? JSON.parse(raw) : {mode:'hora', manual:{}};
+  }catch(e){ return {mode:'hora', manual:{}}; }
+}
+function saveOrderState(){
+  localStorage.setItem(ORDER_KEY, JSON.stringify(orderState));
+}
+function setOrderMode(mode){
+  orderState.mode = mode;
+  saveOrderState();
+  el('ord-hora').classList.toggle('on', mode==='hora');
+  el('ord-manual').classList.toggle('on', mode==='manual');
+  el('order-hint').textContent = mode==='manual'
+    ? 'Asigna un número a cada contrato (1, 2, 3…) para fijar tu ruta. Se guarda en este dispositivo.'
+    : 'Ordenado por hora de entrega registrada en el contrato.';
+  renderEntregas();
+}
+function orderKeyFor(fecha, id){ return fecha+'|'+id; }
+function getManualOrder(fecha, id){
+  var v = orderState.manual[orderKeyFor(fecha,id)];
+  return (v===undefined||v===null||v==='') ? null : Number(v);
+}
+function setManualOrder(fecha, id, val){
+  var k = orderKeyFor(fecha,id);
+  if(val===''||val===null||isNaN(val)) delete orderState.manual[k];
+  else orderState.manual[k] = Number(val);
+  saveOrderState();
+}
+
+/* ─── Sincronización manual con Firebase ──────────────────────── */
+function doSync(){
+  var cfg = fbGetConfig();
+  if(!cfg){ openFbSheet(); return; }
+  runSync(cfg);
+}
+function runSync(cfg){
+  var btn=el('sync-btn'), icon=el('sync-icon');
+  btn.classList.add('syncing'); icon.classList.add('spin');
+  showToast('⏳ Sincronizando con Firebase...');
+  fbInit(cfg, function(err){
+    if(err){
+      btn.classList.remove('syncing'); icon.classList.remove('spin');
+      showToast('❌ Error de sincronización: '+err.message);
+      updateFbBadge(false);
+      return;
+    }
+    updateFbBadge(true);
+    // Se registra un listener único: en cuanto llegue el snapshot en vivo
+    // de Firebase, se copia a la caché offline propia de esta página y
+    // se desuscribe (no queremos depender de la conexión en vivo después).
+    var unsub = onContractsChange(function(){
+      var live = loadContracts();
+      saveOffline(live);
+      updateSyncBar();
+      renderEntregas();
+      btn.classList.remove('syncing'); icon.classList.remove('spin');
+      showToast('✅ Sincronizado: '+live.length+' contratos descargados');
+      if(typeof unsub === 'function') unsub();
+    });
+  });
+}
+
+/* ─── Firebase sheet (idéntico patrón a reporte-mobile.html) ──── */
+function updateFbBadge(live){
+  var e=el('fb-btn'); if(!e) return;
+  e.className = live?'fb-sync live':'fb-sync local';
+  e.textContent = live?'● Firebase':'⬡ Local';
+}
+function openFbSheet(){
+  var cfg=fbGetConfig()||{};
+  el('m-fb-apikey').value=cfg.apiKey||'';
+  el('m-fb-dburl').value=cfg.databaseURL||'';
+  el('m-fb-projid').value=cfg.projectId||'';
+  el('m-fb-disc').style.display=isFbMode()?'':'none';
+  el('fb-sheet-sub').textContent=isFbMode()
+    ?'✅ Conectado. Usa "Sincronizar" para refrescar tu copia local.'
+    :'Conecta Firebase para descargar una copia local de tus contratos.';
+  el('fb-sheet').classList.add('on');
+  el('fb-sbg').classList.add('on');
+}
+function closeFbSheet(){
+  el('fb-sheet').classList.remove('on');
+  el('fb-sbg').classList.remove('on');
+}
+function mFbConnect(){
+  var cfg={
+    apiKey:      el('m-fb-apikey').value.trim(),
+    databaseURL: el('m-fb-dburl').value.trim(),
+    projectId:   el('m-fb-projid').value.trim(),
+    authDomain:  el('m-fb-projid').value.trim()+'.firebaseapp.com',
+    storageBucket:el('m-fb-projid').value.trim()+'.appspot.com',
+    messagingSenderId:'000000000000', appId:'1:000000000000:web:000000'
+  };
+  if(!cfg.apiKey||!cfg.databaseURL||!cfg.projectId){
+    showToast('⚠️ Completa los tres campos'); return;
+  }
+  fbSaveConfig(cfg);
+  closeFbSheet();
+  runSync(cfg);
+}
+function mFbDisconnect(){
+  fbClearConfig(); closeFbSheet();
+  updateFbBadge(false);
+  showToast('⬡ Desconectado. La copia local sigue disponible.');
+}
+
+/* ═══════════════════════════════════════════════════════════════
+   RENDER: ENTREGAS (misma estructura que reporte-mobile.html,
+   pero leyendo SIEMPRE de la copia offline propia, nunca del
+   caché en vivo — así funciona sin conexión.)
+═══════════════════════════════════════════════════════════════ */
+function renderEntregas(){
+  var fecha=(el('ent-fecha')||{value:todayISO_val}).value||todayISO_val;
+  var all = loadOffline();
+
+  var list = all.filter(function(c){
+    return c.fEvento===fecha && resolveStatus(c)!=='cancelado';
+  });
+
+  if(orderState.mode==='manual'){
+    list.sort(function(a,b){
+      var oa=getManualOrder(fecha,a.id), ob=getManualOrder(fecha,b.id);
+      if(oa===null && ob===null) return (a.hEntrega||'').localeCompare(b.hEntrega||'');
+      if(oa===null) return 1;
+      if(ob===null) return -1;
+      return oa-ob;
+    });
+  } else {
+    list.sort(function(a,b){ return (a.hEntrega||'').localeCompare(b.hEntrega||''); });
+  }
+
+  el('ent-count').textContent=list.length;
+  var totBruto=list.reduce(function(s,c){return s+(c.total||0);},0);
+  var totResta=list.reduce(function(s,c){return s+(resolveStatus(c)==='cerrado'?0:(c.resta||0));},0);
+  el('ent-cards').innerHTML=
+    mCard('mc-blue','🚚','Entregas',list.length,'Para '+fmtDate(fecha))+
+    mCard('mc-green','💰','Total',mxn(totBruto),mxn(totResta)+' por cobrar');
+
+  if(all.length===0){
+    el('ent-contracts').innerHTML=
+      '<div class="empty"><div class="empty-icon">📡</div>'+
+      '<div class="empty-title">Sin copia local</div>'+
+      '<div class="empty-sub">Toca "Sincronizar" para descargar tus contratos y usarlos sin conexión.</div></div>';
+    return;
+  }
+  if(list.length===0){
+    el('ent-contracts').innerHTML=
+      '<div class="empty"><div class="empty-icon">📦</div>'+
+      '<div class="empty-title">Sin entregas</div>'+
+      '<div class="empty-sub">No hay contratos a entregar el '+fmtDate(fecha)+'</div></div>';
+    return;
+  }
+
+  el('ent-contracts').innerHTML=list.map(function(c,idx){
+    var waNum=c.tel?(c.tel+'').replace(/\D/g,''):'';
+    var telLink=c.tel
+      ? '<a href="https://wa.me/'+waNum+'" target="_blank" style="color:#15803d;text-decoration:none;font-weight:700">💬 '+c.tel+'</a>'
+      : '—';
+    var locBtn=c.ubicacion
+      ? '<a href="'+c.ubicacion+'" target="_blank" style="display:inline-flex;align-items:center;gap:4px;'+
+          'background:#dbeafe;color:var(--blue);padding:5px 10px;border-radius:8px;'+
+          'text-decoration:none;font-size:12px;font-weight:700;margin-top:6px">📍 Abrir ubicación</a>'
+      : '';
+    var summ=itemsSummary(c.items);
+    var entH=c.hEntregaL||c.hEntrega||'';
+    var recolH=c.hRecolL||c.hRecol||'';
+    var manualVal = getManualOrder(fecha, c.id);
+    var orderTag = orderState.mode==='manual'
+      ? '<div class="order-tag">'+(manualVal!==null?manualVal:(idx+1))+'</div>'
+      : '<div class="order-tag">'+(idx+1)+'</div>';
+    var orderInput = orderState.mode==='manual'
+      ? '<div class="order-input-wrap"><label>Orden</label>'+
+          '<input class="order-input" type="number" min="1" value="'+(manualVal!==null?manualVal:'')+'" '+
+          'placeholder="'+(idx+1)+'" onchange="setManualOrder(\''+fecha+'\',\''+c.id+'\',this.value);renderEntregas();"></div>'
+      : '';
+    return '<div class="frow">'+
+      '<div class="frow-top">'+
+        orderTag+
+        '<div style="flex:1">'+
+          '<div class="frow-name">'+(c.nombre||'Sin nombre')+'</div>'+
+          '<div style="font-size:13px;margin-top:4px">'+telLink+'</div>'+
+          (entH?'<div style="font-size:12px;color:var(--mid);margin-top:3px">🕐 Entrega: <strong>'+entH+'</strong>'+(recolH?' · Recol: '+recolH:'')+'</div>':'')+
+          (summ?'<div style="font-size:12px;margin-top:6px;padding:6px 8px;background:var(--light);border-radius:6px">📦 '+summ+'</div>':'')+
+          (locBtn?'<div>'+locBtn+'</div>':'')+
+          orderInput+
+        '</div>'+
+        '<div style="text-align:right;flex-shrink:0;margin-left:8px">'+
+          '<div class="frow-total">'+mxn(c.total||0)+'</div>'+
+          '<div style="font-size:11px;color:var(--mid);margin-top:3px">resta '+mxn(resolveStatus(c)==='cerrado'?0:(c.resta||0))+'</div>'+
+          '<button onclick="openDetailSheet(\''+c.id+'\')" style="margin-top:6px;background:var(--light);border:none;border-radius:8px;padding:5px 10px;font-size:11px;font-weight:700;color:var(--mid);cursor:pointer;width:100%">👁 Ver</button>'+
+        '</div>'+
+      '</div>'+
+    '</div>';
+  }).join('');
+}
+
+/* ─── Ficha de detalle (misma lógica que reporte-mobile.html,
+       pero lee de la copia offline, no de loadContracts()) ──── */
+function openDetailSheet(id){
+  var list=loadOffline();
+  var c=list.find(function(x){return x.id===id;});
+  if(!c) return;
+  var xe=function(s){return (s||'').replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;');};
+  var statusLabels={abierto:'🟢 Abierto',cerrado:'⚫ Cerrado',cancelado:'🔴 Cancelado'};
+  var statusStyles={abierto:'background:#dcfce7;color:#15803d',cerrado:'background:#f1f5f9;color:#475569',cancelado:'background:#fee2e2;color:#b91c1c'};
+  var s=resolveStatus(c);
+  el('det-nombre').textContent=c.nombre||'Sin nombre';
+  el('det-subtitle').textContent=fmtDate(c.fEvento)+' · Contrato: '+fmtDate(c.cDate);
+  el('det-status-badge').innerHTML='<span style="'+statusStyles[s]+';padding:3px 10px;border-radius:10px;font-size:11px;font-weight:700">'+statusLabels[s]+'</span>';
+  var rows=[];
+  if(c.tel)    rows.push(['Teléfono','<a href="https://wa.me/'+(c.tel+'').replace(/\D/g,'')+'" target="_blank" style="color:#15803d;font-weight:600;text-decoration:none">💬 '+xe(c.tel)+'</a>']);
+  if(c.dir)    rows.push(['Dirección',xe(c.dir)]);
+  if(c.hEntregaL||c.hEntrega) rows.push(['Entrega',xe(c.hEntregaL||c.hEntrega)]);
+  if(c.hRecolL||c.hRecol)     rows.push(['Recolección',xe(c.hRecolL||c.hRecol)]);
+  if(c.traslado>0) rows.push(['Traslado','$'+(c.traslado).toLocaleString('es-MX',{minimumFractionDigits:2})]);
+  el('det-info-rows').innerHTML=rows.map(function(r){
+    return '<div class="det-row"><span class="det-lbl">'+r[0]+'</span><span class="det-val">'+r[1]+'</span></div>';
+  }).join('');
+  var itemRows=(c.items||[]).map(function(r,i){
+    if(!r||!(r.qty>0)) return '';
+    return '<div class="det-item-row"><span class="det-item-name">'+ITEMS[i].desc+' ×'+r.qty+'</span><span class="det-item-amt">$'+r.amt.toFixed(2)+'</span></div>';
+  }).filter(Boolean).join('');
+  el('det-items-rows').innerHTML=itemRows||'<div style="font-size:13px;color:var(--mid);padding:4px 0">Sin artículos</div>';
+  var extraRows=(c.extraItems||[]).filter(function(ex){return ex.qty>0&&ex.desc;}).map(function(ex){
+    var amt=(ex.qty||0)*(ex.price||0);
+    return '<div class="det-item-row">'+
+      '<span class="det-item-name">'+xe(ex.desc)+' ×'+ex.qty+'</span>'+
+      '<span class="det-item-amt">$'+amt.toFixed(2)+'</span>'+
+    '</div>';
+  }).join('');
+  var extraSec=el('det-extra-section');
+  if(extraSec){ extraSec.style.display=extraRows?'':'none'; }
+  var extraRowsEl=el('det-extra-rows');
+  if(extraRowsEl){ extraRowsEl.innerHTML=extraRows; }
+  el('det-fin-rows').innerHTML=
+    '<div class="det-fin-row"><span style="color:var(--mid)">Subtotal</span><span>$'+((c.total||0)-(c.traslado||0)).toLocaleString('es-MX',{minimumFractionDigits:2})+'</span></div>'+
+    (c.traslado>0?'<div class="det-fin-row"><span style="color:var(--mid)">Traslado</span><span>$'+(c.traslado||0).toLocaleString('es-MX',{minimumFractionDigits:2})+'</span></div>':'')+
+    '<div class="det-fin-row"><span style="color:var(--mid)">Total</span><span>$'+(c.total||0).toLocaleString('es-MX',{minimumFractionDigits:2})+'</span></div>'+
+    '<div class="det-fin-row"><span style="color:var(--mid)">Anticipo</span><span>$'+(c.anticipo||0).toLocaleString('es-MX',{minimumFractionDigits:2})+'</span></div>'+
+    (s==='cerrado'
+      ? '<div class="det-fin-row"><span>Resta por pagar</span><span style="color:#15803d;font-weight:700">$0.00 ✓ Saldado</span></div>'
+      : '<div class="det-fin-row"><span>Resta por pagar</span><span style="color:var(--red)">$'+(c.resta||0).toLocaleString('es-MX',{minimumFractionDigits:2})+'</span></div>');
+  var notasSec=el('det-notas-section');
+  if(c.notas){ el('det-notas-val').textContent=c.notas; notasSec.style.display=''; }
+  else        { notasSec.style.display='none'; }
+  var btns='<button class="det-action-btn det-btn-close" onclick="closeDetailSheet()">✕ Cerrar</button>';
+  if(c.tel)       btns='<a href="https://wa.me/'+(c.tel+'').replace(/\D/g,'')+'" target="_blank" class="det-action-btn det-btn-wa">💬 WhatsApp</a>'+btns;
+  if(c.ubicacion) btns='<a href="'+c.ubicacion+'" target="_blank" class="det-action-btn det-btn-map">📍 Mapa</a>'+btns;
+  el('det-actions').innerHTML=btns;
+  el('det-sheet-bg').classList.add('on');
+  el('det-sheet').classList.add('on');
+}
+function closeDetailSheet(){
+  el('det-sheet-bg').classList.remove('on');
+  el('det-sheet').classList.remove('on');
+}
+
+/* ─── Init ──────────────────────────────────────────────────── */
+document.addEventListener('DOMContentLoaded', function(){
+  var logoSrc='data:image/jpeg;base64,'+LOGO_B64;
+  el('hero-logo').src = logoSrc;
+  el('ent-fecha').value = todayISO_val;
+
+  el('ord-hora').classList.toggle('on', orderState.mode==='hora');
+  el('ord-manual').classList.toggle('on', orderState.mode==='manual');
+  el('order-hint').textContent = orderState.mode==='manual'
+    ? 'Asigna un número a cada contrato (1, 2, 3…) para fijar tu ruta. Se guarda en este dispositivo.'
+    : 'Ordenado por hora de entrega registrada en el contrato.';
+
+  updateFbBadge(isFbMode());
+  updateSyncBar();
+  renderEntregas();
+});
+</script>
+</body>
+</html>
