@@ -475,7 +475,12 @@ if(!/[?&]m=1/.test(location.search) &&
     <img id="m-logo" src="" alt="">
     <div><div class="hbrand">CASVEL</div><div class="hsub">Gestor de Contratos</div></div>
     <button class="fb-sync local" id="m-fb-status" onclick="openFbSheet()">⬡ Local</button>
-    <a class="hlink" href="index.html?d=1" style="margin-left:8px">🖥</a>
+    <div style="margin-left:8px;display:flex;align-items:center;gap:10px">
+      <a class="hlink" href="reporte-mobile.html" style="font-size:17px" title="Reportes">📊</a>
+      <a class="hlink" href="entregas.html" style="font-size:17px" title="Entregas">🚚</a>
+      <a class="hlink" href="inventario.html" style="font-size:17px" title="Catálogo / Inventario">🗂️</a>
+      <a class="hlink" href="index.html?d=1" style="font-size:17px" title="Escritorio">🖥</a>
+    </div>
   </div>
   <div class="hcontent">
     <div class="sgrid" id="home-stats"></div>
