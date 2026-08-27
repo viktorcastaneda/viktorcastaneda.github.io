@@ -294,7 +294,8 @@ function fbInit(cfg, onReady){
   }
   var scripts=[
     "https://www.gstatic.com/firebasejs/9.22.2/firebase-app-compat.js",
-    "https://www.gstatic.com/firebasejs/9.22.2/firebase-database-compat.js"
+    "https://www.gstatic.com/firebasejs/9.22.2/firebase-database-compat.js",
+    "https://www.gstatic.com/firebasejs/9.22.2/firebase-auth-compat.js"
   ];
   var loaded=0;
   scripts.forEach(function(src){
@@ -310,6 +311,23 @@ function _fbSetup(cfg, onReady){
   try{
     try{ _fbApp=firebase.app("casvel"); }
     catch(e){ _fbApp=firebase.initializeApp(cfg,"casvel"); }
+    // ADDED: autenticación anónima requerida por las reglas de seguridad
+    // (".read"/".write": "auth != null"). Transparente para el usuario: no
+    // pide login, solo exige que la petición pase por el SDK de Firebase Auth.
+    firebase.auth(_fbApp).signInAnonymously().then(function(){
+      _fbSetupRefs(onReady);
+    }).catch(function(err){
+      _fbMode=false;
+      if(onReady) onReady(err);
+    });
+  } catch(e){
+    _fbMode=false;
+    if(onReady) onReady(e);
+  }
+}
+
+function _fbSetupRefs(onReady){
+  try{
     _fbDb  = firebase.database(_fbApp);
     _fbRef = _fbDb.ref("casvel_v1");
     // ADDED: ref para el catálogo en Firebase
