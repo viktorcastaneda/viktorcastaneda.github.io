@@ -1,0 +1,19 @@
+{
+  "rules": {
+    ".read": false,
+    ".write": false,
+
+    "casvel_v1": {
+      ".read": "auth != null",
+      ".write": "auth != null",
+      "$id": {
+        ".validate": "newData.hasChildren(['id','nombre','fEvento']) && newData.child('total').isNumber()"
+      }
+    },
+
+    "casvel_catalog": {
+      ".read": "auth != null",
+      ".write": "auth != null"
+    }
+  }
+}

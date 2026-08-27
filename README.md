@@ -59,11 +59,18 @@ Sistema web de gestión de contratos de renta de mobiliario para eventos y fiest
 
 ```
 ├── index.html            # Versión escritorio — sidebar, dashboard, historial, editor A4
-├── mobile.html           # Versión móvil — wizard 5 pasos, home, historial
-├── reporte-mobile.html   # Reportes móviles — 4 pestañas de análisis
-├── Contrato-CASVEL.html  # Formulario standalone para impresión directa
+├── mobile.html           # Versión móvil — home, historial, cotizaciones, Reportes y Catálogo
+├── reporte-mobile.html   # Redirect a mobile.html?view=reportes (URLs/marcadores antiguos)
+├── inventario.html       # Redirect a mobile.html?view=catalogo (URLs/marcadores antiguos)
+├── entregas.html         # Vista de entregas por día, standalone (acceso restringido a esta vista)
+├── Contrato-CASVEL.html  # Formulario standalone para impresión directa (página deprecada)
 └── shared.js             # Lógica compartida: catálogo, storage, exportación, inventario
 ```
+
+`mobile.html` es ahora una sola página que reúne Contratos, Reportes (Por Año/Por Mes/Futuros/Entregas)
+y Catálogo/Inventario, con navegación instantánea entre secciones (sin recargar la página) mediante
+`goTo()`, `goReportes()` y `goCatalogo()`. `reporte-mobile.html` e `inventario.html` se conservan solo
+como redirects (`?view=reportes` / `?view=catalogo`) para no romper enlaces existentes.
 
 ### `shared.js` — módulo central
 
@@ -213,12 +220,16 @@ Cada artículo del catálogo también tiene dos IDs: `pq` (cantidad) y `pa` (imp
 
 1. Ve a [console.firebase.google.com](https://console.firebase.google.com)
 2. Crea un nuevo proyecto
-3. En **Realtime Database** → **Crear base de datos** → elige **Modo de prueba**
-4. Copia la URL de la base de datos (ej: `https://mi-proyecto-default-rtdb.firebaseio.com`)
-5. En **Configuración del proyecto → General**, copia el `apiKey` y el `projectId`
-6. Abre la app, ve a **Sincronización** y pega los tres valores
+3. En **Realtime Database** → **Crear base de datos** → elige **Modo de prueba** (se cierra solo a los 30 días — sigue con el paso 4 antes de eso)
+4. En **Authentication → Sign-in method**, habilita el proveedor **Anónimo**
+5. En **Realtime Database → Reglas**, pega el contenido de [`firebase-rules.json`](firebase-rules.json) (exige `auth != null` para leer/escribir — la app inicia sesión anónima automáticamente, sin pedir login al usuario)
+6. Copia la URL de la base de datos (ej: `https://mi-proyecto-default-rtdb.firebaseio.com`)
+7. En **Configuración del proyecto → General**, copia el `apiKey` y el `projectId`
+8. Abre la app, ve a **Sincronización** y pega los tres valores
 
 Los contratos se sincronizan en tiempo real en todos los dispositivos conectados al mismo proyecto.
+
+> **Seguridad:** el `apiKey` de Firebase no es secreto — el control de acceso real vive en las Reglas (paso 5). Sin el paso 4+5, la base queda en modo de prueba: abierta a cualquiera que tenga la URL. Para un endurecimiento adicional (limitar el acceso solo a tu dominio publicado), considera activar [Firebase App Check](https://firebase.google.com/docs/app-check) con reCAPTCHA v3.
 
 ---
 
@@ -283,9 +294,12 @@ La app detecta automáticamente si el visitante usa un dispositivo móvil y redi
 ```
 /
 ├── index.html              → Escritorio (auto-redirect a mobile si móvil)
-├── mobile.html             → Móvil (auto-redirect a index si escritorio)
-├── reporte-mobile.html     → Reportes (sin redirect, funciona en ambos)
-├── Contrato-CASVEL.html    → Formulario standalone
+├── mobile.html             → Móvil: Contratos + Reportes + Catálogo (auto-redirect a index si escritorio,
+│                              salvo que la URL traiga ?view=... o ?m=1)
+├── reporte-mobile.html     → Redirect a mobile.html?view=reportes
+├── inventario.html         → Redirect a mobile.html?view=catalogo
+├── entregas.html           → Vista de entregas por día, standalone
+├── Contrato-CASVEL.html    → Formulario standalone (deprecado)
 └── shared.js               → Lógica compartida
 ```
 
