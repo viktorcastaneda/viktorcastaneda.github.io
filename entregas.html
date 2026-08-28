@@ -645,8 +645,8 @@ function closeDetailSheet(){
 
 /* ─── Init ──────────────────────────────────────────────────── */
 document.addEventListener('DOMContentLoaded', function(){
-  var logoSrc='data:image/jpeg;base64,'+LOGO_B64;
-  el('hero-logo').src = logoSrc;
+  // MODIFIED (perf): LOGO_B64 se carga bajo demanda (ensureLogoLoaded en shared.js)
+  ensureLogoLoaded().then(function(b64){ el('hero-logo').src='data:image/jpeg;base64,'+b64; });
   el('ent-fecha').value = todayISO_val;
 
   el('ord-hora').classList.toggle('on', orderState.mode==='hora');

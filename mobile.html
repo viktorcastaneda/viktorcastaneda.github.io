@@ -730,16 +730,16 @@ if(!/[?&]m=1/.test(location.search) && !/[?&]view=/.test(location.search) &&
     <div>
       <div class="hf-lbl">Nombre del cliente</div>
       <input type="search" class="hf-inp" id="m-search"
-        placeholder="🔍 Buscar por nombre o teléfono…" oninput="renderHist()">
+        placeholder="🔍 Buscar por nombre o teléfono…" oninput="renderHistDebounced()">
     </div>
     <div class="hf-row">
       <div class="hf-date-wrap">
         <div class="hf-lbl">Fecha del contrato</div>
-        <input type="date" class="hf-inp" id="hf-cdate" onchange="renderHist()" style="color-scheme:light">
+        <input type="date" class="hf-inp" id="hf-cdate" onchange="renderHist(true)" style="color-scheme:light">
       </div>
       <div class="hf-date-wrap">
         <div class="hf-lbl">Fecha del evento</div>
-        <input type="date" class="hf-inp" id="hf-fevento" onchange="renderHist()" style="color-scheme:light">
+        <input type="date" class="hf-inp" id="hf-fevento" onchange="renderHist(true)" style="color-scheme:light">
       </div>
       <button class="hf-clear" onclick="clearHistFilters()">✕</button>
     </div>
@@ -1294,7 +1294,7 @@ if(!/[?&]m=1/.test(location.search) && !/[?&]view=/.test(location.search) &&
     <div>
       <div class="hf-lbl">Buscar cliente</div>
       <input type="search" class="hf-inp" id="cli-search"
-        placeholder="🔍 Buscar por nombre o teléfono…" oninput="renderClientes()">
+        placeholder="🔍 Buscar por nombre o teléfono…" oninput="renderClientesDebounced()">
     </div>
   </div>
   <div class="hcont" style="padding-top:0">
@@ -1581,7 +1581,13 @@ function goReportes(){
       var p=el('tpill'+sfx+'-'+t); if(p) p.classList.toggle('on',t===currentTab);
     });
   });
-  if(currentTab==='xmes') renderXMes();
+  // MODIFIED (perf): antes solo xmes/entregas se re-renderizaban aquí, porque
+  // mensual/futuro se mantenían frescos vía el render global en cada cambio de
+  // datos. Ahora que ese render global solo toca la pantalla visible, cada
+  // pestaña de Reportes debe refrescarse al activarse.
+  if(currentTab==='mensual')  renderMensual();
+  if(currentTab==='xmes')     renderXMes();
+  if(currentTab==='futuro')   renderFuturo();
   if(currentTab==='entregas') renderEntregas();
   window.scrollTo(0,0);
 }
@@ -1620,6 +1626,8 @@ function renderClientes(){
   el('clientes-list').innerHTML=list.length?list.map(clienteCardHTML).join(''):
     mempty('Sin clientes',q?'Sin coincidencias para la búsqueda':'Aún no hay contratos guardados');
 }
+// ADDED (perf): igual que Historial, evita reconstruir la lista en cada tecla.
+var renderClientesDebounced = debounce(renderClientes, 200);
 function openClienteDetail(key){
   var cl=computeClients().find(function(c){return c.key===key;});
   if(!cl) return;
@@ -1658,12 +1666,17 @@ function startNewFromClient(contractId){
 
 /* ── Init ── */
 document.addEventListener('DOMContentLoaded', function(){
-  var src='data:image/jpeg;base64,'+LOGO_B64;
-  el('m-logo').src=src; el('wiz-logo').src=src;
-  if(el('qwiz-logo')) el('qwiz-logo').src=src; // ADDED: quotation wizard logo
-  // MERGED: logos de las pantallas de Reportes (antes reporte-mobile.html)
-  ['hero-logo','hero-logo2','hero-logo3','hero-logo4'].forEach(function(id){
-    if(el(id)) el(id).src=src;
+  // MODIFIED (perf): LOGO_B64 se carga bajo demanda (ensureLogoLoaded en shared.js)
+  // en vez de venir embebido en shared.js. Se dispara aquí, temprano, en paralelo
+  // con el resto del arranque.
+  ensureLogoLoaded().then(function(b64){
+    var src='data:image/jpeg;base64,'+b64;
+    el('m-logo').src=src; el('wiz-logo').src=src;
+    if(el('qwiz-logo')) el('qwiz-logo').src=src; // ADDED: quotation wizard logo
+    // MERGED: logos de las pantallas de Reportes (antes reporte-mobile.html)
+    ['hero-logo','hero-logo2','hero-logo3','hero-logo4'].forEach(function(id){
+      if(el(id)) el(id).src=src;
+    });
   });
 
   var opts=TIME_OPTIONS.map(function(t){
@@ -1707,8 +1720,23 @@ document.addEventListener('DOMContentLoaded', function(){
 
   // MODIFIED: registrar listener antes de fbInit. En modo local, onContractsChange
   // dispara inmediatamente con el caché ya inicializado (_initLocalCache en shared.js).
-  // En modo Firebase, el listener onValue de RTDB llama _notifyListeners con los datos.
-  onContractsChange(function(){ renderHome(); renderHist(); renderAll(); });
+  // En modo Firebase, los listeners incrementales de RTDB (shared.js) llaman
+  // _notifyListeners con los datos actualizados.
+  // MODIFIED (perf): antes cada cambio re-renderizaba Home + Historial + Reportes
+  // completos, sin importar qué pantalla estuviera visible. Ahora solo se
+  // re-renderiza la pantalla activa; el resto se refresca solo al navegar a
+  // ella (goTo/showReportTab ya llaman a su render correspondiente).
+  onContractsChange(function(){
+    var on=document.querySelector('.sc.on');
+    var id=on?on.id:null;
+    if(id==='sc-home')          renderHome();
+    else if(id==='sc-hist')     renderHist();
+    else if(id==='sc-clientes') renderClientes();
+    else if(id==='sc-mensual')  renderMensual();
+    else if(id==='sc-futuro')   renderFuturo();
+    else if(id==='sc-xmes')     renderXMes();
+    else if(id==='sc-entregas') renderEntregas();
+  });
 
   // Intentar conectar Firebase si hay config guardada
   var cfg=fbGetConfig();
@@ -2305,7 +2333,14 @@ function renderHome(){
 }
 
 /* ── Historial ── */
-function renderHist(){
+// ADDED (perf): paginación del historial — antes se reconstruía la lista
+// COMPLETA (todos los contratos, cientos y creciendo) en cada tecla del
+// buscador y en cada cambio de datos. Ahora solo se renderizan HIST_PAGE_SIZE
+// tarjetas por vez, con un botón "Cargar más".
+var HIST_PAGE_SIZE = 40;
+var _histRenderedCount = HIST_PAGE_SIZE;
+function renderHist(resetPage){
+  if(resetPage) _histRenderedCount = HIST_PAGE_SIZE;
   var q=((el('m-search')||{}).value||'').toLowerCase().trim();
   var fCdate=(el('hf-cdate')||{value:''}).value;
   var fFevento=(el('hf-fevento')||{value:''}).value;
@@ -2330,14 +2365,26 @@ function renderHist(){
   var hasFilter=q||fCdate||fFevento;
   if(cnt) cnt.textContent=hasFilter
     ? list.length+' de '+all.length+' contrato'+(all.length!==1?'s':'') : '';
-  el('hist-list').innerHTML=list.length?list.map(cardHTML).join(''):
+  var visible=list.slice(0,_histRenderedCount);
+  var remaining=list.length-visible.length;
+  var moreHTML=remaining>0
+    ? '<button class="btn btn-g" style="width:100%;margin-top:10px" onclick="_histLoadMore()">Cargar más ('+remaining+' restantes)</button>'
+    : '';
+  el('hist-list').innerHTML=list.length?visible.map(cardHTML).join('')+moreHTML:
     mempty('Sin resultados',hasFilter?'Sin coincidencias para los filtros aplicados':'Sin contratos guardados');
 }
+function _histLoadMore(){
+  _histRenderedCount += HIST_PAGE_SIZE;
+  renderHist(false);
+}
+// ADDED (perf): el buscador de Historial reconstruía la lista completa en cada
+// tecla — ahora espera una pausa breve antes de re-renderizar.
+var renderHistDebounced = debounce(function(){ renderHist(true); }, 200);
 function clearHistFilters(){
   var s=el('m-search'); if(s) s.value='';
   var d=el('hf-cdate'); if(d) d.value='';
   var f=el('hf-fevento'); if(f) f.value='';
-  renderHist();
+  renderHist(true);
 }
 function cardHTML(c){
   var ni=(c.items||[]).filter(function(r){return r.qty>0;}).length;
@@ -2431,7 +2478,11 @@ function mDoImage(fmt){
 // ADDED: Formal contract PDF — 4 sections (A: datos, B: mobiliario, C: cláusulas, D: firmas)
 // Strategy: render all content freely, measure natural height, apply CSS scale to fit
 // exactly one letter page (816×1056px) regardless of number of items.
+// MODIFIED (perf): LOGO_B64 se carga bajo demanda — esperarlo antes de construir el PDF.
 function mDoPDFFormal(){
+  ensureLogoLoaded().then(_mDoPDFFormalImpl);
+}
+function _mDoPDFFormalImpl(){
   var d = mCollect();
   showLoad('Generando contrato formal...');
 
@@ -3223,7 +3274,11 @@ function closeQSheet(){ el('qexp-sbg').classList.remove('on'); el('qexp-sheet').
 function openQSheet(){ Q_expId=Q_editId; el('qexp-sbg').classList.add('on'); el('qexp-sheet').classList.add('on'); }
 
 /* ── Quotation PDF — formal format, no clauses, no signatures, footer note ── */
+// MODIFIED (perf): LOGO_B64 se carga bajo demanda — esperarlo antes de construir el PDF.
 function mDoPDFCotizacion(fromSheet){
+  ensureLogoLoaded().then(function(){ _mDoPDFCotizacionImpl(fromSheet); });
+}
+function _mDoPDFCotizacionImpl(fromSheet){
   var d;
   if(fromSheet && Q_expId){
     d=getQuotById(Q_expId);
@@ -3421,7 +3476,11 @@ function showReportTab(name){
       var p=el('tpill'+sfx+'-'+t); if(p) p.classList.toggle('on',t===name);
     });
   });
+  // MODIFIED (perf): igual que en goReportes — mensual/futuro ya no se
+  // mantienen frescos por un render global, así que se refrescan al activarse.
+  if(name==='mensual')  renderMensual();
   if(name==='xmes')     renderXMes();
+  if(name==='futuro')   renderFuturo();
   if(name==='entregas') renderEntregas();
 }
 
@@ -3673,10 +3732,6 @@ function mCardFull(colorClass, icon, lbl, val, sub){
   '</div>';
 }
 /* ─── Init ──────────────────────────────────────────── */
-function renderAll(){
-  renderMensual();
-  renderFuturo();
-}
 /* ═══════════════════════════════════════════════════════════════
    ADDED: POR MES
 ═══════════════════════════════════════════════════════════════ */

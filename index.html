@@ -290,7 +290,7 @@ if(!/[?&]d=1/.test(location.search) &&
       <button class="btn btn-p" onclick="openEditor(null)">+ Nuevo Contrato</button>
     </div>
     <div class="search-row">
-      <input class="search-inp" id="search-inp" placeholder="Buscar por nombre, teléfono, dirección…" oninput="renderHistorial()">
+      <input class="search-inp" id="search-inp" placeholder="Buscar por nombre, teléfono, dirección…" oninput="renderHistorialDebounced()">
     </div>
     <div id="h-table"></div>
   </div>
@@ -508,8 +508,12 @@ function closeDelModal()    { el('del-modal').classList.remove('open'); }
 
 /* ── Init ── */
 document.addEventListener('DOMContentLoaded', function(){
-  el('sb-logo').src = 'data:image/jpeg;base64,'+LOGO_B64;
-  el('c-logo').src  = 'data:image/jpeg;base64,'+LOGO_B64;
+  // MODIFIED (perf): LOGO_B64 se carga bajo demanda (ensureLogoLoaded en shared.js)
+  ensureLogoLoaded().then(function(b64){
+    var src='data:image/jpeg;base64,'+b64;
+    el('sb-logo').src = src;
+    el('c-logo').src  = src;
+  });
 
   var opts = TIME_OPTIONS.map(function(t){
     return '<option value="'+t.value+'">'+t.label+'</option>';
@@ -526,9 +530,14 @@ document.addEventListener('DOMContentLoaded', function(){
   el('c-fevento').addEventListener('change', updateInvWarningDesk);
 
   // Suscribir a cambios en tiempo real (funciona con localStorage Y Firebase)
+  // MODIFIED (perf): antes cada cambio re-renderizaba Dashboard + Historial
+  // completos sin importar cuál estuviera visible. Ahora solo se re-renderiza
+  // la vista activa; showView() ya refresca la otra al navegar a ella.
   onContractsChange(function(){
-    renderDashboard();
-    renderHistorial();
+    var on=document.querySelector('.view.on');
+    var id=on?on.id:null;
+    if(id==='view-dashboard')      renderDashboard();
+    else if(id==='view-historial') renderHistorial();
   });
 
   // Intentar conectar Firebase si hay config guardada
@@ -756,7 +765,13 @@ function renderDashboard(){
 }
 
 /* ── Historial ── */
-function renderHistorial(){
+// ADDED (perf): paginación del historial — antes se reconstruía la tabla
+// COMPLETA (todos los contratos, cientos y creciendo) en cada tecla del
+// buscador y en cada cambio de datos.
+var HIST_PAGE_SIZE = 40;
+var _histRenderedCount = HIST_PAGE_SIZE;
+function renderHistorial(resetPage){
+  if(resetPage) _histRenderedCount = HIST_PAGE_SIZE;
   var q=(el('search-inp').value||'').toLowerCase();
   var list=loadContracts().filter(function(c){
     if(!q) return true;
@@ -765,8 +780,19 @@ function renderHistorial(){
   }).sort(function(a,b){ // ADDED: newest event first
     return (b.fEvento||'').localeCompare(a.fEvento||'');
   });
-  el('h-table').innerHTML=list.length?cTableHTML(list):emptyHTML('Sin resultados',q?'Nada para: "'+q+'"':'Sin contratos');
+  var visible=list.slice(0,_histRenderedCount);
+  var remaining=list.length-visible.length;
+  var moreHTML=remaining>0
+    ? '<div style="text-align:center;padding:14px"><button class="btn btn-g" onclick="_histLoadMore()">Cargar más ('+remaining+' restantes)</button></div>'
+    : '';
+  el('h-table').innerHTML=list.length?cTableHTML(visible)+moreHTML:emptyHTML('Sin resultados',q?'Nada para: "'+q+'"':'Sin contratos');
 }
+function _histLoadMore(){
+  _histRenderedCount += HIST_PAGE_SIZE;
+  renderHistorial(false);
+}
+// ADDED (perf): el buscador reconstruía la tabla completa en cada tecla.
+var renderHistorialDebounced = debounce(function(){ renderHistorial(true); }, 200);
 
 function cTableHTML(list){
   var rows=list.map(function(c){
