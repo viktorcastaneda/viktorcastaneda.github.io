@@ -64,8 +64,25 @@ Sistema web de gestión de contratos de renta de mobiliario para eventos y fiest
 ├── inventario.html       # Redirect a mobile.html?view=catalogo (URLs/marcadores antiguos)
 ├── entregas.html         # Vista de entregas por día, standalone (acceso restringido a esta vista)
 ├── Contrato-CASVEL.html  # Formulario standalone para impresión directa (página deprecada)
-└── shared.js             # Lógica compartida: catálogo, storage, exportación, inventario
+├── shared.js             # Lógica compartida: catálogo, storage, exportación, inventario
+├── logo-b64.js           # Logo en base64 — cargado bajo demanda (ver "Carga diferida" abajo)
+└── docx-b64.js           # Plantilla Word en base64 — cargado bajo demanda
 ```
+
+### Carga diferida de logo y plantilla Word
+
+`LOGO_B64` y `DOCX_B64` ya no viven embebidos en `shared.js` (antes ~610KB de sus ~656KB totales,
+lo que forzaba a re-descargar ese bloque completo en cada visita cada vez que se editaba
+`shared.js`, aunque el logo o la plantilla no hubieran cambiado). Ahora viven en `logo-b64.js` y
+`docx-b64.js`, archivos aparte que casi nunca cambian y se cachean por separado del código.
+
+Se cargan bajo demanda con `ensureLogoLoaded()` / `ensureDocxLoaded()` (definidas en `shared.js`),
+que inyectan un `<script>` la primera vez que se necesitan y devuelven una Promise:
+- El logo se solicita apenas arranca la página (se ve en la UI casi de inmediato).
+- La plantilla Word solo se descarga la primera vez que el usuario exporta un `.docx`.
+
+Cualquier código nuevo que lea `LOGO_B64`/`DOCX_B64` directamente debe esperar primero a la
+Promise correspondiente.
 
 `mobile.html` es ahora una sola página que reúne Contratos, Reportes (Por Año/Por Mes/Futuros/Entregas)
 y Catálogo/Inventario, con navegación instantánea entre secciones (sin recargar la página) mediante
@@ -175,21 +192,35 @@ Cada contrato se almacena como un objeto JSON con la siguiente estructura:
 
 ## Configuración inicial (deploy)
 
-### 1. Variables que deben llenarse en `shared.js`
+### 1. Assets que deben llenarse
 
-Estas tres variables están vacías intencionalmente en el repositorio y deben configurarse antes de usar la app:
+`A4_CSS` está vacío intencionalmente en `shared.js` y debe configurarse antes de usar la app.
+`LOGO_B64` y `DOCX_B64` viven en `logo-b64.js` / `docx-b64.js` (ver "Carga diferida" arriba) — deben
+contener, cada uno, una sola línea:
 
 ```js
-var LOGO_B64 = ""; // Base64 del logo JPEG (para el A4 y la app)
-var DOCX_B64 = ""; // Base64 de la plantilla Word (.docx)
-var A4_CSS   = ""; // CSS del contrato A4 renderizado
+// logo-b64.js
+var LOGO_B64="<base64 del logo JPEG>";
+```
+```js
+// docx-b64.js
+var DOCX_B64="<base64 de la plantilla .docx>";
+```
+```js
+// shared.js
+var A4_CSS = "..."; // CSS del contrato A4 renderizado
 ```
 
 Para obtener el base64 de un archivo:
 ```bash
 # En terminal
-base64 -i logo.jpg | tr -d '\n'
-base64 -i plantilla.docx | tr -d '\n'
+echo -n 'var LOGO_B64="' > logo-b64.js
+base64 -i logo.jpg | tr -d '\n' >> logo-b64.js
+echo '";' >> logo-b64.js
+
+echo -n 'var DOCX_B64="' > docx-b64.js
+base64 -i plantilla.docx | tr -d '\n' >> docx-b64.js
+echo '";' >> docx-b64.js
 ```
 
 ### 2. Favicon e iconos
@@ -264,13 +295,15 @@ saveContract(obj)
         └── Modo Firebase  →  Firebase RTDB child(id).set()
                                       │
                                       ▼
-                              listener onValue
+                    listeners incrementales (child_added/
+                    child_changed/child_removed) en casvel_v1
                                       │
                                       ▼
                               _memCache actualizado
                                       │
                                       ▼
-                         onContractsChange() → re-render vistas
+                         onContractsChange() → re-render de la
+                         vista actualmente visible
 ```
 
 ---
