@@ -125,10 +125,15 @@ input[type=date].fi{color-scheme:light}
 /* home */
 .hhero{background:var(--dark);padding:24px 18px 20px;
   padding-top:calc(24px + var(--st));display:flex;align-items:center;gap:14px;flex-shrink:0}
-.hhero img{width:52px;border-radius:8px}
+.hhero img{width:52px;border-radius:8px;flex-shrink:0}
 .hbrand{font-size:22px;font-weight:700;color:#fff}
 .hsub{font-size:13px;color:rgba(255,255,255,.4);margin-top:2px}
-.hlink{margin-left:auto;font-size:10px;color:rgba(255,255,255,.3);text-decoration:none}
+.hlink{margin-left:auto;font-size:10px;color:rgba(255,255,255,.3);text-decoration:none;flex-shrink:0}
+/* ADDED: fila propia para Entregas/Escritorio — full-width, nunca compite
+   por espacio con el badge de Firebase (ver comentario junto al HTML) */
+.hquick{background:var(--dark);padding:0 18px 14px;display:flex;gap:18px;flex-shrink:0}
+.hquick-link{font-size:12px;font-weight:600;color:rgba(255,255,255,.5);text-decoration:none;
+  display:flex;align-items:center;gap:5px;white-space:nowrap}
 .hcontent{flex:1;overflow-y:auto;-webkit-overflow-scrolling:touch;
   padding:16px 16px calc(90px + var(--sb))}
 .sgrid{display:grid;grid-template-columns:1fr 1fr;gap:12px;margin-bottom:16px}
@@ -213,7 +218,7 @@ input[type=date].fi{color-scheme:light}
 /* Firebase sync indicator */
 .fb-sync{display:inline-flex;align-items:center;gap:5px;font-size:11px;font-weight:600;
   padding:3px 9px;border-radius:10px;cursor:pointer;border:none;font-family:inherit;
-  margin-left:auto;-webkit-tap-highlight-color:transparent}
+  margin-left:auto;flex-shrink:0;white-space:nowrap;-webkit-tap-highlight-color:transparent}
 .fb-sync.local{background:rgba(255,255,255,.08);color:rgba(255,255,255,.4)}
 .fb-sync.live{background:rgba(26,122,68,.25);color:#6ee7b7}
 .fb-sync.live::before{content:"●";margin-right:2px;animation:fbpulse 2s infinite}
@@ -415,6 +420,7 @@ input[type=date].fi{color-scheme:light}
 .det-btn-wa{background:#dcfce7;color:#15803d}
 .det-btn-map{background:#dbeafe;color:var(--blue)}
 .det-btn-close{background:var(--light);color:var(--mid)}
+.det-btn-new{background:var(--bbg);color:var(--blue)}
 /* ADDED: home inventory sheet date picker */
 .hinv-date-wrap{background:var(--light);border-radius:12px;padding:14px 16px;
   margin-bottom:14px;display:flex;align-items:center;gap:12px}
@@ -692,12 +698,14 @@ if(!/[?&]m=1/.test(location.search) && !/[?&]view=/.test(location.search) &&
     <img id="m-logo" src="" alt="">
     <div><div class="hbrand">CASVEL</div><div class="hsub">Gestor de Contratos</div></div>
     <button class="fb-sync local" id="m-fb-status" onclick="openFbSheet()">⬡ Local</button>
-    <div style="margin-left:8px;display:flex;align-items:center;gap:10px">
-      <a class="hlink" href="#" onclick="goReportes();return false" style="font-size:17px" title="Reportes">📊</a>
-      <a class="hlink" href="entregas.html" style="font-size:17px" title="Entregas">🚚</a>
-      <a class="hlink" href="#" onclick="goCatalogo();return false" style="font-size:17px" title="Catálogo / Inventario">🗂️</a>
-      <a class="hlink" href="index.html?d=1" style="font-size:17px" title="Escritorio">🖥</a>
-    </div>
+  </div>
+  <!-- MODIFIED: Entregas/Escritorio en su propia fila, con ancho de sobra siempre —
+       antes compartían renglón con el badge de Firebase y en pantallas angostas
+       (~320px) con "● Firebase" (más largo que "⬡ Local") se salían del contenedor.
+       Reportes y Catálogo se quitaron de aquí: ya están en el bottom-nav. -->
+  <div class="hquick">
+    <a class="hquick-link" href="entregas.html">🚚 Entregas</a>
+    <a class="hquick-link" href="index.html?d=1">🖥 Escritorio</a>
   </div>
   <div class="hcontent">
     <div class="sgrid" id="home-stats"></div>
@@ -1273,6 +1281,40 @@ if(!/[?&]m=1/.test(location.search) && !/[?&]view=/.test(location.search) &&
 
 </div>
 
+<!-- ══════════════════════════════════════════════════════════════════
+     CLIENTES (ADDED: vista calculada a partir de los contratos —
+     agrupa por teléfono normalizado, sin colección/almacenamiento nuevo)
+═══════════════════════════════════════════════════════════════════ -->
+<div class="sc" id="sc-clientes">
+  <div class="tb" style="padding-bottom:14px">
+    <span style="font-size:20px">👥</span>
+    <span class="tb-ttl">Clientes</span>
+  </div>
+  <div class="hist-filters">
+    <div>
+      <div class="hf-lbl">Buscar cliente</div>
+      <input type="search" class="hf-inp" id="cli-search"
+        placeholder="🔍 Buscar por nombre o teléfono…" oninput="renderClientes()">
+    </div>
+  </div>
+  <div class="hcont" style="padding-top:0">
+    <div id="clientes-list"></div>
+  </div>
+</div>
+
+<!-- ── Detalle de cliente (drill-down, sin bottom nav — igual que el wizard) ── -->
+<div class="sc" id="sc-cliente-detail">
+  <div class="tb" style="padding-bottom:14px">
+    <button class="tb-bk" onclick="goTo('sc-clientes')">←</button>
+    <span class="tb-ttl" id="clidet-nombre">Cliente</span>
+  </div>
+  <div class="hcont">
+    <div class="card" id="clidet-info"></div>
+    <button class="nbtn" id="clidet-new-btn" style="margin-bottom:16px" onclick="startNewFromClientKey()">✏️ Nuevo contrato para este cliente</button>
+    <div class="rec-ttl">Contratos (<span id="clidet-count">0</span>)</div>
+    <div id="clidet-contracts"></div>
+  </div>
+</div>
 
 <!-- ═══ INVENTORY CONFLICT MODAL ════════════════════════════════ -->
 <div class="inv-modal-bg" id="inv-modal-bg">
@@ -1468,6 +1510,7 @@ if(!/[?&]m=1/.test(location.search) && !/[?&]view=/.test(location.search) &&
 <!-- ══ BOTTOM NAV (global, fusionado desde mobile/reporte-mobile/inventario) ══ -->
 <nav class="bnav" id="main-bnav">
   <button class="bn on" id="bn-home" onclick="goTo('sc-home')"><span class="bi">🏠</span><span class="bl">Inicio</span></button>
+  <button class="bn" id="bn-clientes" onclick="goTo('sc-clientes')"><span class="bi">👥</span><span class="bl">Clientes</span></button>
   <button class="bn" id="bn-hist" onclick="goTo('sc-hist')"><span class="bi">📋</span><span class="bl">Historial</span></button>
   <button class="bn" id="bn-quot" onclick="goTo('sc-quot')"><span class="bi">🗒</span><span class="bl">Cotizaciones</span></button>
   <button class="bn" id="bn-reportes" onclick="goReportes()"><span class="bi">💰</span><span class="bl">Reportes</span></button>
@@ -1508,7 +1551,7 @@ function hideLoad(){ el('m-loading').classList.remove('show'); }
 /* ── Screen navigation ── */
 /* ── Screen navigation ── */
 function setActiveNav(tab){
-  ['home','hist','quot','reportes','catalogo'].forEach(function(t){
+  ['home','clientes','hist','quot','reportes','catalogo'].forEach(function(t){
     var b=el('bn-'+t); if(b) b.classList.toggle('on', t===tab);
   });
 }
@@ -1517,7 +1560,8 @@ function goTo(id){
   if(id==='sc-home') renderHome();
   if(id==='sc-hist') renderHist();
   if(id==='sc-quot') renderQuot(); // ADDED: render quotations list
-  var NAV_MAP={'sc-home':'home','sc-hist':'hist','sc-quot':'quot'};
+  if(id==='sc-clientes') renderClientes(); // ADDED: render clients list
+  var NAV_MAP={'sc-home':'home','sc-hist':'hist','sc-quot':'quot','sc-clientes':'clientes'};
   var mb=el('main-bnav');
   if(NAV_MAP[id]){
     if(mb) mb.classList.remove('bnav-hide');
@@ -1546,6 +1590,70 @@ function goCatalogo(){
   var mb=el('main-bnav'); if(mb) mb.classList.remove('bnav-hide');
   setActiveNav('catalogo');
   window.scrollTo(0,0);
+}
+
+/* ══════════════════════════════════════════════════════════════════
+   ADDED: CLIENTES — vista calculada (computeClients() en shared.js),
+   agrupa contratos por teléfono normalizado. No hay CRUD de clientes:
+   se recalcula siempre desde loadContracts(), como Reportes/Entregas.
+═══════════════════════════════════════════════════════════════════ */
+var _currentClienteKey=null;
+function clienteCardHTML(cl){
+  var waNum=cl.tel?(cl.tel+'').replace(/\D/g,''):'';
+  var telHtml=cl.tel
+    ? '<a href="https://wa.me/'+waNum+'" target="_blank" style="color:var(--green);text-decoration:none" onclick="event.stopPropagation()">&#128172; '+cl.tel+'</a>'
+    : 'Sin teléfono';
+  return '<div class="ccard" style="cursor:pointer" onclick="openClienteDetail(\''+cl.key+'\')">'+
+    '<div class="cctop">'+
+      '<div><div class="ccname">'+(cl.nombre||'Sin nombre')+'</div>'+
+        '<div class="ccmeta"><span>'+telHtml+'</span>'+
+          '<span>&#128203; '+cl.total+' contrato'+(cl.total!==1?'s':'')+'</span></div>'+
+      '</div></div>'+
+    '</div>';
+}
+function renderClientes(){
+  var q=((el('cli-search')||{}).value||'').toLowerCase().trim();
+  var all=computeClients();
+  var list=q ? all.filter(function(cl){
+    return (cl.nombre||'').toLowerCase().indexOf(q)!==-1 || (cl.tel||'').indexOf(q)!==-1;
+  }) : all;
+  el('clientes-list').innerHTML=list.length?list.map(clienteCardHTML).join(''):
+    mempty('Sin clientes',q?'Sin coincidencias para la búsqueda':'Aún no hay contratos guardados');
+}
+function openClienteDetail(key){
+  var cl=computeClients().find(function(c){return c.key===key;});
+  if(!cl) return;
+  _currentClienteKey=key;
+  el('clidet-nombre').textContent=cl.nombre||'Cliente';
+  var waNum=cl.tel?(cl.tel+'').replace(/\D/g,''):'';
+  el('clidet-info').innerHTML=
+    '<div class="ccname" style="margin-bottom:8px">'+(cl.nombre||'Sin nombre')+'</div>'+
+    (cl.tel
+      ? '<div class="ccmeta"><a href="https://wa.me/'+waNum+'" target="_blank" style="color:var(--green);text-decoration:none">&#128172; '+cl.tel+'</a></div>'
+      : '<div class="ccmeta">Sin teléfono registrado</div>');
+  el('clidet-count').textContent=cl.total;
+  el('clidet-contracts').innerHTML=cl.contracts.map(cardHTML).join('');
+  goTo('sc-cliente-detail');
+}
+/* ADDED: botón "Nuevo contrato" a nivel cliente — usa el contrato
+   más reciente del cliente actualmente abierto como plantilla. */
+function startNewFromClientKey(){
+  var cl=computeClients().find(function(c){return c.key===_currentClienteKey;});
+  if(cl && cl.contracts[0]) startNewFromClient(cl.contracts[0].id);
+}
+/* ADDED: crea un contrato nuevo prellenado con los datos del cliente
+   (nombre, teléfono, dirección, ubicación, notas, traslado) del contrato
+   indicado, omitiendo fechas, horarios y mobiliario (arrancan en blanco,
+   igual que un contrato nuevo). Anticipo y status también arrancan en
+   blanco: son datos del evento, no del cliente. */
+function startNewFromClient(contractId){
+  var c=getById(contractId);
+  startNew();
+  if(!c) return;
+  sv('m-nombre',c.nombre||''); sv('m-tel',c.tel||''); sv('m-dir',c.dir||'');
+  sv('m-ubicacion',c.ubicacion||''); sv('m-notas',c.notas||'');
+  sv('m-traslado',c.traslado||0);
+  var wt=el('wiz-ttl'); if(wt) wt.textContent=(c.nombre||'Contrato')+' (nuevo)';
 }
 
 /* ── Init ── */
@@ -1620,6 +1728,7 @@ document.addEventListener('DOMContentLoaded', function(){
     else if(v==='catalogo') goCatalogo();
     else if(v==='hist') goTo('sc-hist');
     else if(v==='quot') goTo('sc-quot');
+    else if(v==='clientes') goTo('sc-clientes');
   }
 });
 
@@ -2650,6 +2759,8 @@ function openDetailSheet(id){
   var btns='<button class="det-action-btn det-btn-close" onclick="closeDetailSheet()">&#10005; Cerrar</button>';
   if(c.tel)       btns='<a href="https://wa.me/'+(c.tel+'').replace(/\D/g,'')+'" target="_blank" class="det-action-btn det-btn-wa">&#128172; WhatsApp</a>'+btns;
   if(c.ubicacion) btns='<a href="'+c.ubicacion+'" target="_blank" class="det-action-btn det-btn-map">&#128205; Mapa</a>'+btns;
+  // ADDED: crear un contrato nuevo prellenado con los datos de este cliente
+  btns='<button class="det-action-btn det-btn-new" onclick="closeDetailSheet();startNewFromClient(\''+c.id+'\')">&#10133; Nuevo</button>'+btns;
   el('det-actions').innerHTML=btns;
   el('det-sheet-bg').classList.add('on');
   el('det-sheet').classList.add('on');

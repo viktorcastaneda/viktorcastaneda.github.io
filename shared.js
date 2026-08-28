@@ -806,6 +806,44 @@ function resolveStatus(c){
   return 'abierto';
 }
 
+/* ── Clientes: normalización de teléfono y agrupación ─────────
+   ADDED: no persiste nada — se recalcula siempre a partir de
+   loadContracts(), igual que Reportes/Entregas. normPhone() quita todo
+   lo que no sea dígito y devuelve los últimos 10 (así "+52 614-123-4567"
+   y "6141234567" agrupan como el mismo cliente). Sin teléfono válido
+   (<10 dígitos), se agrupa por nombre normalizado como respaldo. */
+function normPhone(tel){
+  var digits=(tel||'').replace(/\D/g,'');
+  return digits.length>=10 ? digits.slice(-10) : digits;
+}
+function normName(nombre){
+  return (nombre||'').trim().toLowerCase().replace(/\s+/g,' ');
+}
+function computeClients(){
+  var byKey={};
+  loadContracts().forEach(function(c){
+    var np=normPhone(c.tel);
+    var key = np.length===10 ? 'tel:'+np : 'name:'+normName(c.nombre);
+    if(!byKey[key]) byKey[key]={key:key, nombre:c.nombre||'Sin nombre', tel:c.tel||'', contracts:[]};
+    byKey[key].contracts.push(c);
+  });
+  var clients=Object.keys(byKey).map(function(k){ return byKey[k]; });
+  clients.forEach(function(cl){
+    cl.contracts.sort(function(a,b){
+      return (b.updatedAt||b.createdAt||'').localeCompare(a.updatedAt||a.createdAt||'');
+    });
+    var latest=cl.contracts[0];
+    if(latest){ cl.nombre=latest.nombre||cl.nombre; cl.tel=latest.tel||cl.tel; }
+    cl.total=cl.contracts.length;
+  });
+  clients.sort(function(a,b){
+    var da=(a.contracts[0]&&(a.contracts[0].updatedAt||a.contracts[0].createdAt))||'';
+    var db=(b.contracts[0]&&(b.contracts[0].updatedAt||b.contracts[0].createdAt))||'';
+    return db.localeCompare(da);
+  });
+  return clients;
+}
+
 /* ── Verificar conflictos de inventario ──────────────────────
    items      : [{qty,price,amt}×13]  — ítems del nuevo/editado contrato
    fEvento    : 'YYYY-MM-DD'
