@@ -1,0 +1,14 @@
+{
+  "name": "CASVEL Entregas",
+  "short_name": "Entregas",
+  "description": "Ruta de entregas para repartidores CASVEL — funciona sin conexión",
+  "start_url": "./entregas.html",
+  "scope": "./entregas.html",
+  "display": "standalone",
+  "orientation": "portrait",
+  "background_color": "#1a1f2e",
+  "theme_color": "#1a1f2e",
+  "icons": [
+    { "src": "apple-touch-icon.png", "sizes": "180x180", "type": "image/png", "purpose": "any" }
+  ]
+}

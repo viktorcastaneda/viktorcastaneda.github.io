@@ -4,11 +4,16 @@
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width,initial-scale=1,maximum-scale=1,user-scalable=no">
 <meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+<meta name="apple-mobile-web-app-title" content="Entregas">
 <meta name="theme-color" content="#1a1f2e">
 <title>CASVEL – Entregas</title>
 <link href="https://fonts.googleapis.com/css2?family=DM+Sans:wght@400;500;600;700&family=DM+Mono:wght@400;500&display=swap" rel="stylesheet">
 <link rel="icon" type="image/x-icon" href="eventos_casvel_favicon.ico">
 <link rel="apple-touch-icon" sizes="180x180" href="apple-touch-icon.png">
+<!-- ADDED: PWA — permite "Agregar a pantalla de inicio" para que la app abra
+     sin conexión (ver sw-entregas.js) -->
+<link rel="manifest" href="manifest-entregas.json">
 <style>
 /* ═══ Estilos tomados de reporte-mobile.html para mantener consistencia visual ═══ */
 *{box-sizing:border-box;margin:0;padding:0}
@@ -41,11 +46,15 @@ body{-webkit-text-size-adjust:100%;overscroll-behavior-y:none}
 .fb-sync.live::before{content:"●";margin-right:2px;animation:fbpulse 2s infinite}
 @keyframes fbpulse{0%,100%{opacity:1}50%{opacity:.4}}
 
-/* ── Barra de sincronización offline ── */
-.sync-bar{background:rgba(255,255,255,.06);margin:0 16px 14px;border-radius:12px;
+/* ── Barra de sincronización offline ──
+   FIXED: el texto blanco sobre este fondo casi transparente quedaba
+   prácticamente ilegible sobre el body claro (bug preexistente, no
+   introducido en este rediseño) — se corrige a tarjeta clara con texto
+   oscuro, consistente con el resto de .sarea. */
+.sync-bar{background:var(--white);border:1px solid var(--border);margin:0 16px 14px;border-radius:12px;
   padding:12px 14px;display:flex;align-items:center;justify-content:space-between;gap:10px;flex-shrink:0}
-.sync-info{font-size:11px;color:rgba(255,255,255,.55);line-height:1.4}
-.sync-info strong{color:#fff;display:block;font-size:12px;margin-bottom:1px}
+.sync-info{font-size:11px;color:var(--mid);line-height:1.4}
+.sync-info strong{color:var(--dark);display:block;font-size:12.5px;margin-bottom:1px}
 .sync-btn{background:var(--blue);color:#fff;border:none;border-radius:10px;
   padding:9px 14px;font-family:inherit;font-size:12px;font-weight:700;cursor:pointer;
   display:flex;align-items:center;gap:5px;white-space:nowrap;-webkit-tap-highlight-color:transparent}
@@ -53,6 +62,34 @@ body{-webkit-text-size-adjust:100%;overscroll-behavior-y:none}
 .sync-btn.syncing{opacity:.6;pointer-events:none}
 .sync-btn .spin{display:inline-block;animation:spin 1s linear infinite}
 @keyframes spin{from{transform:rotate(0)}to{transform:rotate(360deg)}}
+
+/* ── ADDED: indicador de conexión (online/offline real del dispositivo) ── */
+.net-badge{display:inline-flex;align-items:center;gap:5px;font-size:11px;font-weight:700;
+  padding:3px 9px;border-radius:10px;flex-shrink:0}
+.net-badge.on{background:rgba(26,122,68,.25);color:#6ee7b7}
+.net-badge.off{background:rgba(192,57,43,.3);color:#ffb4a8}
+.net-badge::before{content:"●";font-size:9px}
+
+/* ── ADDED: banner de instalación (Agregar a pantalla de inicio) ── */
+.install-banner{background:var(--teal-lt);border:1.5px solid var(--teal);border-radius:12px;
+  margin:0 16px 14px;padding:13px 14px;display:flex;align-items:center;gap:12px;flex-shrink:0}
+.install-banner .ico{font-size:24px;flex-shrink:0}
+.install-banner .txt{flex:1;font-size:12.5px;color:var(--dark);line-height:1.4}
+.install-banner .txt strong{display:block;font-size:13.5px;margin-bottom:2px}
+.install-banner .acts{display:flex;flex-direction:column;gap:6px;flex-shrink:0}
+.install-banner button{border:none;border-radius:8px;padding:8px 12px;font-family:inherit;
+  font-size:11.5px;font-weight:700;cursor:pointer;-webkit-tap-highlight-color:transparent;white-space:nowrap}
+.install-banner .ib-go{background:var(--teal);color:#fff}
+.install-banner .ib-x{background:transparent;color:var(--mid)}
+
+/* ── ADDED: barra de progreso de entregas del día ── */
+.progress-wrap{background:var(--white);border-radius:12px;border:1px solid var(--border);
+  padding:12px 16px;margin-bottom:12px}
+.progress-top{display:flex;justify-content:space-between;align-items:baseline;margin-bottom:8px}
+.progress-lbl{font-size:12px;font-weight:700;text-transform:uppercase;letter-spacing:.06em;color:var(--mid)}
+.progress-count{font-family:var(--fm);font-size:14px;font-weight:600;color:var(--dark)}
+.progress-track{height:10px;background:var(--light);border-radius:6px;overflow:hidden}
+.progress-fill{height:100%;background:var(--green);border-radius:6px;transition:width .3s ease}
 
 .sarea{flex:1;overflow-y:auto;-webkit-overflow-scrolling:touch;
   padding:14px 16px calc(84px + var(--sb))}
@@ -95,11 +132,30 @@ body{-webkit-text-size-adjust:100%;overscroll-behavior-y:none}
 .sec-count{font-size:11px;font-weight:600;background:var(--bbg);color:var(--blue);
   padding:2px 8px;border-radius:8px}
 
-.frow{background:var(--white);border-radius:12px;border:1px solid var(--border);
-  padding:14px 16px;margin-bottom:10px;box-shadow:0 1px 4px rgba(0,0,0,.04)}
+/* MODIFIED (repartidores): tarjetas más grandes, pensadas para tocar con el
+   pulgar mientras caminan, con las acciones principales siempre visibles
+   (no hay que abrir la ficha de detalle para llamar, ver mapa o marcar). */
+.frow{background:var(--white);border-radius:14px;border:1px solid var(--border);
+  padding:16px 17px;margin-bottom:12px;box-shadow:0 1px 4px rgba(0,0,0,.04)}
+.frow.done{background:#f6f8f6;border-color:#cfe3d5}
+.frow.done .frow-name{color:var(--mid);text-decoration:line-through;text-decoration-color:#9db8a5}
 .frow-top{display:flex;justify-content:space-between;align-items:flex-start;margin-bottom:10px}
-.frow-name{font-size:15px;font-weight:700;line-height:1.2}
-.frow-total{font-family:var(--fm);font-size:16px;font-weight:500;color:var(--blue)}
+.frow-name{font-size:16.5px;font-weight:700;line-height:1.25}
+.frow-total{font-family:var(--fm);font-size:17px;font-weight:600;color:var(--blue)}
+.frow-resta{font-size:12px;color:var(--red);font-weight:700;margin-top:3px}
+.frow.done .frow-resta{color:var(--mid);font-weight:500}
+
+/* ── ADDED: fila de acciones grandes (WhatsApp / Mapa / Entregado) ── */
+.frow-actions{display:grid;grid-template-columns:1fr 1fr 1fr;gap:8px;margin-top:12px}
+.frow-actions.no-loc{grid-template-columns:1fr 1fr}
+.fa-btn{display:flex;flex-direction:column;align-items:center;justify-content:center;gap:3px;
+  padding:11px 6px;border-radius:11px;border:none;font-family:inherit;font-size:11px;font-weight:700;
+  cursor:pointer;text-decoration:none;-webkit-tap-highlight-color:transparent;min-height:56px}
+.fa-btn .fi{font-size:19px;line-height:1}
+.fa-wa{background:#dcfce7;color:#15803d}
+.fa-map{background:#dbeafe;color:var(--blue)}
+.fa-done{background:var(--light);color:var(--mid);border:1.5px solid var(--border)}
+.fa-done.on{background:var(--green);color:#fff;border-color:var(--green)}
 
 .order-input-wrap{display:flex;align-items:center;gap:6px;margin-top:8px;
   background:var(--light);border-radius:8px;padding:5px 8px}
@@ -201,7 +257,18 @@ body{-webkit-text-size-adjust:100%;overscroll-behavior-y:none}
   <div class="hhero">
     <img id="hero-logo" src="" alt="CASVEL">
     <div><div class="hbrand">Entregas</div><div class="hsub">Modo fuera de línea</div></div>
+    <span class="net-badge off" id="net-badge">Sin conexión</span>
     <button class="fb-sync local" id="fb-btn" onclick="openFbSheet()">⬡ Local</button>
+  </div>
+
+  <!-- ADDED: banner de instalación — se muestra solo si la página no está ya instalada -->
+  <div class="install-banner" id="install-banner" style="display:none">
+    <div class="ico">📲</div>
+    <div class="txt" id="install-txt"><strong>Instala esta app</strong>Ábrela sin conexión, aunque cierres el navegador.</div>
+    <div class="acts">
+      <button class="ib-go" id="install-go" onclick="doInstall()" style="display:none">Instalar</button>
+      <button class="ib-x" onclick="dismissInstallBanner()">Ahora no</button>
+    </div>
   </div>
 
   <!-- ADDED: barra de sincronización offline -->
@@ -234,6 +301,16 @@ body{-webkit-text-size-adjust:100%;overscroll-behavior-y:none}
     </div>
 
     <div class="mgrid" id="ent-cards"></div>
+
+    <!-- ADDED: progreso de entregas del día (checklist local, no se sincroniza) -->
+    <div class="progress-wrap" id="progress-wrap" style="display:none">
+      <div class="progress-top">
+        <span class="progress-lbl">Progreso de la ruta</span>
+        <span class="progress-count" id="progress-count">0 / 0</span>
+      </div>
+      <div class="progress-track"><div class="progress-fill" id="progress-fill" style="width:0%"></div></div>
+    </div>
+
     <div class="sec-hdr">
       <div class="sec-lbl">Contratos a entregar</div>
       <div class="sec-count" id="ent-count">0</div>
@@ -333,9 +410,12 @@ body{-webkit-text-size-adjust:100%;overscroll-behavior-y:none}
 var OFFLINE_KEY = 'casvel_entregas_offline';
 var LASTSYNC_KEY = 'casvel_entregas_last_sync';
 var ORDER_KEY = 'casvel_entregas_order';   // {mode:'hora'|'manual', manual:{ "fecha|id": n }}
+var DONE_KEY = 'casvel_entregas_done';     // {"fecha|id": true} — checklist local del repartidor
+var INSTALL_DISMISS_KEY = 'casvel_entregas_install_dismiss';
 
 var todayISO_val = todayISO();
 var orderState = loadOrderState();
+var doneState = loadDoneState();
 
 function el(id){ return document.getElementById(id); }
 function mxn(n){
@@ -413,6 +493,23 @@ function setManualOrder(fecha, id, val){
   if(val===''||val===null||isNaN(val)) delete orderState.manual[k];
   else orderState.manual[k] = Number(val);
   saveOrderState();
+}
+
+/* ─── ADDED: checklist de "entregado" — solo local, no se sincroniza a la
+   oficina ni modifica el contrato (así lo pidieron: control propio del
+   repartidor para su ruta del día). Se guarda por fecha+id, así que un
+   contrato reprogramado a otro día vuelve a aparecer sin marcar. ────── */
+function loadDoneState(){
+  try{ return JSON.parse(localStorage.getItem(DONE_KEY)||'{}'); }
+  catch(e){ return {}; }
+}
+function saveDoneState(){ localStorage.setItem(DONE_KEY, JSON.stringify(doneState)); }
+function isDelivered(fecha, id){ return !!doneState[orderKeyFor(fecha,id)]; }
+function toggleDelivered(fecha, id){
+  var k = orderKeyFor(fecha,id);
+  if(doneState[k]) delete doneState[k]; else doneState[k] = Date.now();
+  saveDoneState();
+  renderEntregas();
 }
 
 /* ─── Sincronización manual con Firebase ──────────────────────── */
@@ -524,6 +621,17 @@ function renderEntregas(){
     mCard('mc-blue','🚚','Entregas',list.length,'Para '+fmtDate(fecha))+
     mCard('mc-green','💰','Total',mxn(totBruto),mxn(totResta)+' por cobrar');
 
+  // ADDED: barra de progreso del checklist local de entregas
+  var deliveredCount=list.filter(function(c){return isDelivered(fecha,c.id);}).length;
+  var pw=el('progress-wrap');
+  if(list.length>0){
+    pw.style.display='';
+    el('progress-count').textContent=deliveredCount+' / '+list.length;
+    el('progress-fill').style.width=(list.length?Math.round(deliveredCount/list.length*100):0)+'%';
+  } else {
+    pw.style.display='none';
+  }
+
   if(all.length===0){
     el('ent-contracts').innerHTML=
       '<div class="empty"><div class="empty-icon">📡</div>'+
@@ -541,43 +649,49 @@ function renderEntregas(){
 
   el('ent-contracts').innerHTML=list.map(function(c,idx){
     var waNum=c.tel?(c.tel+'').replace(/\D/g,''):'';
-    var telLink=c.tel
-      ? '<a href="https://wa.me/'+waNum+'" target="_blank" style="color:#15803d;text-decoration:none;font-weight:700">💬 '+c.tel+'</a>'
-      : '—';
-    var locBtn=c.ubicacion
-      ? '<a href="'+c.ubicacion+'" target="_blank" style="display:inline-flex;align-items:center;gap:4px;'+
-          'background:#dbeafe;color:var(--blue);padding:5px 10px;border-radius:8px;'+
-          'text-decoration:none;font-size:12px;font-weight:700;margin-top:6px">📍 Abrir ubicación</a>'
-      : '';
     var summ=itemsSummary(c.items);
     var entH=c.hEntregaL||c.hEntrega||'';
     var recolH=c.hRecolL||c.hRecol||'';
     var manualVal = getManualOrder(fecha, c.id);
+    var delivered = isDelivered(fecha, c.id);
+    var resta = resolveStatus(c)==='cerrado'?0:(c.resta||0);
     var orderTag = orderState.mode==='manual'
       ? '<div class="order-tag">'+(manualVal!==null?manualVal:(idx+1))+'</div>'
       : '<div class="order-tag">'+(idx+1)+'</div>';
     var orderInput = orderState.mode==='manual'
-      ? '<div class="order-input-wrap"><label>Orden</label>'+
+      ? '<div class="order-input-wrap" onclick="event.stopPropagation()"><label>Orden</label>'+
           '<input class="order-input" type="number" min="1" value="'+(manualVal!==null?manualVal:'')+'" '+
           'placeholder="'+(idx+1)+'" onchange="setManualOrder(\''+fecha+'\',\''+c.id+'\',this.value);renderEntregas();"></div>'
       : '';
-    return '<div class="frow">'+
+    // ADDED: 3 acciones grandes siempre visibles — no hay que abrir la ficha
+    // para llamar/ver mapa/marcar entregado. "Entregado" es un checklist
+    // local del repartidor: no modifica el contrato ni notifica a la oficina.
+    var actionsHTML='<div class="frow-actions'+(c.ubicacion?'':' no-loc')+'">'+
+      (c.tel
+        ? '<a class="fa-btn fa-wa" href="https://wa.me/'+waNum+'" target="_blank" onclick="event.stopPropagation()"><span class="fi">💬</span>WhatsApp</a>'
+        : '<span class="fa-btn fa-wa" style="opacity:.35;pointer-events:none"><span class="fi">💬</span>Sin tel.</span>')+
+      (c.ubicacion
+        ? '<a class="fa-btn fa-map" href="'+c.ubicacion+'" target="_blank" onclick="event.stopPropagation()"><span class="fi">📍</span>Mapa</a>'
+        : '')+
+      '<button class="fa-btn fa-done'+(delivered?' on':'')+'" onclick="event.stopPropagation();toggleDelivered(\''+fecha+'\',\''+c.id+'\')">'+
+        '<span class="fi">'+(delivered?'✅':'⚪')+'</span>'+(delivered?'Entregado':'Marcar')+
+      '</button>'+
+    '</div>';
+    return '<div class="frow'+(delivered?' done':'')+'" onclick="openDetailSheet(\''+c.id+'\')">'+
       '<div class="frow-top">'+
         orderTag+
         '<div style="flex:1">'+
           '<div class="frow-name">'+(c.nombre||'Sin nombre')+'</div>'+
-          '<div style="font-size:13px;margin-top:4px">'+telLink+'</div>'+
-          (entH?'<div style="font-size:12px;color:var(--mid);margin-top:3px">🕐 Entrega: <strong>'+entH+'</strong>'+(recolH?' · Recol: '+recolH:'')+'</div>':'')+
-          (summ?'<div style="font-size:12px;margin-top:6px;padding:6px 8px;background:var(--light);border-radius:6px">📦 '+summ+'</div>':'')+
-          (locBtn?'<div>'+locBtn+'</div>':'')+
+          (entH?'<div style="font-size:12.5px;color:var(--mid);margin-top:4px">🕐 Entrega: <strong>'+entH+'</strong>'+(recolH?' · Recol: '+recolH:'')+'</div>':'')+
+          (summ?'<div style="font-size:12.5px;margin-top:6px;padding:6px 8px;background:var(--light);border-radius:6px">📦 '+summ+'</div>':'')+
           orderInput+
         '</div>'+
         '<div style="text-align:right;flex-shrink:0;margin-left:8px">'+
           '<div class="frow-total">'+mxn(c.total||0)+'</div>'+
-          '<div style="font-size:11px;color:var(--mid);margin-top:3px">resta '+mxn(resolveStatus(c)==='cerrado'?0:(c.resta||0))+'</div>'+
-          '<button onclick="openDetailSheet(\''+c.id+'\')" style="margin-top:6px;background:var(--light);border:none;border-radius:8px;padding:5px 10px;font-size:11px;font-weight:700;color:var(--mid);cursor:pointer;width:100%">👁 Ver</button>'+
+          '<div class="frow-resta">'+(resta>0?'Cobrar '+mxn(resta):'✓ Saldado')+'</div>'+
         '</div>'+
       '</div>'+
+      actionsHTML+
     '</div>';
   }).join('');
 }
@@ -643,6 +757,73 @@ function closeDetailSheet(){
   el('det-sheet').classList.remove('on');
 }
 
+/* ═══════════════════════════════════════════════════════════════
+   ADDED: PWA — Service Worker + instalación
+   Registra sw-entregas.js (cachea la app completa) y muestra un
+   banner para "Agregar a pantalla de inicio", clave para que la
+   página abra sin conexión aunque el navegador la haya cerrado.
+═══════════════════════════════════════════════════════════════ */
+var _deferredInstallPrompt = null;
+
+function isStandaloneMode(){
+  return window.matchMedia('(display-mode: standalone)').matches || window.navigator.standalone===true;
+}
+function isIOS(){
+  return /iPad|iPhone|iPod/.test(navigator.userAgent) && !window.MSStream;
+}
+function registerSW(){
+  if(!('serviceWorker' in navigator)) return;
+  navigator.serviceWorker.register('sw-entregas.js', {scope:'./entregas.html'}).catch(function(e){
+    console.warn('No se pudo registrar el Service Worker de Entregas', e);
+  });
+}
+function updateInstallBanner(){
+  var b=el('install-banner');
+  if(isStandaloneMode() || localStorage.getItem(INSTALL_DISMISS_KEY)==='1'){
+    b.style.display='none';
+    return;
+  }
+  b.style.display='flex';
+  if(isIOS()){
+    el('install-txt').innerHTML='<strong>Instala esta app</strong>Toca compartir <span style="font-weight:700">⬆️</span> y luego "Agregar a pantalla de inicio".';
+    el('install-go').style.display='none';
+  } else {
+    el('install-txt').innerHTML='<strong>Instala esta app</strong>Ábrela sin conexión, aunque cierres el navegador.';
+    el('install-go').style.display=_deferredInstallPrompt?'':'none';
+  }
+}
+function doInstall(){
+  if(!_deferredInstallPrompt) return;
+  _deferredInstallPrompt.prompt();
+  _deferredInstallPrompt.userChoice.finally(function(){
+    _deferredInstallPrompt=null;
+    updateInstallBanner();
+  });
+}
+function dismissInstallBanner(){
+  localStorage.setItem(INSTALL_DISMISS_KEY,'1');
+  el('install-banner').style.display='none';
+}
+window.addEventListener('beforeinstallprompt', function(e){
+  e.preventDefault();
+  _deferredInstallPrompt=e;
+  updateInstallBanner();
+});
+window.addEventListener('appinstalled', function(){
+  _deferredInstallPrompt=null;
+  el('install-banner').style.display='none';
+});
+
+/* ── ADDED: indicador real de conexión del dispositivo (no de Firebase) ── */
+function updateNetBadge(){
+  var b=el('net-badge');
+  var online=navigator.onLine;
+  b.className='net-badge '+(online?'on':'off');
+  b.textContent=online?'En línea':'Sin conexión';
+}
+window.addEventListener('online', updateNetBadge);
+window.addEventListener('offline', updateNetBadge);
+
 /* ─── Init ──────────────────────────────────────────────────── */
 document.addEventListener('DOMContentLoaded', function(){
   // MODIFIED (perf): LOGO_B64 se carga bajo demanda (ensureLogoLoaded en shared.js)
@@ -657,6 +838,9 @@ document.addEventListener('DOMContentLoaded', function(){
 
   updateFbBadge(isFbMode());
   updateSyncBar();
+  updateNetBadge();
+  updateInstallBanner();
+  registerSW();
   renderEntregas();
 });
 </script>
