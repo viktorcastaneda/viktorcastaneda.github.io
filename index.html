@@ -8,6 +8,10 @@
 <link rel="icon" type="image/x-icon" href="eventos_casvel_favicon.ico">
 <!-- iPhone / iPad -->
 <link rel="apple-touch-icon" sizes="180x180" href="apple-touch-icon.png">
+<!-- ADDED: PWA de toda la app — permite instalarla para que abra sin
+     conexión (ver sw-app.js) -->
+<link rel="manifest" href="manifest-app.json">
+<meta name="theme-color" content="#1a1f2e">
 <script src="https://cdnjs.cloudflare.com/ajax/libs/jszip/3.10.1/jszip.min.js"></script>
 <script src="https://cdnjs.cloudflare.com/ajax/libs/html2canvas/1.4.1/html2canvas.min.js"></script>
 <style>
@@ -275,6 +279,15 @@ if(!/[?&]d=1/.test(location.search) &&
 
   <!-- DASHBOARD -->
   <div id="view-dashboard" class="view on content">
+    <!-- ADDED: banner de instalación de la app (PWA de toda la app) -->
+    <div id="install-banner" style="display:none;background:var(--bbg);border:1.5px solid var(--blue);border-radius:10px;padding:13px 16px;align-items:center;gap:12px;margin-bottom:16px">
+      <div style="font-size:22px;flex-shrink:0">📲</div>
+      <div id="install-txt" style="flex:1;font-size:13px;color:var(--dark);line-height:1.4"><strong style="display:block;font-size:14px;margin-bottom:2px">Instala esta app</strong>Ábrela sin conexión, aunque cierres el navegador.</div>
+      <div style="display:flex;gap:8px;flex-shrink:0">
+        <button id="install-go" onclick="doInstall()" style="display:none;border:none;border-radius:8px;padding:9px 14px;font-family:inherit;font-size:12.5px;font-weight:700;cursor:pointer;background:var(--blue);color:#fff">Instalar</button>
+        <button onclick="dismissInstallBanner()" style="border:none;border-radius:8px;padding:9px 14px;font-family:inherit;font-size:12.5px;font-weight:700;cursor:pointer;background:transparent;color:var(--mid)">Ahora no</button>
+      </div>
+    </div>
     <div class="stats-grid" id="db-stats"></div>
     <div class="sec-hdr">
       <div class="sec-title">Contratos Recientes</div>
@@ -506,6 +519,33 @@ function openExportModal() { el('exp-modal').classList.add('open'); }
 function closeExportModal(){ el('exp-modal').classList.remove('open'); }
 function closeDelModal()    { el('del-modal').classList.remove('open'); }
 
+/* ═══════════════════════════════════════════════════════════════
+   ADDED: PWA de toda la app — usa los helpers genéricos de shared.js.
+   entregas.html tiene su propia copia independiente aparte, a propósito.
+═══════════════════════════════════════════════════════════════ */
+function updateInstallBanner(){
+  var b=el('install-banner'); if(!b) return;
+  if(pwaIsStandalone() || localStorage.getItem('casvel_install_dismiss')==='1'){
+    b.style.display='none';
+    return;
+  }
+  b.style.display='flex';
+  if(pwaIsIOS()){
+    el('install-txt').innerHTML='<strong style="display:block;font-size:14px;margin-bottom:2px">Instala esta app</strong>Toca compartir ⬆️ y luego "Agregar a pantalla de inicio".';
+    el('install-go').style.display='none';
+  } else {
+    el('install-txt').innerHTML='<strong style="display:block;font-size:14px;margin-bottom:2px">Instala esta app</strong>Ábrela sin conexión, aunque cierres el navegador.';
+    el('install-go').style.display=pwaCanPromptInstall()?'':'none';
+  }
+}
+function doInstall(){ pwaDoInstall(updateInstallBanner); }
+function dismissInstallBanner(){
+  localStorage.setItem('casvel_install_dismiss','1');
+  var b=el('install-banner'); if(b) b.style.display='none';
+}
+function onPwaInstallAvailable(){ updateInstallBanner(); }
+function onPwaInstalled(){ var b=el('install-banner'); if(b) b.style.display='none'; }
+
 /* ── Init ── */
 document.addEventListener('DOMContentLoaded', function(){
   // MODIFIED (perf): LOGO_B64 se carga bajo demanda (ensureLogoLoaded en shared.js)
@@ -514,6 +554,10 @@ document.addEventListener('DOMContentLoaded', function(){
     el('sb-logo').src = src;
     el('c-logo').src  = src;
   });
+
+  // ADDED: PWA de toda la app
+  pwaRegisterSW('sw-app.js', './');
+  updateInstallBanner();
 
   var opts = TIME_OPTIONS.map(function(t){
     return '<option value="'+t.value+'">'+t.label+'</option>';

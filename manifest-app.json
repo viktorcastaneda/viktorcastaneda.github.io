@@ -1,0 +1,14 @@
+{
+  "name": "CASVEL Contratos",
+  "short_name": "CASVEL",
+  "description": "Gestor de contratos de renta de mobiliario para eventos — funciona sin conexión",
+  "start_url": "./mobile.html",
+  "scope": "./",
+  "display": "standalone",
+  "orientation": "portrait",
+  "background_color": "#f0f4f8",
+  "theme_color": "#1a1f2e",
+  "icons": [
+    { "src": "apple-touch-icon.png", "sizes": "180x180", "type": "image/png", "purpose": "any" }
+  ]
+}

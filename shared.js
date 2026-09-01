@@ -31,6 +31,57 @@ function ensureDocxLoaded(){
   return _docxLoadPromise;
 }
 
+// ADDED: logo de Fairy Decoraciones (negocio hermano de decoración) — se agrega
+// a las cotizaciones y al contrato formal PDF solo cuando el usuario incluyó
+// un artículo adicional de Fairy Decoraciones. Igual que LOGO_B64/DOCX_B64,
+// vive aparte (fairy-logo-b64.js) y solo se descarga cuando realmente se usa.
+var FAIRY_LOGO_B64 = "";
+var _fairyLogoLoadPromise = null;
+function ensureFairyLogoLoaded(){
+  if(FAIRY_LOGO_B64) return Promise.resolve(FAIRY_LOGO_B64);
+  if(!_fairyLogoLoadPromise) _fairyLogoLoadPromise=_loadScriptOnce("fairy-logo-b64.js").then(function(){ return FAIRY_LOGO_B64; });
+  return _fairyLogoLoadPromise;
+}
+
+/* ═══════════════════════════════════════════════════════════════════════
+   ADDED: PWA genérica — registro de Service Worker + banner de instalación,
+   reutilizable por cualquier página que se ofrezca como app instalable.
+   entregas.html mantiene su PROPIA copia independiente a propósito (es una
+   mini-app aparte, con su propio ícono e instalación, para repartidores).
+   Esta versión la usan mobile.html / index.html para el resto de la app.
+═══════════════════════════════════════════════════════════════════════ */
+var _pwaDeferredPrompt = null;
+function pwaIsStandalone(){
+  return window.matchMedia("(display-mode: standalone)").matches || window.navigator.standalone===true;
+}
+function pwaIsIOS(){
+  return /iPad|iPhone|iPod/.test(navigator.userAgent) && !window.MSStream;
+}
+function pwaRegisterSW(swPath, scope){
+  if(!("serviceWorker" in navigator)) return;
+  navigator.serviceWorker.register(swPath, scope?{scope:scope}:undefined).catch(function(e){
+    console.warn("No se pudo registrar el Service Worker "+swPath, e);
+  });
+}
+function pwaCanPromptInstall(){ return !!_pwaDeferredPrompt; }
+function pwaDoInstall(onDone){
+  if(!_pwaDeferredPrompt) return;
+  _pwaDeferredPrompt.prompt();
+  _pwaDeferredPrompt.userChoice.finally(function(){
+    _pwaDeferredPrompt=null;
+    if(onDone) onDone();
+  });
+}
+window.addEventListener("beforeinstallprompt", function(e){
+  e.preventDefault();
+  _pwaDeferredPrompt=e;
+  if(typeof onPwaInstallAvailable==="function") onPwaInstallAvailable();
+});
+window.addEventListener("appinstalled", function(){
+  _pwaDeferredPrompt=null;
+  if(typeof onPwaInstalled==="function") onPwaInstalled();
+});
+
 
 /* ═══════════════════════════════════════════════════════════════════════
    ADDED: Catálogo dinámico — reemplaza constantes hardcoded ITEMS, ITEM_ABBREV,
