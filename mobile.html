@@ -4,12 +4,18 @@
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width,initial-scale=1,maximum-scale=1,user-scalable=no">
 <meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+<meta name="apple-mobile-web-app-title" content="CASVEL">
 <meta name="theme-color" content="#1a1f2e">
 <title>CASVEL Contratos</title>
 <link href="https://fonts.googleapis.com/css2?family=DM+Sans:wght@400;500;600;700&display=swap" rel="stylesheet">
 <link rel="icon" type="image/x-icon" href="eventos_casvel_favicon.ico">
 <!-- iPhone / iPad -->
 <link rel="apple-touch-icon" sizes="180x180" href="apple-touch-icon.png">
+<!-- ADDED: PWA de toda la app — permite "Agregar a pantalla de inicio" para
+     que abra sin conexión (ver sw-app.js). entregas.html usa su propia
+     mini-app instalable aparte (manifest-entregas.json). -->
+<link rel="manifest" href="manifest-app.json">
 <script src="https://cdnjs.cloudflare.com/ajax/libs/jszip/3.10.1/jszip.min.js"></script>
 <script src="https://cdnjs.cloudflare.com/ajax/libs/html2canvas/1.4.1/html2canvas.min.js"></script>
 <style>
@@ -136,6 +142,17 @@ input[type=date].fi{color-scheme:light}
   display:flex;align-items:center;gap:5px;white-space:nowrap}
 .hcontent{flex:1;overflow-y:auto;-webkit-overflow-scrolling:touch;
   padding:16px 16px calc(90px + var(--sb))}
+/* ── ADDED: banner de instalación de la app (PWA de toda la app) ── */
+.install-banner{background:var(--teal-lt);border:1.5px solid var(--teal);border-radius:12px;
+  padding:13px 14px;display:flex;align-items:center;gap:12px;margin-bottom:16px}
+.install-banner .ico{font-size:24px;flex-shrink:0}
+.install-banner .txt{flex:1;font-size:12.5px;color:var(--dark);line-height:1.4}
+.install-banner .txt strong{display:block;font-size:13.5px;margin-bottom:2px}
+.install-banner .acts{display:flex;flex-direction:column;gap:6px;flex-shrink:0}
+.install-banner button{border:none;border-radius:8px;padding:8px 12px;font-family:inherit;
+  font-size:11.5px;font-weight:700;cursor:pointer;-webkit-tap-highlight-color:transparent;white-space:nowrap}
+.install-banner .ib-go{background:var(--teal);color:#fff}
+.install-banner .ib-x{background:transparent;color:var(--mid)}
 .sgrid{display:grid;grid-template-columns:1fr 1fr;gap:12px;margin-bottom:16px}
 .scard{background:var(--white);border-radius:12px;padding:16px;border:1px solid var(--border)}
 .sclbl{font-size:11px;font-weight:600;color:var(--mid);text-transform:uppercase}
@@ -289,6 +306,20 @@ input[type=date].fi{color-scheme:light}
   cursor:pointer;display:flex;align-items:center;justify-content:center;gap:6px;
   -webkit-tap-highlight-color:transparent}
 .add-extra-btn:active{background:var(--bbg)}
+/* ADDED: artículo opcional "Fairy Decoraciones" (negocio hermano de decoración) —
+   mismo patrón que un artículo adicional normal, con acento morado/rosa propio
+   de su marca para distinguirlo en la lista. */
+.add-fairy-btn{width:100%;margin-top:8px;padding:11px;border:2px dashed #a020c8;border-radius:10px;
+  background:linear-gradient(135deg,#fdf2ff,#fff0f7);color:#8b0fc4;font-family:'DM Sans',sans-serif;
+  font-size:14px;font-weight:700;cursor:pointer;display:flex;align-items:center;justify-content:center;
+  gap:6px;-webkit-tap-highlight-color:transparent}
+.add-fairy-btn:active{background:#fbe4ff}
+.extra-row.fairy{background:linear-gradient(135deg,#fdf6ff,#fff8fb);border-radius:10px;
+  padding:10px 10px;margin-bottom:2px;border-bottom:none;border:1.5px solid #f0c6ff}
+.extra-row.fairy .extra-desc{border-color:#dba6f0}
+.extra-fairy-tag{display:inline-flex;align-items:center;gap:4px;font-size:10px;font-weight:800;
+  color:#8b0fc4;background:#f6dcff;padding:2px 8px;border-radius:8px;margin-bottom:2px;
+  text-transform:uppercase;letter-spacing:.04em}
 /* ADDED: formal PDF container — hidden off-screen */
 #formal-pdf-container{position:fixed;left:-9999px;top:0;z-index:-1;pointer-events:none;width:816px}
 /* fpdf-page: fixed letter size, clips overflow — scale applied by JS to fit content */
@@ -333,6 +364,14 @@ input[type=date].fi{color-scheme:light}
 .fpdf-sig-role{font-size:9px;color:#5a6580;margin-top:2px}
 .fpdf-footer{text-align:center;font-size:9px;color:#5a6580;margin-top:16px;
   padding-top:10px;border-top:1px solid #e2e8f0}
+/* ADDED: insignia de co-branding cuando el contrato/cotización incluye un
+   artículo de Fairy Decoraciones — tamaño similar al logo de CASVEL en el
+   encabezado (60px) para que se vea igual de destacado. */
+.fpdf-fairy-badge{display:flex;align-items:center;gap:14px;background:#fdf2ff;
+  border:1.5px solid #e3a6f5;border-radius:8px;padding:10px 16px;margin:-8px 0 20px}
+.fpdf-fairy-badge img{height:52px;width:auto;flex-shrink:0}
+.fpdf-fairy-badge .txt{font-size:9.5px;color:#6b1a8c;line-height:1.45}
+.fpdf-fairy-badge .txt strong{display:block;font-size:11.5px;color:#8b0fc4;font-weight:800;letter-spacing:.01em}
 .fpdf-et-formal{background:#f0fdf4;color:#15803d}
 /* ADDED: inventory viewer sheet */
 .inv-sheet-bg{display:none;position:fixed;inset:0;background:rgba(0,0,0,.55);z-index:360}
@@ -708,6 +747,15 @@ if(!/[?&]m=1/.test(location.search) && !/[?&]view=/.test(location.search) &&
     <a class="hquick-link" href="index.html?d=1">🖥 Escritorio</a>
   </div>
   <div class="hcontent">
+    <!-- ADDED: banner de instalación — se muestra solo si la app no está ya instalada -->
+    <div class="install-banner" id="install-banner" style="display:none">
+      <div class="ico">📲</div>
+      <div class="txt" id="install-txt"><strong>Instala esta app</strong>Ábrela sin conexión, aunque cierres el navegador.</div>
+      <div class="acts">
+        <button class="ib-go" id="install-go" onclick="doInstall()" style="display:none">Instalar</button>
+        <button class="ib-x" onclick="dismissInstallBanner()">Ahora no</button>
+      </div>
+    </div>
     <div class="sgrid" id="home-stats"></div>
     <div style="display:flex;gap:10px;margin-bottom:16px">
       <button class="nbtn" style="margin-bottom:0" onclick="startNew()">✏️ Nuevo Contrato</button>
@@ -831,6 +879,7 @@ if(!/[?&]m=1/.test(location.search) && !/[?&]view=/.test(location.search) &&
         <div class="card-ttl">Artículos Adicionales</div>
         <div id="q-extra-items"></div>
         <button onclick="addQExtraItem()" style="width:100%;padding:11px;border:1.5px dashed var(--border);border-radius:10px;background:none;color:var(--blue);font-family:inherit;font-size:13px;font-weight:700;cursor:pointer;margin-top:10px">+ Artículo adicional</button>
+        <button class="add-fairy-btn" onclick="addQFairyItem()" style="width:100%;padding:11px;border-radius:10px;font-family:inherit;font-size:13px;font-weight:700;cursor:pointer;margin-top:8px">🧚 Agregar Fairy Decoraciones</button>
       </div>
     </div>
 
@@ -932,6 +981,7 @@ if(!/[?&]m=1/.test(location.search) && !/[?&]view=/.test(location.search) &&
         <div class="extra-section-ttl">➕ Artículos adicionales</div>
         <div id="m-extra-items"></div>
         <button class="add-extra-btn" onclick="addExtraItem()">＋ Agregar artículo no listado</button>
+        <button class="add-extra-btn add-fairy-btn" onclick="addFairyItem()">🧚 Agregar Fairy Decoraciones</button>
       </div>
     </div>
 
@@ -1664,6 +1714,36 @@ function startNewFromClient(contractId){
   var wt=el('wiz-ttl'); if(wt) wt.textContent=(c.nombre||'Contrato')+' (nuevo)';
 }
 
+/* ═══════════════════════════════════════════════════════════════
+   ADDED: PWA de toda la app — usa los helpers genéricos de shared.js
+   (pwaIsStandalone/pwaIsIOS/pwaRegisterSW/pwaCanPromptInstall/pwaDoInstall).
+   entregas.html tiene su propia copia independiente aparte, a propósito.
+═══════════════════════════════════════════════════════════════ */
+function updateInstallBanner(){
+  var b=el('install-banner'); if(!b) return;
+  if(pwaIsStandalone() || localStorage.getItem('casvel_install_dismiss')==='1'){
+    b.style.display='none';
+    return;
+  }
+  b.style.display='flex';
+  if(pwaIsIOS()){
+    el('install-txt').innerHTML='<strong>Instala esta app</strong>Toca compartir <span style="font-weight:700">⬆️</span> y luego "Agregar a pantalla de inicio".';
+    el('install-go').style.display='none';
+  } else {
+    el('install-txt').innerHTML='<strong>Instala esta app</strong>Ábrela sin conexión, aunque cierres el navegador.';
+    el('install-go').style.display=pwaCanPromptInstall()?'':'none';
+  }
+}
+function doInstall(){
+  pwaDoInstall(updateInstallBanner);
+}
+function dismissInstallBanner(){
+  localStorage.setItem('casvel_install_dismiss','1');
+  var b=el('install-banner'); if(b) b.style.display='none';
+}
+function onPwaInstallAvailable(){ updateInstallBanner(); }
+function onPwaInstalled(){ var b=el('install-banner'); if(b) b.style.display='none'; }
+
 /* ── Init ── */
 document.addEventListener('DOMContentLoaded', function(){
   // MODIFIED (perf): LOGO_B64 se carga bajo demanda (ensureLogoLoaded en shared.js)
@@ -1678,6 +1758,10 @@ document.addEventListener('DOMContentLoaded', function(){
       if(el(id)) el(id).src=src;
     });
   });
+
+  // ADDED: PWA de toda la app
+  pwaRegisterSW('sw-app.js', './');
+  updateInstallBanner();
 
   var opts=TIME_OPTIONS.map(function(t){
     return '<option value="'+t.value+'">'+t.label+'</option>';
@@ -2087,7 +2171,9 @@ function renderExtraItems(){
   c.innerHTML=M_extraItems.map(function(ex,i){
     var amt=(ex.qty||0)*(ex.price||0);
     // MODIFIED: descripción en línea 1, controles en línea 2
-    return '<div class="extra-row" id="exrow'+i+'">' +
+    // ADDED: renglones de Fairy Decoraciones llevan acento visual propio
+    return '<div class="extra-row'+(ex.isFairy?' fairy':'')+'" id="exrow'+i+'">' +
+      (ex.isFairy?'<div class="extra-fairy-tag">🧚 Fairy Decoraciones</div>':'') +
       '<input class="extra-desc" type="text" placeholder="Descripción..." value="'+_xe(ex.desc||'')+'" oninput="updateExtra('+i+',\'desc\',this.value)">' +
       '<div class="extra-row-controls">' +
         '<div class="qctrl" style="border-radius:8px">' +
@@ -2110,6 +2196,21 @@ function addExtraItem(){
   // focus the new description input
   setTimeout(function(){
     var inputs=document.querySelectorAll('.extra-desc');
+    if(inputs.length) inputs[inputs.length-1].focus();
+  },50);
+}
+// ADDED: artículo opcional "Fairy Decoraciones" — mismo mecanismo que un
+// artículo adicional (desc/qty/precio editables), solo pre-llenado y
+// marcado con isFairy:true para: 1) distinguirlo visualmente en la lista,
+// 2) detectar si hay que incluir el logo de Fairy Decoraciones al exportar
+// la cotización o el contrato formal. Se puede agregar más de una vez
+// (varios servicios de Fairy en el mismo contrato/cotización).
+function addFairyItem(){
+  M_extraItems.push({desc:'Fairy Decoraciones', qty:1, price:0, isFairy:true});
+  renderExtraItems();
+  mCalc();
+  setTimeout(function(){
+    var inputs=document.querySelectorAll('#m-extra-items .extra-price');
     if(inputs.length) inputs[inputs.length-1].focus();
   },50);
 }
@@ -2198,7 +2299,7 @@ function mCollect(){
     anticipo:ant, total:total, resta:total-ant, items:items,
     // ADDED: extra items (non-inventory)
     extraItems: M_extraItems.filter(function(ex){ return ex.qty>0 || ex.desc; }).map(function(ex){
-      return {desc:ex.desc||'', qty:ex.qty||0, price:ex.price||0, amt:(ex.qty||0)*(ex.price||0)};
+      return {desc:ex.desc||'', qty:ex.qty||0, price:ex.price||0, amt:(ex.qty||0)*(ex.price||0), isFairy:!!ex.isFairy};
     }),
     status:gv('m-status')||'abierto',
     ubicacion:(gv('m-ubicacion')||'').trim(),
@@ -2224,7 +2325,7 @@ function mPopulate(d){
     mUpdAmt(i);
   });
   // ADDED: restore extra items
-  M_extraItems = (d.extraItems||[]).map(function(ex){ return {desc:ex.desc||'',qty:ex.qty||0,price:ex.price||0}; });
+  M_extraItems = (d.extraItems||[]).map(function(ex){ return {desc:ex.desc||'',qty:ex.qty||0,price:ex.price||0,isFairy:!!ex.isFairy}; });
   renderExtraItems();
   mCalc();
   if(ai){ ai.value=(d.anticipo||0).toFixed(2); ai.dataset.manual='1'; }
@@ -2480,7 +2581,12 @@ function mDoImage(fmt){
 // exactly one letter page (816×1056px) regardless of number of items.
 // MODIFIED (perf): LOGO_B64 se carga bajo demanda — esperarlo antes de construir el PDF.
 function mDoPDFFormal(){
-  ensureLogoLoaded().then(_mDoPDFFormalImpl);
+  // ADDED: si hay algún artículo de Fairy Decoraciones, también hay que
+  // esperar su logo antes de construir el PDF (se carga bajo demanda).
+  var d = mCollect();
+  var needsFairy = (d.extraItems||[]).some(function(ex){ return ex.isFairy; });
+  var ready = needsFairy ? Promise.all([ensureLogoLoaded(), ensureFairyLogoLoaded()]) : ensureLogoLoaded();
+  ready.then(_mDoPDFFormalImpl);
 }
 function _mDoPDFFormalImpl(){
   var d = mCollect();
@@ -2524,6 +2630,7 @@ function _mDoPDFFormalImpl(){
   // -- Section B: Mobiliario table --
   var tableRows = '';
   var hasAny = false;
+  var hasFairyItem = false; // ADDED
   ITEMS.forEach(function(it, i){
     var r = d.items[i];
     if(!r || !r.qty) return;
@@ -2533,7 +2640,8 @@ function _mDoPDFFormalImpl(){
   (d.extraItems||[]).forEach(function(ex){
     if(!ex.qty || !ex.desc) return;
     hasAny = true;
-    tableRows += '<tr><td>'+_xe(ex.desc)+' <em style="font-size:9px;color:#5a6580">(adicional)</em></td><td class="num">'+ex.qty+'</td><td class="num">$'+ex.price.toFixed(2)+'</td><td class="num">$'+ex.amt.toFixed(2)+'</td></tr>';
+    if(ex.isFairy) hasFairyItem = true; // ADDED
+    tableRows += '<tr><td>'+_xe(ex.desc)+' <em style="font-size:9px;color:#5a6580">('+(ex.isFairy?'Fairy Decoraciones':'adicional')+')</em></td><td class="num">'+ex.qty+'</td><td class="num">$'+ex.price.toFixed(2)+'</td><td class="num">$'+ex.amt.toFixed(2)+'</td></tr>';
   });
   if(!hasAny) tableRows = '<tr><td colspan="4" style="text-align:center;color:#5a6580;font-style:italic">Sin artículos registrados</td></tr>';
   var subtotal = d.total - d.traslado;
@@ -2552,6 +2660,15 @@ function _mDoPDFFormalImpl(){
         '</tfoot>'+
       '</table>'+
     '</div>';
+
+  // ADDED: insignia de Fairy Decoraciones — solo si el contrato incluye
+  // al menos un artículo de Fairy Decoraciones
+  var secFairy = hasFairyItem
+    ? '<div class="fpdf-fairy-badge">'+
+        '<img src="data:image/png;base64,'+FAIRY_LOGO_B64+'" alt="Fairy Decoraciones">'+
+        '<div class="txt"><strong>Incluye servicio de Fairy Decoraciones</strong>Decoración adicional a cargo de Fairy Decoraciones, negocio hermano de Eventos CASVEL.</div>'+
+      '</div>'
+    : '';
 
   // -- Section C: Cláusulas exactas del cliente --
   var secC =
@@ -2605,7 +2722,7 @@ function _mDoPDFFormalImpl(){
         '<div class="fpdf-contract-id"><strong>CONTRATO DE ARRENDAMIENTO</strong>No. '+contratoNum+'</div>'+
       '</div>'+
       '<div class="fpdf-inner-wrap" id="fpdf-inner">'+
-        secA + secB + secC + secD +
+        secA + secB + secFairy + secC + secD +
       '</div>'+
     '</div>';
 
@@ -2941,7 +3058,8 @@ function renderQExtraItems(){
   if(Q_extraItems.length===0){ c.innerHTML=''; return; }
   c.innerHTML=Q_extraItems.map(function(ex,i){
     var amt=(ex.qty||0)*(ex.price||0);
-    return '<div class="extra-row" id="qexrow'+i+'">'+
+    return '<div class="extra-row'+(ex.isFairy?' fairy':'')+'" id="qexrow'+i+'">'+
+      (ex.isFairy?'<div class="extra-fairy-tag">🧚 Fairy Decoraciones</div>':'')+
       '<input class="extra-desc" type="text" placeholder="Descripción..." value="'+_xe(ex.desc||'')+'" oninput="updateQExtra('+i+',\'desc\',this.value)">'+
       '<div class="extra-row-controls">'+
         '<div class="qctrl" style="border-radius:8px">'+
@@ -2957,6 +3075,8 @@ function renderQExtraItems(){
   }).join('');
 }
 function addQExtraItem(){ Q_extraItems.push({desc:'',qty:1,price:0}); renderQExtraItems(); qCalc(); setTimeout(function(){ var inp=document.querySelectorAll('#q-extra-items .extra-desc'); if(inp.length) inp[inp.length-1].focus(); },50); }
+// ADDED: mismo mecanismo que addFairyItem() pero para la cotización
+function addQFairyItem(){ Q_extraItems.push({desc:'Fairy Decoraciones',qty:1,price:0,isFairy:true}); renderQExtraItems(); qCalc(); setTimeout(function(){ var inp=document.querySelectorAll('#q-extra-items .extra-price'); if(inp.length) inp[inp.length-1].focus(); },50); }
 function removeQExtra(i){ Q_extraItems.splice(i,1); renderQExtraItems(); qCalc(); }
 function updateQExtra(i,field,val){
   if(!Q_extraItems[i]) return;
@@ -3084,7 +3204,7 @@ function qCollect(){
     traslado:parseFloat(gv('q-traslado'))||0,
     total:total, items:items,
     extraItems: Q_extraItems.filter(function(ex){return ex.qty>0||ex.desc;}).map(function(ex){
-      return {desc:ex.desc||'',qty:ex.qty||0,price:ex.price||0,amt:(ex.qty||0)*(ex.price||0)};
+      return {desc:ex.desc||'',qty:ex.qty||0,price:ex.price||0,amt:(ex.qty||0)*(ex.price||0),isFairy:!!ex.isFairy};
     }),
     notas:(gv('q-notas')||'').trim()
   };
@@ -3104,7 +3224,7 @@ function qPopulate(d){
     if(pe) pe.value=(r.price||getItemByIndex(i).price||0).toFixed(2);
     qUpdAmt(i);
   });
-  Q_extraItems=(d.extraItems||[]).map(function(ex){return {desc:ex.desc||'',qty:ex.qty||0,price:ex.price||0};});
+  Q_extraItems=(d.extraItems||[]).map(function(ex){return {desc:ex.desc||'',qty:ex.qty||0,price:ex.price||0,isFairy:!!ex.isFairy};});
   renderQExtraItems();
   qCalc();
 }
@@ -3276,7 +3396,12 @@ function openQSheet(){ Q_expId=Q_editId; el('qexp-sbg').classList.add('on'); el(
 /* ── Quotation PDF — formal format, no clauses, no signatures, footer note ── */
 // MODIFIED (perf): LOGO_B64 se carga bajo demanda — esperarlo antes de construir el PDF.
 function mDoPDFCotizacion(fromSheet){
-  ensureLogoLoaded().then(function(){ _mDoPDFCotizacionImpl(fromSheet); });
+  // ADDED: si hay algún artículo de Fairy Decoraciones, también hay que
+  // esperar su logo antes de construir el PDF (se carga bajo demanda).
+  var d = (fromSheet && Q_expId) ? (getQuotById(Q_expId) || qCollect()) : qCollect();
+  var needsFairy = (d.extraItems||[]).some(function(ex){ return ex.isFairy; });
+  var ready = needsFairy ? Promise.all([ensureLogoLoaded(), ensureFairyLogoLoaded()]) : ensureLogoLoaded();
+  ready.then(function(){ _mDoPDFCotizacionImpl(fromSheet); });
 }
 function _mDoPDFCotizacionImpl(fromSheet){
   var d;
@@ -3326,7 +3451,7 @@ function _mDoPDFCotizacionImpl(fromSheet){
     '</div>';
 
   // Section B: mobiliario table
-  var tableRows=''; var hasAny=false;
+  var tableRows=''; var hasAny=false; var hasFairyItem=false; // ADDED hasFairyItem
   ITEMS.forEach(function(it,i){
     var r=d.items[i];
     if(!r||!r.qty) return;
@@ -3336,7 +3461,8 @@ function _mDoPDFCotizacionImpl(fromSheet){
   (d.extraItems||[]).forEach(function(ex){
     if(!ex.qty||!ex.desc) return;
     hasAny=true;
-    tableRows+='<tr><td>'+_xe(ex.desc)+' <em style="font-size:9px;color:#5a6580">(adicional)</em></td><td class="num">'+ex.qty+'</td><td class="num">$'+ex.price.toFixed(2)+'</td><td class="num">$'+ex.amt.toFixed(2)+'</td></tr>';
+    if(ex.isFairy) hasFairyItem=true; // ADDED
+    tableRows+='<tr><td>'+_xe(ex.desc)+' <em style="font-size:9px;color:#5a6580">('+(ex.isFairy?'Fairy Decoraciones':'adicional')+')</em></td><td class="num">'+ex.qty+'</td><td class="num">$'+ex.price.toFixed(2)+'</td><td class="num">$'+ex.amt.toFixed(2)+'</td></tr>';
   });
   if(!hasAny) tableRows='<tr><td colspan="4" style="text-align:center;color:#5a6580;font-style:italic">Sin artículos registrados</td></tr>';
   var subtotal=d.total-d.traslado;
@@ -3353,6 +3479,15 @@ function _mDoPDFCotizacionImpl(fromSheet){
         '</tfoot>'+
       '</table>'+
     '</div>';
+
+  // ADDED: insignia de Fairy Decoraciones — solo si la cotización incluye
+  // al menos un artículo de Fairy Decoraciones
+  var secFairy = hasFairyItem
+    ? '<div class="fpdf-fairy-badge">'+
+        '<img src="data:image/png;base64,'+FAIRY_LOGO_B64+'" alt="Fairy Decoraciones">'+
+        '<div class="txt"><strong>Incluye servicio de Fairy Decoraciones</strong>Decoración adicional a cargo de Fairy Decoraciones, negocio hermano de Eventos CASVEL.</div>'+
+      '</div>'
+    : '';
 
   // Notas section (if any)
   var secNotas=d.notas
@@ -3382,7 +3517,7 @@ function _mDoPDFCotizacionImpl(fromSheet){
         '<div class="fpdf-contract-id"><strong>COTIZACIÓN</strong>No. '+cotNum+'</div>'+
       '</div>'+
       '<div class="fpdf-inner-wrap" id="fpdf-inner">'+
-        secA+secB+secNotas+secFooter+
+        secA+secB+secFairy+secNotas+secFooter+
       '</div>'+
     '</div>';
 
