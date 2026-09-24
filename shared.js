@@ -330,6 +330,12 @@ var _fbMode   = false; // true cuando Firebase está activo
 var _memCache = null;  // MODIFIED: caché unificado — válido en local Y Firebase
 var _listeners= [];    // callbacks registrados para cambios en tiempo real
 
+// ADDED: metadatos de entrega (orden manual/entregado/recolectado) — ver
+// bloque dedicado más abajo, junto a _fbSetupRefs.
+var _fbEntRef    = null; // DatabaseRef para /casvel_entregas
+var _entMemCache = null; // caché de metadatos de entrega, local o Firebase
+var _entListeners= [];   // callbacks para cambios en metadatos de entrega
+
 /* ── Helpers internos de caché ───────────────────────────────── */
 // ADDED: ordena el caché por fEvento desc (criterio consistente en ambos modos)
 function _sortCache(arr){
@@ -366,10 +372,11 @@ function fbClearConfig(){
 }
 
 /* ── Inicializar Firebase (llamado al arrancar si hay config) ─── */
-function fbInit(cfg, onReady){
-  if(typeof firebase !== "undefined"){
-    _fbSetup(cfg, onReady); return;
-  }
+// MODIFIED: la carga del SDK se extrajo a _fbLoadSDK() para reutilizarla
+// desde fbInitEntregasOnly() (conexión ligera solo para metadatos de
+// entrega) sin duplicar el bloque de <script> tags.
+function _fbLoadSDK(onDone){
+  if(typeof firebase !== "undefined"){ onDone(); return; }
   var scripts=[
     "https://www.gstatic.com/firebasejs/9.22.2/firebase-app-compat.js",
     "https://www.gstatic.com/firebasejs/9.22.2/firebase-database-compat.js",
@@ -379,9 +386,15 @@ function fbInit(cfg, onReady){
   scripts.forEach(function(src){
     var s=document.createElement("script");
     s.src=src;
-    s.onload=function(){ loaded++; if(loaded===scripts.length) _fbSetup(cfg,onReady); };
-    s.onerror=function(){ if(onReady) onReady(new Error("No se pudo cargar Firebase SDK")); };
+    s.onload=function(){ loaded++; if(loaded===scripts.length) onDone(); };
+    s.onerror=function(){ onDone(new Error("No se pudo cargar Firebase SDK")); };
     document.head.appendChild(s);
+  });
+}
+function fbInit(cfg, onReady){
+  _fbLoadSDK(function(err){
+    if(err){ if(onReady) onReady(err); return; }
+    _fbSetup(cfg, onReady);
   });
 }
 
@@ -410,6 +423,10 @@ function _fbSetupRefs(onReady){
     _fbRef = _fbDb.ref("casvel_v1");
     // ADDED: ref para el catálogo en Firebase
     _fbCatRef = _fbDb.ref("casvel_catalog");
+    // ADDED: metadatos de entrega (orden/entregado/recolectado) — comparte
+    // conexión con contratos/catálogo; no-op si entregas.html ya se había
+    // conectado antes vía fbInitEntregasOnly() al cargar la página.
+    _fbSetupEntregasRefOnce();
 
     // MODIFIED (perf): antes un solo listener "value" en la raíz de casvel_v1
     // hacía que CUALQUIER escritura a UN contrato, desde CUALQUIER dispositivo,
@@ -469,6 +486,125 @@ function _fbSetupRefs(onReady){
     _fbMode=false;
     if(onReady) onReady(e);
   }
+}
+
+/* ═══════════════════════════════════════════════════════════════════════
+   ADDED: Metadatos de entrega (orden manual, entregado, recolectado).
+   Antes vivían solo en localStorage de entregas.html (por dispositivo).
+   Ahora se sincronizan igual que los contratos, en el mismo proyecto
+   Firebase, para que cualquier repartidor/dispositivo vea el mismo
+   estado de la ruta del día. Clave del registro: "<fEvento>|<contratoId>"
+   (mismo formato que ya usaba entregas.html para su checklist local).
+
+   Conexión: entregas.html se conecta a esta colección en segundo plano
+   al cargar (fbInitEntregasOnly), SIN activar el caché en vivo completo
+   de contratos (eso sigue siendo manual, vía el botón "Sincronizar" y
+   fbInit/_fbSetupRefs) — así no cambia el consumo de datos ni el diseño
+   offline-first que ya tenía la página para contratos.
+═══════════════════════════════════════════════════════════════════════ */
+function entregaKey(fecha, id){ return fecha+"|"+id; }
+
+function _initLocalEntregas(){
+  if(_entMemCache !== null) return;
+  try{ _entMemCache = JSON.parse(localStorage.getItem("casvel_entregas")||"{}"); }
+  catch(e){ _entMemCache = {}; }
+}
+
+function _notifyEntListeners(){
+  var snap = JSON.parse(JSON.stringify(_entMemCache||{}));
+  _entListeners.forEach(function(fn){ try{ fn(snap); }catch(e){} });
+}
+
+// ADDED: conecta (una sola vez) el ref de Firebase para casvel_entregas y
+// sube cualquier cambio hecho localmente antes de conectar (p.ej. marcado
+// como entregado sin conexión) para no perderlo al reconectar — comparación
+// simple por updatedAt (último en escribir gana).
+function _fbSetupEntregasRefOnce(){
+  if(_fbEntRef) return;
+  var pendingLocal = _entMemCache;
+  if(!pendingLocal){
+    try{ pendingLocal = JSON.parse(localStorage.getItem("casvel_entregas")||"{}"); }
+    catch(e){ pendingLocal = {}; }
+  }
+  _fbEntRef = _fbDb.ref("casvel_entregas");
+  _entMemCache = {};
+  var _notifyTimer=null;
+  function _scheduleEntNotify(){
+    if(_notifyTimer) return;
+    _notifyTimer=setTimeout(function(){ _notifyTimer=null; _notifyEntListeners(); },0);
+  }
+  _fbEntRef.on("child_added", function(snap){ _entMemCache[snap.key]=snap.val(); _scheduleEntNotify(); });
+  _fbEntRef.on("child_changed", function(snap){ _entMemCache[snap.key]=snap.val(); _scheduleEntNotify(); });
+  _fbEntRef.on("child_removed", function(snap){ delete _entMemCache[snap.key]; _scheduleEntNotify(); });
+
+  Object.keys(pendingLocal||{}).forEach(function(key){
+    var local = pendingLocal[key];
+    _fbEntRef.child(key).once("value").then(function(snap){
+      var remote = snap.val();
+      if(!remote || (local.updatedAt||0) > (remote.updatedAt||0)){
+        _fbEntRef.child(key).set(local).catch(function(e){console.error("Firebase entregas merge",e);});
+      }
+    }).catch(function(){});
+  });
+}
+
+// ADDED: conexión ligera — solo autentica y sincroniza casvel_entregas, sin
+// tocar casvel_v1 (contratos) ni casvel_catalog. Se llama en segundo plano
+// al cargar entregas.html si ya hay una config de Firebase guardada.
+function fbInitEntregasOnly(cfg, onReady){
+  _fbLoadSDK(function(err){
+    if(err){ if(onReady) onReady(err); return; }
+    try{
+      try{ _fbApp = firebase.app("casvel"); }
+      catch(e){ _fbApp = firebase.initializeApp(cfg,"casvel"); }
+      firebase.auth(_fbApp).signInAnonymously().then(function(){
+        _fbDb = _fbDb || firebase.database(_fbApp);
+        _fbSetupEntregasRefOnce();
+        if(onReady) onReady(null);
+      }).catch(function(e){ if(onReady) onReady(e); });
+    } catch(e){ if(onReady) onReady(e); }
+  });
+}
+
+// ADDED: true cuando los metadatos de entrega están conectados a Firebase
+// (vía fbInitEntregasOnly o vía el fbInit completo de "Sincronizar")
+function isEntregasSynced(){ return !!_fbEntRef; }
+
+// ADDED: registra listener de cambios en tiempo real de metadatos de entrega
+function onEntregasChange(fn){
+  _entListeners.push(fn);
+  if(!_fbEntRef) _initLocalEntregas();
+  if(_entMemCache!==null) try{ fn(JSON.parse(JSON.stringify(_entMemCache))); }catch(e){}
+  return function(){ _entListeners=_entListeners.filter(function(x){return x!==fn;}); };
+}
+
+function loadEntregasMeta(){
+  if(!_fbEntRef) _initLocalEntregas();
+  return _entMemCache ? JSON.parse(JSON.stringify(_entMemCache)) : {};
+}
+
+function getEntregaMeta(fecha, id){
+  var all = loadEntregasMeta();
+  return all[entregaKey(fecha,id)] || null;
+}
+
+// ADDED: combina (merge) los campos indicados sobre el registro existente y
+// persiste en Firebase (si hay conexión) o local — mismo patrón que
+// saveContract().
+function saveEntregaMeta(fecha, id, patch){
+  var key = entregaKey(fecha, id);
+  if(_fbEntRef){
+    var cur = (_entMemCache && _entMemCache[key]) || {};
+    var next = Object.assign({}, cur, patch, {fecha:fecha, id:id, updatedAt:Date.now()});
+    // El listener child_added/child_changed actualizará _entMemCache y notificará
+    _fbEntRef.child(key).set(next).catch(function(e){console.error("Firebase entregas write",e);});
+    return;
+  }
+  _initLocalEntregas();
+  var curL = _entMemCache[key] || {};
+  _entMemCache[key] = Object.assign({}, curL, patch, {fecha:fecha, id:id, updatedAt:Date.now()});
+  _notifyEntListeners();
+  localStorage.setItem("casvel_entregas", JSON.stringify(_entMemCache));
 }
 
 /* ── Registrar listener de cambios en tiempo real ────────────── */
@@ -541,12 +677,16 @@ function isFbMode(){return _fbMode;}
 function _resetToLocalCache(){
   _fbMode   = false;
   _fbCatRef = null;              // ADDED: limpiar ref de catálogo
+  _fbEntRef = null;              // ADDED: limpiar ref de metadatos de entrega
   _memCache = null;
   _catalogCache = null;          // ADDED: forzar re-lectura del catálogo local
+  _entMemCache = null;           // ADDED: forzar re-lectura de metadatos de entrega
   _initLocalCache();
   _initLocalCatalog();           // ADDED: recargar catálogo desde localStorage
+  _initLocalEntregas();          // ADDED: recargar metadatos de entrega desde localStorage
   _notifyListeners();
   _notifyCatListeners();         // ADDED: notificar vistas del catálogo
+  _notifyEntListeners();         // ADDED: notificar vistas de entregas
 }
 
 /* ── Fechas y formato ── */
