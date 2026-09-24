@@ -60,10 +60,14 @@ self.addEventListener("fetch", function(event){
   // ADDED: network-first para entregas.html/shared.js — ver nota de
   // NETWORK_FIRST arriba. Si falla la red (sin conexión), cae a la última
   // copia cacheada, así que el offline-first sigue funcionando igual.
+  // MODIFIED: {cache:"reload"} — un fetch() normal desde dentro del Service
+  // Worker puede seguir sirviéndose de la caché HTTP del navegador (una capa
+  // aparte de este Cache Storage), devolviendo la misma versión vieja aunque
+  // aquí ya sea "network-first". "reload" fuerza una ida real a la red.
   var isAppShellCode = NETWORK_FIRST.some(function(suffix){ return url.pathname.indexOf(suffix) !== -1; });
   if(isAppShellCode){
     event.respondWith(
-      fetch(req).then(function(res){
+      fetch(req, {cache:"reload"}).then(function(res){
         caches.open(CACHE_VERSION).then(function(cache){
           try{ cache.put(req, res.clone()); }catch(e){}
         });
