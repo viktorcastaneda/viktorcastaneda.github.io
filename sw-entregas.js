@@ -6,7 +6,12 @@
 
    Para forzar que los repartidores reciban una actualización, sube este
    número en el próximo deploy. */
-var CACHE_VERSION = "casvel-entregas-v1";
+// MODIFIED: subido a v2 — un deploy anterior cambió entregas.html/shared.js
+// sin subir este número, así que el navegador nunca detectó que el Service
+// Worker había cambiado (el archivo era byte-idéntico) y siguió sirviendo
+// shared.js viejo desde caché junto al entregas.html nuevo, causando
+// "ReferenceError: entregaKey/onEntregasChange is not defined" en producción.
+var CACHE_VERSION = "casvel-entregas-v2";
 
 var APP_SHELL = [
   "./entregas.html",
@@ -16,6 +21,13 @@ var APP_SHELL = [
   "./apple-touch-icon.png",
   "./eventos_casvel_favicon.ico"
 ];
+
+// ADDED: el HTML/JS de la app cambia con cada deploy; los assets de abajo
+// (logo, icono, manifest) casi nunca cambian. Servir el app shell
+// network-first evita depender de acordarse de subir CACHE_VERSION a mano
+// (la causa exacta del bug de arriba) — un deploy nuevo se aplica de
+// inmediato en cuanto haya conexión, y solo cae a caché si falla la red.
+var NETWORK_FIRST = ["/entregas.html", "/shared.js"];
 
 self.addEventListener("install", function(event){
   event.waitUntil(
@@ -42,6 +54,22 @@ self.addEventListener("fetch", function(event){
   // Firebase (RTDB/Auth) nunca se cachea — siempre debe ir a la red en vivo,
   // o fallar limpiamente si no hay conexión (la app ya maneja ese error).
   if(url.hostname.indexOf("firebaseio.com")!==-1 || url.hostname.indexOf("firebaseapp.com")!==-1){
+    return;
+  }
+
+  // ADDED: network-first para entregas.html/shared.js — ver nota de
+  // NETWORK_FIRST arriba. Si falla la red (sin conexión), cae a la última
+  // copia cacheada, así que el offline-first sigue funcionando igual.
+  var isAppShellCode = NETWORK_FIRST.some(function(suffix){ return url.pathname.indexOf(suffix) !== -1; });
+  if(isAppShellCode){
+    event.respondWith(
+      fetch(req).then(function(res){
+        caches.open(CACHE_VERSION).then(function(cache){
+          try{ cache.put(req, res.clone()); }catch(e){}
+        });
+        return res;
+      }).catch(function(){ return caches.match(req); })
+    );
     return;
   }
 
