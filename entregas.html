@@ -154,17 +154,19 @@ body{-webkit-text-size-adjust:100%;overscroll-behavior-y:none}
   font-family:inherit;font-size:11.5px;font-weight:700;color:var(--blue);cursor:pointer;
   padding:4px 0;-webkit-tap-highlight-color:transparent}
 
-/* ── ADDED: fila de acciones grandes (WhatsApp / Mapa / Entregado) ── */
-.frow-actions{display:grid;grid-template-columns:1fr 1fr 1fr;gap:8px;margin-top:12px}
-.frow-actions.no-loc{grid-template-columns:1fr 1fr}
+/* ── ADDED: fila de acciones grandes (WhatsApp / Mapa / Entregado / Recolectado) ── */
+.frow-actions{display:grid;grid-template-columns:repeat(4,1fr);gap:8px;margin-top:12px}
+.frow-actions.no-loc{grid-template-columns:repeat(3,1fr)}
 .fa-btn{display:flex;flex-direction:column;align-items:center;justify-content:center;gap:3px;
-  padding:11px 6px;border-radius:11px;border:none;font-family:inherit;font-size:11px;font-weight:700;
+  padding:11px 4px;border-radius:11px;border:none;font-family:inherit;font-size:10.5px;font-weight:700;
   cursor:pointer;text-decoration:none;-webkit-tap-highlight-color:transparent;min-height:56px}
-.fa-btn .fi{font-size:19px;line-height:1}
+.fa-btn .fi{font-size:18px;line-height:1}
 .fa-wa{background:#dcfce7;color:#15803d}
 .fa-map{background:#dbeafe;color:var(--blue)}
 .fa-done{background:var(--light);color:var(--mid);border:1.5px solid var(--border)}
 .fa-done.on{background:var(--green);color:#fff;border-color:var(--green)}
+.fa-recol{background:var(--light);color:var(--mid);border:1.5px solid var(--border)}
+.fa-recol.on{background:var(--teal);color:#fff;border-color:var(--teal)}
 
 .order-input-wrap{display:flex;align-items:center;gap:6px;margin-top:8px;
   background:var(--light);border-radius:8px;padding:5px 8px}
@@ -418,13 +420,17 @@ body{-webkit-text-size-adjust:100%;overscroll-behavior-y:none}
 
 var OFFLINE_KEY = 'casvel_entregas_offline';
 var LASTSYNC_KEY = 'casvel_entregas_last_sync';
-var ORDER_KEY = 'casvel_entregas_order';   // {mode:'hora'|'manual', manual:{ "fecha|id": n }}
-var DONE_KEY = 'casvel_entregas_done';     // {"fecha|id": true} — checklist local del repartidor
+var ORDER_KEY = 'casvel_entregas_order';   // {mode:'hora'|'manual'} — preferencia local de vista
+// MODIFIED: el orden manual, "entregado" y "recolectado" ya NO viven en estas
+// claves — se sincronizan entre dispositivos vía shared.js (casvel_entregas /
+// Firebase). Las claves de abajo son legacy, solo se leen una vez para migrar.
+var LEGACY_DONE_KEY = 'casvel_entregas_done';
+var MIGRATED_KEY = 'casvel_entregas_meta_migrated';
 var INSTALL_DISMISS_KEY = 'casvel_entregas_install_dismiss';
 
 var todayISO_val = todayISO();
 var orderState = loadOrderState();
-var doneState = loadDoneState();
+var entMeta = {};   // ADDED: caché en memoria de metadatos de entrega sincronizados (ver onEntregasChange)
 
 function el(id){ return document.getElementById(id); }
 function mxn(n){
@@ -472,15 +478,18 @@ function updateSyncBar(){
   el('sync-last-txt').textContent = fmtLastSync();
 }
 
-/* ─── Orden de entrega configurable (sólo local) ──────────────── */
+/* ─── Orden de entrega: el modo (hora/manual) es preferencia de ESTE
+   dispositivo; el número asignado a cada contrato SÍ se sincroniza (ver
+   bloque de metadatos de entrega, más abajo). ─────────────────────── */
 function loadOrderState(){
   try{
     var raw = localStorage.getItem(ORDER_KEY);
-    return raw ? JSON.parse(raw) : {mode:'hora', manual:{}};
-  }catch(e){ return {mode:'hora', manual:{}}; }
+    var parsed = raw ? JSON.parse(raw) : null;
+    return {mode:(parsed && parsed.mode==='manual')?'manual':'hora'};
+  }catch(e){ return {mode:'hora'}; }
 }
 function saveOrderState(){
-  localStorage.setItem(ORDER_KEY, JSON.stringify(orderState));
+  localStorage.setItem(ORDER_KEY, JSON.stringify({mode:orderState.mode}));
 }
 function setOrderMode(mode){
   orderState.mode = mode;
@@ -488,37 +497,87 @@ function setOrderMode(mode){
   el('ord-hora').classList.toggle('on', mode==='hora');
   el('ord-manual').classList.toggle('on', mode==='manual');
   el('order-hint').textContent = mode==='manual'
-    ? 'Asigna un número a cada contrato (1, 2, 3…) para fijar tu ruta. Se guarda en este dispositivo.'
+    ? 'Asigna un número a cada contrato (1, 2, 3…) para fijar tu ruta. Se sincroniza entre dispositivos.'
     : 'Ordenado por hora de entrega registrada en el contrato.';
   renderEntregas();
 }
-function orderKeyFor(fecha, id){ return fecha+'|'+id; }
+
+/* ═══════════════════════════════════════════════════════════════════
+   ADDED: Metadatos de entrega EN LÍNEA (orden manual / entregado /
+   recolectado). Antes vivían solo en localStorage de este dispositivo
+   (orderState.manual y un checklist aparte); ahora se leen/escriben a
+   través de shared.js (entregaKey/saveEntregaMeta/onEntregasChange), que
+   sincroniza con Firebase igual que los contratos, para que cualquier
+   repartidor vea y actualice la misma ruta del día. `entMeta` es la
+   copia en memoria que el listener registrado en el arranque mantiene
+   al día (ver DOMContentLoaded, al final del archivo). ────────────────
+   ═══════════════════════════════════════════════════════════════════ */
 function getManualOrder(fecha, id){
-  var v = orderState.manual[orderKeyFor(fecha,id)];
-  return (v===undefined||v===null||v==='') ? null : Number(v);
+  var m = entMeta[entregaKey(fecha,id)];
+  return (m && m.orden!==undefined && m.orden!==null) ? Number(m.orden) : null;
 }
 function setManualOrder(fecha, id, val){
-  var k = orderKeyFor(fecha,id);
-  if(val===''||val===null||isNaN(val)) delete orderState.manual[k];
-  else orderState.manual[k] = Number(val);
-  saveOrderState();
+  var patch = (val===''||val===null||isNaN(val)) ? {orden:null} : {orden:Number(val)};
+  saveEntregaMeta(fecha, id, patch);
+}
+function isDelivered(fecha, id){
+  var m = entMeta[entregaKey(fecha,id)];
+  return !!(m && m.entregado);
+}
+function toggleDelivered(fecha, id){
+  var cur = isDelivered(fecha, id);
+  saveEntregaMeta(fecha, id, {entregado: !cur, entregadoAt: !cur ? Date.now() : null});
+}
+// ADDED: marcar el servicio como recolectado (independiente de "entregado")
+function isCollected(fecha, id){
+  var m = entMeta[entregaKey(fecha,id)];
+  return !!(m && m.recolectado);
+}
+function toggleCollected(fecha, id){
+  var cur = isCollected(fecha, id);
+  saveEntregaMeta(fecha, id, {recolectado: !cur, recolectadoAt: !cur ? Date.now() : null});
 }
 
-/* ─── ADDED: checklist de "entregado" — solo local, no se sincroniza a la
-   oficina ni modifica el contrato (así lo pidieron: control propio del
-   repartidor para su ruta del día). Se guarda por fecha+id, así que un
-   contrato reprogramado a otro día vuelve a aparecer sin marcar. ────── */
-function loadDoneState(){
-  try{ return JSON.parse(localStorage.getItem(DONE_KEY)||'{}'); }
-  catch(e){ return {}; }
-}
-function saveDoneState(){ localStorage.setItem(DONE_KEY, JSON.stringify(doneState)); }
-function isDelivered(fecha, id){ return !!doneState[orderKeyFor(fecha,id)]; }
-function toggleDelivered(fecha, id){
-  var k = orderKeyFor(fecha,id);
-  if(doneState[k]) delete doneState[k]; else doneState[k] = Date.now();
-  saveDoneState();
-  renderEntregas();
+// ADDED: migra una sola vez el orden manual y el checklist "entregado" que
+// vivían solo en este dispositivo (versión anterior) hacia el store
+// sincronizado, para no perder lo que ya había capturado el repartidor.
+function migrateLegacyEntregasData(){
+  if(localStorage.getItem(MIGRATED_KEY)==='1') return;
+  try{
+    var rawOrder = localStorage.getItem(ORDER_KEY);
+    var legacyManual = null;
+    if(rawOrder){
+      var parsed = JSON.parse(rawOrder);
+      if(parsed && parsed.manual) legacyManual = parsed.manual;
+    }
+    var legacyDone = null;
+    var rawDone = localStorage.getItem(LEGACY_DONE_KEY);
+    if(rawDone) legacyDone = JSON.parse(rawDone);
+
+    var keys = {};
+    if(legacyManual) Object.keys(legacyManual).forEach(function(k){ keys[k]=1; });
+    if(legacyDone) Object.keys(legacyDone).forEach(function(k){ keys[k]=1; });
+
+    Object.keys(keys).forEach(function(k){
+      var sep = k.indexOf('|');
+      if(sep<0) return;
+      var fecha = k.slice(0,sep), id = k.slice(sep+1);
+      var patch = {};
+      if(legacyManual && legacyManual[k]!==undefined && legacyManual[k]!==null) patch.orden = Number(legacyManual[k]);
+      if(legacyDone && legacyDone[k]){ patch.entregado = true; patch.entregadoAt = Number(legacyDone[k])||Date.now(); }
+      if(Object.keys(patch).length) saveEntregaMeta(fecha, id, patch);
+    });
+  } catch(e){ /* datos legacy corruptos — se ignoran, no bloquean la app */ }
+
+  try{
+    var rawOrder2 = localStorage.getItem(ORDER_KEY);
+    if(rawOrder2){
+      var parsed2 = JSON.parse(rawOrder2);
+      if(parsed2 && parsed2.manual) localStorage.setItem(ORDER_KEY, JSON.stringify({mode:parsed2.mode||'hora'}));
+    }
+  }catch(e){}
+  localStorage.removeItem(LEGACY_DONE_KEY);
+  localStorage.setItem(MIGRATED_KEY,'1');
 }
 
 /* ─── Sincronización manual con Firebase ──────────────────────── */
@@ -594,6 +653,7 @@ function mFbConnect(){
 }
 function mFbDisconnect(){
   fbClearConfig(); closeFbSheet();
+  _resetToLocalCache();   // ADDED: cierra refs en vivo (incluye metadatos de entrega)
   updateFbBadge(false);
   showToast('⬡ Desconectado. La copia local sigue disponible.');
 }
@@ -663,6 +723,7 @@ function renderEntregas(){
     var recolH=c.hRecolL||c.hRecol||'';
     var manualVal = getManualOrder(fecha, c.id);
     var delivered = isDelivered(fecha, c.id);
+    var collected = isCollected(fecha, c.id);
     var resta = resolveStatus(c)==='cerrado'?0:(c.resta||0);
     var orderTag = orderState.mode==='manual'
       ? '<div class="order-tag">'+(manualVal!==null?manualVal:(idx+1))+'</div>'
@@ -672,9 +733,10 @@ function renderEntregas(){
           '<input class="order-input" type="number" min="1" value="'+(manualVal!==null?manualVal:'')+'" '+
           'placeholder="'+(idx+1)+'" onchange="setManualOrder(\''+fecha+'\',\''+c.id+'\',this.value);renderEntregas();"></div>'
       : '';
-    // ADDED: 3 acciones grandes siempre visibles — no hay que abrir la ficha
-    // para llamar/ver mapa/marcar entregado. "Entregado" es un checklist
-    // local del repartidor: no modifica el contrato ni notifica a la oficina.
+    // ADDED: acciones grandes siempre visibles — no hay que abrir la ficha
+    // para llamar/ver mapa/marcar entregado o recolectado. Ambos estados se
+    // sincronizan en línea (ver saveEntregaMeta en shared.js): cualquier
+    // repartidor o la oficina ve el mismo estado, sin modificar el contrato.
     var actionsHTML='<div class="frow-actions'+(c.ubicacion?'':' no-loc')+'">'+
       (c.tel
         ? '<a class="fa-btn fa-wa" href="https://wa.me/'+waNum+'" target="_blank" onclick="event.stopPropagation()"><span class="fi">💬</span>WhatsApp</a>'
@@ -684,6 +746,9 @@ function renderEntregas(){
         : '')+
       '<button class="fa-btn fa-done'+(delivered?' on':'')+'" onclick="event.stopPropagation();toggleDelivered(\''+fecha+'\',\''+c.id+'\')">'+
         '<span class="fi">'+(delivered?'✅':'⚪')+'</span>'+(delivered?'Entregado':'Marcar')+
+      '</button>'+
+      '<button class="fa-btn fa-recol'+(collected?' on':'')+'" onclick="event.stopPropagation();toggleCollected(\''+fecha+'\',\''+c.id+'\')">'+
+        '<span class="fi">'+(collected?'✅':'📦')+'</span>'+(collected?'Recolectado':'Recolectar')+
       '</button>'+
     '</div>';
     return '<div class="frow'+(delivered?' done':'')+'" onclick="openDetailSheet(\''+c.id+'\')">'+
@@ -843,7 +908,7 @@ document.addEventListener('DOMContentLoaded', function(){
   el('ord-hora').classList.toggle('on', orderState.mode==='hora');
   el('ord-manual').classList.toggle('on', orderState.mode==='manual');
   el('order-hint').textContent = orderState.mode==='manual'
-    ? 'Asigna un número a cada contrato (1, 2, 3…) para fijar tu ruta. Se guarda en este dispositivo.'
+    ? 'Asigna un número a cada contrato (1, 2, 3…) para fijar tu ruta. Se sincroniza entre dispositivos.'
     : 'Ordenado por hora de entrega registrada en el contrato.';
 
   updateFbBadge(isFbMode());
@@ -851,8 +916,37 @@ document.addEventListener('DOMContentLoaded', function(){
   updateNetBadge();
   updateInstallBanner();
   registerSW();
-  renderEntregas();
+
+  migrateLegacyEntregasData();     // ADDED: sube a la nube el orden/entregado que solo vivía aquí
+
+  // ADDED: mantiene entMeta al día — al registrar el listener ya dispara un
+  // render con lo que haya en caché (local u online), y los siguientes
+  // llegan cuando cambia algo en este dispositivo o en cualquier otro
+  // conectado al mismo proyecto de Firebase.
+  onEntregasChange(function(meta){
+    entMeta = meta;
+    renderEntregas();
+  });
+
+  // ADDED: conexión en segundo plano SOLO para metadatos de entrega — no
+  // activa el caché completo de contratos (eso sigue siendo manual, vía
+  // "Sincronizar"), así no cambia el consumo de datos de esta página.
+  tryConnectEntregas();
 });
+
+// ADDED: conecta (o reintenta) la sincronización de metadatos de entrega si
+// hay una configuración de Firebase guardada. También se reintenta al
+// recuperar conexión, para no perder cambios hechos por otros mientras este
+// dispositivo estuvo sin señal.
+function tryConnectEntregas(){
+  if(isEntregasSynced()) return;
+  var cfg = fbGetConfig();
+  if(!cfg) return;
+  fbInitEntregasOnly(cfg, function(err){
+    if(err) console.warn('No se pudo sincronizar entregas en línea', err);
+  });
+}
+window.addEventListener('online', tryConnectEntregas);
 </script>
 </body>
 </html>
