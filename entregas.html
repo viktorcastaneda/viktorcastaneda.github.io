@@ -297,7 +297,11 @@ body{-webkit-text-size-adjust:100%;overscroll-behavior-y:none}
     <!-- Selector de fecha (misma estructura que reporte-mobile.html → sc-entregas) -->
     <div class="year-nav">
       <div class="ynav-lbl">Fecha de entrega</div>
-      <input type="date" id="ent-fecha" onchange="renderEntregas()"
+      <!-- MODIFIED: oninput además de onchange — en algunos navegadores móviles
+           "change" solo dispara al perder el foco/cerrar el picker, dejando la
+           lista de entregas mostrando la fecha anterior mientras el campo ya
+           muestra la fecha nueva. "input" dispara en cuanto se elige la fecha. -->
+      <input type="date" id="ent-fecha" oninput="renderEntregas()" onchange="renderEntregas()"
         style="padding:6px 12px;border:1.5px solid var(--border);border-radius:8px;font-family:inherit;font-size:14px;background:var(--white);outline:none;color-scheme:light">
     </div>
 
