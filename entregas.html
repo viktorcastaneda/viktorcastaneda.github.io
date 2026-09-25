@@ -4,6 +4,8 @@
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width,initial-scale=1,maximum-scale=1,user-scalable=no">
 <meta name="apple-mobile-web-app-capable" content="yes">
+<!-- ADDED: equivalente estándar — "apple-mobile-web-app-capable" está deprecado -->
+<meta name="mobile-web-app-capable" content="yes">
 <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
 <meta name="apple-mobile-web-app-title" content="Entregas">
 <meta name="theme-color" content="#1a1f2e">
@@ -14,6 +16,9 @@
 <!-- ADDED: PWA — permite "Agregar a pantalla de inicio" para que la app abra
      sin conexión (ver sw-entregas.js) -->
 <link rel="manifest" href="manifest-entregas.json">
+<!-- ADDED: Leaflet (mapa de la ruta del día) — biblioteca gratuita, sin API key -->
+<link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/leaflet/1.9.4/leaflet.min.css">
+<script src="https://cdnjs.cloudflare.com/ajax/libs/leaflet/1.9.4/leaflet.min.js"></script>
 <style>
 /* ═══ Estilos tomados de reporte-mobile.html para mantener consistencia visual ═══ */
 *{box-sizing:border-box;margin:0;padding:0}
@@ -154,17 +159,19 @@ body{-webkit-text-size-adjust:100%;overscroll-behavior-y:none}
   font-family:inherit;font-size:11.5px;font-weight:700;color:var(--blue);cursor:pointer;
   padding:4px 0;-webkit-tap-highlight-color:transparent}
 
-/* ── ADDED: fila de acciones grandes (WhatsApp / Mapa / Entregado) ── */
-.frow-actions{display:grid;grid-template-columns:1fr 1fr 1fr;gap:8px;margin-top:12px}
-.frow-actions.no-loc{grid-template-columns:1fr 1fr}
+/* ── ADDED: fila de acciones grandes (WhatsApp / Mapa / Entregado / Recolectado) ── */
+.frow-actions{display:grid;grid-template-columns:repeat(4,1fr);gap:8px;margin-top:12px}
+.frow-actions.no-loc{grid-template-columns:repeat(3,1fr)}
 .fa-btn{display:flex;flex-direction:column;align-items:center;justify-content:center;gap:3px;
-  padding:11px 6px;border-radius:11px;border:none;font-family:inherit;font-size:11px;font-weight:700;
+  padding:11px 4px;border-radius:11px;border:none;font-family:inherit;font-size:10.5px;font-weight:700;
   cursor:pointer;text-decoration:none;-webkit-tap-highlight-color:transparent;min-height:56px}
-.fa-btn .fi{font-size:19px;line-height:1}
+.fa-btn .fi{font-size:18px;line-height:1}
 .fa-wa{background:#dcfce7;color:#15803d}
 .fa-map{background:#dbeafe;color:var(--blue)}
 .fa-done{background:var(--light);color:var(--mid);border:1.5px solid var(--border)}
 .fa-done.on{background:var(--green);color:#fff;border-color:var(--green)}
+.fa-recol{background:var(--light);color:var(--mid);border:1.5px solid var(--border)}
+.fa-recol.on{background:var(--teal);color:#fff;border-color:var(--teal)}
 
 .order-input-wrap{display:flex;align-items:center;gap:6px;margin-top:8px;
   background:var(--light);border-radius:8px;padding:5px 8px}
@@ -258,6 +265,65 @@ body{-webkit-text-size-adjust:100%;overscroll-behavior-y:none}
 .det-btn-wa{background:#dcfce7;color:#15803d}
 .det-btn-map{background:#dbeafe;color:var(--blue)}
 .det-btn-close{background:var(--light);color:var(--mid)}
+
+/* ── ADDED: ruta de entregas del día (link multi-parada de Google Maps) ── */
+.route-card{background:var(--white);border-radius:12px;border:1px solid var(--border);
+  padding:12px 16px;margin-bottom:12px}
+.route-card-hdr{display:flex;align-items:center;justify-content:space-between;gap:8px;
+  font-size:13px;font-weight:700;color:var(--dark)}
+.route-bodega-tag{font-size:10.5px;font-weight:700;color:var(--mid);background:var(--light);
+  padding:3px 8px;border-radius:8px;white-space:nowrap}
+.route-hint{font-size:11px;color:var(--mid);margin-top:6px;line-height:1.4}
+.route-bodega-row{font-size:12.5px;color:var(--dark);background:var(--light);
+  border-radius:10px;padding:10px 12px;margin-bottom:12px;line-height:1.5}
+.route-bodega-row a{color:var(--blue);font-weight:700;text-decoration:none;margin-left:4px}
+.route-bodega-warn{color:var(--red)}
+.route-mini-btn{background:var(--bbg);color:var(--blue);border:none;border-radius:8px;
+  padding:7px 10px;font-family:inherit;font-size:11.5px;font-weight:700;cursor:pointer;
+  text-decoration:none;display:inline-block;-webkit-tap-highlight-color:transparent}
+.route-stop{border:1px solid var(--border);border-radius:10px;padding:10px 12px;margin-bottom:8px}
+.route-stop-hdr{display:flex;align-items:center;gap:8px;font-size:13px}
+.route-stop-n{background:var(--dark);color:#fff;width:20px;height:20px;border-radius:6px;
+  display:flex;align-items:center;justify-content:center;font-size:11px;font-weight:700;flex-shrink:0}
+.route-stop-name{flex:1;font-weight:600;color:var(--dark)}
+.route-stop-ok{font-size:11px;font-weight:700;color:var(--green)}
+.route-stop-warn{font-size:11px;font-weight:700;color:var(--red)}
+.route-capture{display:flex;flex-wrap:wrap;gap:6px;margin-top:8px}
+.route-geo-input{flex:1;min-width:140px;border:1.5px solid var(--border);border-radius:8px;
+  padding:7px 9px;font-family:var(--fm);font-size:12.5px;outline:none}
+.route-geo-input:focus{border-color:var(--blue)}
+.route-empty{font-size:12.5px;color:var(--mid);padding:10px 2px}
+.route-result-hdr{font-size:11.5px;font-weight:700;color:var(--mid);margin:12px 0 8px;
+  text-transform:uppercase;letter-spacing:.05em}
+.route-link-row{display:flex;align-items:center;gap:8px;margin-bottom:8px;flex-wrap:wrap}
+.route-link-tag{font-size:10.5px;font-weight:700;color:var(--mid)}
+.route-link-open{background:var(--blue);color:#fff}
+
+/* ── ADDED: mapa interactivo de la ruta (reemplaza el link-solamente) ── */
+#ent-map{height:min(320px,42vh);min-height:200px;border-radius:12px;overflow:hidden;
+  margin:2px 0 12px;border:1px solid var(--border);background:var(--light)}
+.route-summary{display:grid;grid-template-columns:1fr 1fr 1fr;gap:8px;margin-bottom:12px}
+.route-sum-card{background:var(--light);border-radius:10px;padding:9px 6px;text-align:center}
+.route-sum-card b{display:block;font-family:var(--fm);font-size:15px;color:var(--dark)}
+.route-sum-card span{font-size:9px;color:var(--mid);text-transform:uppercase;font-weight:700;letter-spacing:.03em}
+.route-eta-row{display:flex;gap:8px;margin-bottom:12px}
+.route-eta-field{flex:1}
+.route-eta-field label{font-size:9.5px;font-weight:700;color:var(--mid);text-transform:uppercase;
+  letter-spacing:.03em;display:block;margin-bottom:3px}
+.route-eta-field input{width:100%;padding:7px 9px;border:1.5px solid var(--border);border-radius:8px;
+  font-family:inherit;font-size:13px;outline:none}
+.route-eta-field input:focus{border-color:var(--blue)}
+.route-suggest-row{display:flex;gap:8px;margin-bottom:12px}
+.route-suggest-row .route-mini-btn{flex:1;padding:9px 8px;text-align:center}
+.route-stop-eta{font-family:var(--fm);font-size:11px;color:var(--blue);font-weight:700;
+  white-space:nowrap;margin-left:auto}
+.route-stop-actions{display:flex;gap:6px;margin-top:8px}
+.divicon-num{width:26px;height:26px;border-radius:50%;background:var(--dark);color:#fff;
+  display:flex;align-items:center;justify-content:center;font-size:12px;font-weight:700;
+  font-family:'DM Sans',sans-serif;border:2px solid #fff;box-shadow:0 1px 4px rgba(0,0,0,.4)}
+.divicon-bod{width:30px;height:30px;border-radius:8px;background:var(--gold);color:#fff;
+  display:flex;align-items:center;justify-content:center;font-size:15px;border:2px solid #fff;
+  box-shadow:0 1px 4px rgba(0,0,0,.4)}
 </style>
 </head>
 <body>
@@ -295,7 +361,11 @@ body{-webkit-text-size-adjust:100%;overscroll-behavior-y:none}
     <!-- Selector de fecha (misma estructura que reporte-mobile.html → sc-entregas) -->
     <div class="year-nav">
       <div class="ynav-lbl">Fecha de entrega</div>
-      <input type="date" id="ent-fecha" onchange="renderEntregas()"
+      <!-- MODIFIED: oninput además de onchange — en algunos navegadores móviles
+           "change" solo dispara al perder el foco/cerrar el picker, dejando la
+           lista de entregas mostrando la fecha anterior mientras el campo ya
+           muestra la fecha nueva. "input" dispara en cuanto se elige la fecha. -->
+      <input type="date" id="ent-fecha" oninput="renderEntregas()" onchange="renderEntregas()"
         style="padding:6px 12px;border:1.5px solid var(--border);border-radius:8px;font-family:inherit;font-size:14px;background:var(--white);outline:none;color-scheme:light">
     </div>
 
@@ -307,6 +377,17 @@ body{-webkit-text-size-adjust:100%;overscroll-behavior-y:none}
         <button class="order-choice" id="ord-manual" onclick="setOrderMode('manual')">✋ Manual</button>
       </div>
       <div class="order-hint" id="order-hint">Ordenado por hora de entrega registrada en el contrato.</div>
+    </div>
+
+    <!-- MODIFIED: ahora abre el mapa de la ruta del día (antes solo generaba
+         un link de Google Maps sin poder ver todas las paradas a la vez) -->
+    <div class="route-card">
+      <div class="route-card-hdr">
+        <span>🗺️ Mapa de la ruta</span>
+        <span class="route-bodega-tag" id="route-bodega-tag">Bodega no configurada</span>
+      </div>
+      <div class="route-hint">Visualiza todas las paradas del día en el mapa, ordénalas y genera la navegación en Google Maps.</div>
+      <button class="wbtn wbtn-p" style="margin:10px 0 0;padding:11px" onclick="openRouteSheet()">Ver mapa de entregas ›</button>
     </div>
 
     <div class="mgrid" id="ent-cards"></div>
@@ -397,6 +478,50 @@ body{-webkit-text-size-adjust:100%;overscroll-behavior-y:none}
   <button class="wbtn wbtn-g" onclick="closeFbSheet()">Cancelar</button>
 </div>
 
+<!-- MODIFIED: hoja de ruta de entregas — ahora con mapa interactivo (Leaflet +
+     MapTiler) para ver todas las paradas a la vez, reordenarlas (▲▼, se
+     guarda en línea en casvel_entregas vía setManualOrder) y solo al final
+     generar el link de navegación de Google Maps. -->
+<div class="fb-sbg" id="route-sbg" onclick="closeRouteSheet()"></div>
+<div class="fb-sheet" id="route-sheet" style="max-height:92vh;overflow-y:auto">
+  <div class="shandle"></div>
+  <div class="sttitle">🗺️ Ruta de entregas</div>
+  <div class="stsub" id="route-sub">—</div>
+
+  <div class="route-bodega-row" id="route-bodega-row"></div>
+
+  <div id="ent-map"></div>
+
+  <div class="route-summary" id="route-summary">
+    <div class="route-sum-card"><b id="route-sum-count">0</b><span>Entregas</span></div>
+    <div class="route-sum-card"><b id="route-sum-dist">—</b><span>Distancia</span></div>
+    <div class="route-sum-card"><b id="route-sum-time">—</b><span>Tiempo</span></div>
+  </div>
+
+  <div class="route-eta-row">
+    <div class="route-eta-field"><label>Salida</label>
+      <input type="time" id="route-start" value="09:00" onchange="recalcRouteETA()"></div>
+    <div class="route-eta-field"><label>Min. por parada</label>
+      <input type="number" id="route-dwell" value="20" min="0" onchange="recalcRouteETA()"></div>
+  </div>
+
+  <label style="display:flex;align-items:center;gap:8px;font-size:12.5px;font-weight:600;color:var(--dark);margin:4px 0 14px">
+    <input type="checkbox" id="route-roundtrip"> Regresar a la bodega al terminar
+  </label>
+
+  <div class="route-suggest-row">
+    <button class="route-mini-btn" onclick="suggestRouteOrder()">🧭 Sugerir orden más corto</button>
+    <button class="route-mini-btn" onclick="resetToHoraOrder()">↺ Por hora</button>
+  </div>
+
+  <div class="route-stops" id="route-stops"></div>
+
+  <div id="route-result"></div>
+
+  <button class="wbtn wbtn-p" onclick="generateRoute()">🚗 Abrir en Google Maps para navegar</button>
+  <button class="wbtn wbtn-g" onclick="closeRouteSheet()">Cerrar</button>
+</div>
+
 <div id="mtoast"></div>
 
 <script src="shared.js"></script>
@@ -418,13 +543,17 @@ body{-webkit-text-size-adjust:100%;overscroll-behavior-y:none}
 
 var OFFLINE_KEY = 'casvel_entregas_offline';
 var LASTSYNC_KEY = 'casvel_entregas_last_sync';
-var ORDER_KEY = 'casvel_entregas_order';   // {mode:'hora'|'manual', manual:{ "fecha|id": n }}
-var DONE_KEY = 'casvel_entregas_done';     // {"fecha|id": true} — checklist local del repartidor
+var ORDER_KEY = 'casvel_entregas_order';   // {mode:'hora'|'manual'} — preferencia local de vista
+// MODIFIED: el orden manual, "entregado" y "recolectado" ya NO viven en estas
+// claves — se sincronizan entre dispositivos vía shared.js (casvel_entregas /
+// Firebase). Las claves de abajo son legacy, solo se leen una vez para migrar.
+var LEGACY_DONE_KEY = 'casvel_entregas_done';
+var MIGRATED_KEY = 'casvel_entregas_meta_migrated';
 var INSTALL_DISMISS_KEY = 'casvel_entregas_install_dismiss';
 
 var todayISO_val = todayISO();
 var orderState = loadOrderState();
-var doneState = loadDoneState();
+var entMeta = {};   // ADDED: caché en memoria de metadatos de entrega sincronizados (ver onEntregasChange)
 
 function el(id){ return document.getElementById(id); }
 function mxn(n){
@@ -472,15 +601,18 @@ function updateSyncBar(){
   el('sync-last-txt').textContent = fmtLastSync();
 }
 
-/* ─── Orden de entrega configurable (sólo local) ──────────────── */
+/* ─── Orden de entrega: el modo (hora/manual) es preferencia de ESTE
+   dispositivo; el número asignado a cada contrato SÍ se sincroniza (ver
+   bloque de metadatos de entrega, más abajo). ─────────────────────── */
 function loadOrderState(){
   try{
     var raw = localStorage.getItem(ORDER_KEY);
-    return raw ? JSON.parse(raw) : {mode:'hora', manual:{}};
-  }catch(e){ return {mode:'hora', manual:{}}; }
+    var parsed = raw ? JSON.parse(raw) : null;
+    return {mode:(parsed && parsed.mode==='manual')?'manual':'hora'};
+  }catch(e){ return {mode:'hora'}; }
 }
 function saveOrderState(){
-  localStorage.setItem(ORDER_KEY, JSON.stringify(orderState));
+  localStorage.setItem(ORDER_KEY, JSON.stringify({mode:orderState.mode}));
 }
 function setOrderMode(mode){
   orderState.mode = mode;
@@ -488,37 +620,89 @@ function setOrderMode(mode){
   el('ord-hora').classList.toggle('on', mode==='hora');
   el('ord-manual').classList.toggle('on', mode==='manual');
   el('order-hint').textContent = mode==='manual'
-    ? 'Asigna un número a cada contrato (1, 2, 3…) para fijar tu ruta. Se guarda en este dispositivo.'
+    ? 'Asigna un número a cada contrato (1, 2, 3…) para fijar tu ruta. Se sincroniza entre dispositivos.'
     : 'Ordenado por hora de entrega registrada en el contrato.';
   renderEntregas();
-}
-function orderKeyFor(fecha, id){ return fecha+'|'+id; }
-function getManualOrder(fecha, id){
-  var v = orderState.manual[orderKeyFor(fecha,id)];
-  return (v===undefined||v===null||v==='') ? null : Number(v);
-}
-function setManualOrder(fecha, id, val){
-  var k = orderKeyFor(fecha,id);
-  if(val===''||val===null||isNaN(val)) delete orderState.manual[k];
-  else orderState.manual[k] = Number(val);
-  saveOrderState();
+  // ADDED: mantiene el orden de la hoja de ruta consistente si está abierta
+  if(el('route-sheet') && el('route-sheet').classList.contains('on')) renderRouteSheet();
 }
 
-/* ─── ADDED: checklist de "entregado" — solo local, no se sincroniza a la
-   oficina ni modifica el contrato (así lo pidieron: control propio del
-   repartidor para su ruta del día). Se guarda por fecha+id, así que un
-   contrato reprogramado a otro día vuelve a aparecer sin marcar. ────── */
-function loadDoneState(){
-  try{ return JSON.parse(localStorage.getItem(DONE_KEY)||'{}'); }
-  catch(e){ return {}; }
+/* ═══════════════════════════════════════════════════════════════════
+   ADDED: Metadatos de entrega EN LÍNEA (orden manual / entregado /
+   recolectado). Antes vivían solo en localStorage de este dispositivo
+   (orderState.manual y un checklist aparte); ahora se leen/escriben a
+   través de shared.js (entregaKey/saveEntregaMeta/onEntregasChange), que
+   sincroniza con Firebase igual que los contratos, para que cualquier
+   repartidor vea y actualice la misma ruta del día. `entMeta` es la
+   copia en memoria que el listener registrado en el arranque mantiene
+   al día (ver DOMContentLoaded, al final del archivo). ────────────────
+   ═══════════════════════════════════════════════════════════════════ */
+function getManualOrder(fecha, id){
+  var m = entMeta[entregaKey(fecha,id)];
+  return (m && m.orden!==undefined && m.orden!==null) ? Number(m.orden) : null;
 }
-function saveDoneState(){ localStorage.setItem(DONE_KEY, JSON.stringify(doneState)); }
-function isDelivered(fecha, id){ return !!doneState[orderKeyFor(fecha,id)]; }
+function setManualOrder(fecha, id, val){
+  var patch = (val===''||val===null||isNaN(val)) ? {orden:null} : {orden:Number(val)};
+  saveEntregaMeta(fecha, id, patch);
+}
+function isDelivered(fecha, id){
+  var m = entMeta[entregaKey(fecha,id)];
+  return !!(m && m.entregado);
+}
 function toggleDelivered(fecha, id){
-  var k = orderKeyFor(fecha,id);
-  if(doneState[k]) delete doneState[k]; else doneState[k] = Date.now();
-  saveDoneState();
-  renderEntregas();
+  var cur = isDelivered(fecha, id);
+  saveEntregaMeta(fecha, id, {entregado: !cur, entregadoAt: !cur ? Date.now() : null});
+}
+// ADDED: marcar el servicio como recolectado (independiente de "entregado")
+function isCollected(fecha, id){
+  var m = entMeta[entregaKey(fecha,id)];
+  return !!(m && m.recolectado);
+}
+function toggleCollected(fecha, id){
+  var cur = isCollected(fecha, id);
+  saveEntregaMeta(fecha, id, {recolectado: !cur, recolectadoAt: !cur ? Date.now() : null});
+}
+
+// ADDED: migra una sola vez el orden manual y el checklist "entregado" que
+// vivían solo en este dispositivo (versión anterior) hacia el store
+// sincronizado, para no perder lo que ya había capturado el repartidor.
+function migrateLegacyEntregasData(){
+  if(localStorage.getItem(MIGRATED_KEY)==='1') return;
+  try{
+    var rawOrder = localStorage.getItem(ORDER_KEY);
+    var legacyManual = null;
+    if(rawOrder){
+      var parsed = JSON.parse(rawOrder);
+      if(parsed && parsed.manual) legacyManual = parsed.manual;
+    }
+    var legacyDone = null;
+    var rawDone = localStorage.getItem(LEGACY_DONE_KEY);
+    if(rawDone) legacyDone = JSON.parse(rawDone);
+
+    var keys = {};
+    if(legacyManual) Object.keys(legacyManual).forEach(function(k){ keys[k]=1; });
+    if(legacyDone) Object.keys(legacyDone).forEach(function(k){ keys[k]=1; });
+
+    Object.keys(keys).forEach(function(k){
+      var sep = k.indexOf('|');
+      if(sep<0) return;
+      var fecha = k.slice(0,sep), id = k.slice(sep+1);
+      var patch = {};
+      if(legacyManual && legacyManual[k]!==undefined && legacyManual[k]!==null) patch.orden = Number(legacyManual[k]);
+      if(legacyDone && legacyDone[k]){ patch.entregado = true; patch.entregadoAt = Number(legacyDone[k])||Date.now(); }
+      if(Object.keys(patch).length) saveEntregaMeta(fecha, id, patch);
+    });
+  } catch(e){ /* datos legacy corruptos — se ignoran, no bloquean la app */ }
+
+  try{
+    var rawOrder2 = localStorage.getItem(ORDER_KEY);
+    if(rawOrder2){
+      var parsed2 = JSON.parse(rawOrder2);
+      if(parsed2 && parsed2.manual) localStorage.setItem(ORDER_KEY, JSON.stringify({mode:parsed2.mode||'hora'}));
+    }
+  }catch(e){}
+  localStorage.removeItem(LEGACY_DONE_KEY);
+  localStorage.setItem(MIGRATED_KEY,'1');
 }
 
 /* ─── Sincronización manual con Firebase ──────────────────────── */
@@ -594,6 +778,7 @@ function mFbConnect(){
 }
 function mFbDisconnect(){
   fbClearConfig(); closeFbSheet();
+  _resetToLocalCache();   // ADDED: cierra refs en vivo (incluye metadatos de entrega)
   updateFbBadge(false);
   showToast('⬡ Desconectado. La copia local sigue disponible.');
 }
@@ -663,6 +848,7 @@ function renderEntregas(){
     var recolH=c.hRecolL||c.hRecol||'';
     var manualVal = getManualOrder(fecha, c.id);
     var delivered = isDelivered(fecha, c.id);
+    var collected = isCollected(fecha, c.id);
     var resta = resolveStatus(c)==='cerrado'?0:(c.resta||0);
     var orderTag = orderState.mode==='manual'
       ? '<div class="order-tag">'+(manualVal!==null?manualVal:(idx+1))+'</div>'
@@ -672,9 +858,10 @@ function renderEntregas(){
           '<input class="order-input" type="number" min="1" value="'+(manualVal!==null?manualVal:'')+'" '+
           'placeholder="'+(idx+1)+'" onchange="setManualOrder(\''+fecha+'\',\''+c.id+'\',this.value);renderEntregas();"></div>'
       : '';
-    // ADDED: 3 acciones grandes siempre visibles — no hay que abrir la ficha
-    // para llamar/ver mapa/marcar entregado. "Entregado" es un checklist
-    // local del repartidor: no modifica el contrato ni notifica a la oficina.
+    // ADDED: acciones grandes siempre visibles — no hay que abrir la ficha
+    // para llamar/ver mapa/marcar entregado o recolectado. Ambos estados se
+    // sincronizan en línea (ver saveEntregaMeta en shared.js): cualquier
+    // repartidor o la oficina ve el mismo estado, sin modificar el contrato.
     var actionsHTML='<div class="frow-actions'+(c.ubicacion?'':' no-loc')+'">'+
       (c.tel
         ? '<a class="fa-btn fa-wa" href="https://wa.me/'+waNum+'" target="_blank" onclick="event.stopPropagation()"><span class="fi">💬</span>WhatsApp</a>'
@@ -684,6 +871,9 @@ function renderEntregas(){
         : '')+
       '<button class="fa-btn fa-done'+(delivered?' on':'')+'" onclick="event.stopPropagation();toggleDelivered(\''+fecha+'\',\''+c.id+'\')">'+
         '<span class="fi">'+(delivered?'✅':'⚪')+'</span>'+(delivered?'Entregado':'Marcar')+
+      '</button>'+
+      '<button class="fa-btn fa-recol'+(collected?' on':'')+'" onclick="event.stopPropagation();toggleCollected(\''+fecha+'\',\''+c.id+'\')">'+
+        '<span class="fi">'+(collected?'✅':'📦')+'</span>'+(collected?'Recolectado':'Recolectar')+
       '</button>'+
     '</div>';
     return '<div class="frow'+(delivered?' done':'')+'" onclick="openDetailSheet(\''+c.id+'\')">'+
@@ -768,6 +958,481 @@ function closeDetailSheet(){
 }
 
 /* ═══════════════════════════════════════════════════════════════
+   RUTA DE ENTREGAS — mapa interactivo (Leaflet + MapTiler) con todas
+   las paradas del día a la vez, más el link final de navegación de
+   Google Maps. NO usa Google My Maps: ese producto no tiene una API
+   pública para crear/editar capas por código (es un editor pensado
+   para usarse a mano en mymaps.google.com).
+
+   MODIFIED (integración desde el POC entregas-mapa-poc.html): antes
+   esta hoja solo generaba el link de Google Maps sin poder ver todas
+   las paradas juntas (el link de navegación admite máx. 3 paradas en
+   celular). Ahora se ve el mapa completo primero, se puede reordenar
+   o pedir un orden sugerido, y solo al final se genera el link de
+   navegación con generateRoute() (sin cambios).
+
+   A diferencia del POC (que probaba el orden en una clave de
+   localStorage propia, aislada), aquí reordenar ESCRIBE en línea en
+   la colección casvel_entregas (vía setManualOrder → saveEntregaMeta,
+   ya sincronizado con Firebase) — es el mismo campo "orden" que usa
+   el modo manual del listado principal, así que mover una parada en
+   el mapa también reordena la lista de "Contratos a entregar" y
+   cualquier repartidor con la página abierta ve el cambio.
+
+   Coordenadas: se intenta extraer del link guardado en c.ubicacion
+   (funciona con links completos de Maps/Waze). Si el link está
+   acortado (maps.app.goo.gl, goo.gl/maps, waze.com/ul sin "ll=") no
+   trae coordenadas legibles y no se puede resolver solo — en ese
+   caso se pide una captura manual (pegar coordenadas o usar la
+   ubicación GPS del dispositivo). Ambas formas (parseada o manual) se
+   guardan con el mismo mecanismo sincronizado que ya usa esta página
+   para orden/entregado (saveEntregaMeta), para no volver a resolverla
+   en cada carga ni en otro dispositivo.
+   ═══════════════════════════════════════════════════════════════ */
+var BODEGA_KEY = 'casvel_bodega';            // {lat,lng,label} — punto de partida fijo
+var ROUTE_RT_KEY = 'casvel_route_roundtrip'; // '1'/'0' — preferencia local de "ida y vuelta"
+var map, markersLayer, routeLine;            // ADDED: estado del mapa Leaflet
+var _geoCachedThisSession = {};              // ADDED: evita reescribir el mismo geo parseado varias veces por sesión
+
+// ADDED: API key gratuita de MapTiler (100,000 tiles/mes + 5,000 sesiones/mes
+// gratis, sin tarjeta) — la misma que Victor configuró en el POC. Se
+// recomienda restringirla por dominio en cloud.maptiler.com antes de
+// depender de ella a largo plazo, ya que este repositorio es público.
+var MAPTILER_KEY = 'KhEjJDJ6fvaPtxtPvSNx';
+
+function getBodega(){
+  try{ return JSON.parse(localStorage.getItem(BODEGA_KEY)||'null'); }catch(e){ return null; }
+}
+function saveBodega(b){ localStorage.setItem(BODEGA_KEY, JSON.stringify(b)); }
+function fmtCoord(g){ return g.lat.toFixed(6)+','+g.lng.toFixed(6); }
+
+// Extrae {lat,lng} de un link de Google Maps o Waze cuando la URL los trae
+// expuestos. No hace peticiones de red (los links cortos no se pueden
+// resolver desde el navegador sin un backend) — si no encuentra nada
+// coincidente regresa null y el llamador cae a la captura manual.
+function parseLatLngFromLink(url){
+  if(!url) return null;
+  var s = String(url);
+  try{ s = decodeURIComponent(s); }catch(e){}
+  var pats=[
+    /[?&]q=(-?\d{1,3}\.\d+),\s*(-?\d{1,3}\.\d+)/,   // Google Maps: ?q=lat,lng
+    /[?&]ll=(-?\d{1,3}\.\d+),\s*(-?\d{1,3}\.\d+)/,  // Waze / Maps: ?ll=lat,lng
+    /!3d(-?\d{1,3}\.\d+)!4d(-?\d{1,3}\.\d+)/,       // Maps: detalle de lugar (!3d..!4d..)
+    /@(-?\d{1,3}\.\d+),(-?\d{1,3}\.\d+)/            // Maps: .../@lat,lng,zoomz
+  ];
+  for(var i=0;i<pats.length;i++){
+    var m=s.match(pats[i]);
+    if(m){
+      var lat=parseFloat(m[1]), lng=parseFloat(m[2]);
+      if(!isNaN(lat)&&!isNaN(lng)&&Math.abs(lat)<=90&&Math.abs(lng)<=180) return {lat:lat,lng:lng};
+    }
+  }
+  return null;
+}
+
+// Prioriza una captura manual/parseada ya guardada (evita volver a parsear
+// o pedir el dato cada vez) y si no existe intenta leerla del link guardado
+// en el contrato. MODIFIED: cuando el link SÍ trae coordenadas legibles, se
+// guardan en casvel_entregas (source:'parsed') para que quede resuelta en
+// línea igual que una captura manual, y no haya que volver a parsearla en
+// cada carga ni en otro dispositivo — protegido con _geoCachedThisSession
+// para no reescribir el mismo contrato varias veces mientras Firebase
+// todavía no refleja la escritura anterior en entMeta.
+function resolveContractGeo(fecha, c){
+  var key = entregaKey(fecha,c.id);
+  var meta = entMeta[key];
+  if(meta && meta.geo && typeof meta.geo.lat==='number') return meta.geo;
+  var parsed = parseLatLngFromLink(c.ubicacion);
+  if(parsed && !_geoCachedThisSession[key]){
+    _geoCachedThisSession[key] = true;
+    saveEntregaMeta(fecha, c.id, {geo:{lat:parsed.lat,lng:parsed.lng,source:'parsed'}});
+  }
+  return parsed;
+}
+
+/* ─── Mapa (Leaflet + MapTiler) — portado de entregas-mapa-poc.html ─── */
+// ADDED: aviso amigable (en vez de un error de JS que rompa toda la hoja de
+// ruta) si el script de Leaflet no llegó a cargar — por ejemplo sin señal o
+// con un firewall que bloquea cdnjs.cloudflare.com. Con esto, aunque el
+// mapa no se pueda dibujar, la lista de paradas, el reordenar y el link de
+// navegación de Google Maps siguen funcionando con normalidad.
+function mapUnavailableBanner(host, msg){
+  host.innerHTML =
+    '<div style="height:100%;display:flex;align-items:center;justify-content:center;'+
+    'text-align:center;padding:20px;color:var(--mid);font-size:12.5px;line-height:1.6">'+
+    '<div>🗺️ '+msg+'</div></div>';
+}
+function ensureMap(){
+  if(map) return;
+  var host = el('ent-map'); if(!host) return;
+  if(typeof L === 'undefined'){
+    mapUnavailableBanner(host, '<strong>No se pudo cargar la librería del mapa.</strong><br>Revisa tu conexión — la lista y la navegación de Google Maps abajo funcionan igual.');
+    return;
+  }
+  if(!MAPTILER_KEY || MAPTILER_KEY==='TU_API_KEY_AQUI'){
+    mapUnavailableBanner(host,
+      '<strong>Falta configurar el mapa</strong><br>'+
+      'Crea una API key gratuita (sin tarjeta) en '+
+      '<a href="https://www.maptiler.com/cloud/" target="_blank" style="color:var(--blue);font-weight:700">maptiler.com/cloud</a>'+
+      ' y pégala en la variable <code>MAPTILER_KEY</code>.');
+    return;
+  }
+  try{
+    map=L.map('ent-map').setView([25.6866,-100.3161],12); // fallback: área metropolitana de Monterrey
+    var tiles=L.tileLayer('https://api.maptiler.com/maps/streets-v4/256/{z}/{x}/{y}.png?key='+MAPTILER_KEY,{
+      maxZoom:20,
+      attribution:'&copy; <a href="https://www.maptiler.com/copyright/" target="_blank">MapTiler</a> '+
+        '&copy; <a href="https://www.openstreetmap.org/copyright" target="_blank">OpenStreetMap</a> contributors'
+    }).addTo(map);
+    var tileErrorShown=false;
+    tiles.on('tileerror', function(){
+      if(tileErrorShown) return;
+      tileErrorShown=true;
+      showToast('⚠️ Error cargando el mapa — revisa la API key de MapTiler');
+    });
+    markersLayer=L.layerGroup().addTo(map);
+    // Leaflet a veces calcula mal el tamaño si el contenedor no tenía su
+    // tamaño final al crear el mapa (hoja apenas abriéndose) — esto corrige
+    // mapas que se ven cortados o con los tiles desalineados.
+    setTimeout(function(){ if(map) map.invalidateSize(); }, 250);
+  }catch(e){
+    console.error('No se pudo inicializar el mapa', e);
+    map=null; markersLayer=null;
+    mapUnavailableBanner(host, '<strong>No se pudo mostrar el mapa.</strong><br>La lista y la navegación de Google Maps abajo funcionan igual.');
+  }
+}
+function numIcon(n){
+  return L.divIcon({className:'',html:'<div class="divicon-num">'+n+'</div>',iconSize:[26,26],iconAnchor:[13,13]});
+}
+function bodIcon(){
+  return L.divIcon({className:'',html:'<div class="divicon-bod">🏬</div>',iconSize:[30,30],iconAnchor:[15,15]});
+}
+
+// Mismo filtro/orden que renderEntregas() — se mantiene aparte (en vez de
+// refactorizar renderEntregas) para no tocar esa función ya probada.
+function getEntregasListForRoute(fecha){
+  var all=loadOffline();
+  var list=all.filter(function(c){ return c.fEvento===fecha && resolveStatus(c)!=='cancelado'; });
+  if(orderState.mode==='manual'){
+    list.sort(function(a,b){
+      var oa=getManualOrder(fecha,a.id), ob=getManualOrder(fecha,b.id);
+      if(oa===null && ob===null) return (a.hEntrega||'').localeCompare(b.hEntrega||'');
+      if(oa===null) return 1;
+      if(ob===null) return -1;
+      return oa-ob;
+    });
+  } else {
+    list.sort(function(a,b){ return (a.hEntrega||'').localeCompare(b.hEntrega||''); });
+  }
+  return list;
+}
+
+function refreshRouteBadge(){
+  var tag=el('route-bodega-tag'); if(!tag) return;
+  var b=getBodega();
+  tag.textContent = b ? ('📍 '+(b.label||fmtCoord(b))) : 'Bodega no configurada';
+}
+
+function openBodegaCapture(){
+  var cur=getBodega();
+  var raw=prompt('Coordenadas de la bodega (lat,lng). Ábrela en Google Maps, mantén presionado el punto exacto y copia las coordenadas que aparecen abajo:', cur?fmtCoord(cur):'');
+  if(raw===null) return;
+  var m=raw.trim().match(/(-?\d{1,3}\.\d+)\s*,\s*(-?\d{1,3}\.\d+)/);
+  if(!m){ showToast('⚠️ Formato inválido, usa lat,lng'); return; }
+  var lat=parseFloat(m[1]), lng=parseFloat(m[2]);
+  if(Math.abs(lat)>90||Math.abs(lng)>180){ showToast('⚠️ Coordenadas fuera de rango'); return; }
+  var label=prompt('Nombre para identificarla (opcional):', (cur&&cur.label)||'Bodega CASVEL')||'Bodega CASVEL';
+  saveBodega({lat:lat,lng:lng,label:label});
+  showToast('✅ Bodega guardada');
+  refreshRouteBadge();
+  renderRouteSheet();
+}
+
+function captureManualGeo(fecha,id){
+  var input=el('geo-in-'+id);
+  var raw=(input&&input.value||'').trim();
+  var m=raw.match(/(-?\d{1,3}\.\d+)\s*,\s*(-?\d{1,3}\.\d+)/);
+  if(!m){ showToast('⚠️ Escribe las coordenadas como lat,lng'); return; }
+  var lat=parseFloat(m[1]), lng=parseFloat(m[2]);
+  if(Math.abs(lat)>90||Math.abs(lng)>180){ showToast('⚠️ Coordenadas fuera de rango'); return; }
+  saveEntregaMeta(fecha,id,{geo:{lat:lat,lng:lng,source:'manual'}});
+  showToast('✅ Ubicación guardada');
+  renderRouteSheet();
+}
+
+function useMyLocationFor(fecha,id){
+  if(!navigator.geolocation){ showToast('⚠️ Tu navegador no soporta geolocalización'); return; }
+  showToast('📍 Obteniendo tu ubicación...');
+  navigator.geolocation.getCurrentPosition(function(pos){
+    saveEntregaMeta(fecha,id,{geo:{lat:pos.coords.latitude,lng:pos.coords.longitude,source:'gps'}});
+    showToast('✅ Ubicación guardada');
+    renderRouteSheet();
+  }, function(){
+    showToast('⚠️ No se pudo obtener tu ubicación');
+  }, {enableHighAccuracy:true, timeout:10000});
+}
+
+function openRouteSheet(){
+  renderRouteSheet();
+  el('route-sheet').classList.add('on');
+  el('route-sbg').classList.add('on');
+}
+function closeRouteSheet(){
+  el('route-sheet').classList.remove('on');
+  el('route-sbg').classList.remove('on');
+}
+
+function renderRouteSheet(){
+  var fecha=(el('ent-fecha')||{value:todayISO_val}).value||todayISO_val;
+  var list=getEntregasListForRoute(fecha);
+  el('route-sub').textContent=list.length+' entrega'+(list.length!==1?'s':'')+' · '+fmtDate(fecha);
+
+  var bodega=getBodega();
+  el('route-bodega-row').innerHTML = bodega
+    ? ('🏬 Bodega: <strong>'+(bodega.label||fmtCoord(bodega))+'</strong><a href="javascript:void(0)" onclick="openBodegaCapture()">Cambiar</a>')
+    : ('<span class="route-bodega-warn">⚠️ No has configurado la ubicación de tu bodega.</span><br>'+
+       '<button class="route-mini-btn" style="margin-top:6px" onclick="openBodegaCapture()">Configurar bodega</button>');
+
+  el('route-roundtrip').checked = localStorage.getItem(ROUTE_RT_KEY)==='1';
+  el('route-sum-count').textContent = list.length;
+
+  ensureMap();
+  var mapReady = !!(map && markersLayer);
+
+  if(list.length===0){
+    if(mapReady){ markersLayer.clearLayers(); if(routeLine){ map.removeLayer(routeLine); routeLine=null; } }
+    el('route-stops').innerHTML='<div class="route-empty">No hay entregas programadas este día.</div>';
+    el('route-result').innerHTML='';
+    el('route-sum-dist').textContent='—'; el('route-sum-time').textContent='—';
+    return;
+  }
+
+  var stopsWithGeo=[], bounds=[];
+  if(mapReady){
+    markersLayer.clearLayers();
+    if(routeLine){ map.removeLayer(routeLine); routeLine=null; }
+    if(bodega){
+      L.marker([bodega.lat,bodega.lng],{icon:bodIcon()}).addTo(markersLayer)
+        .bindPopup('<strong>🏬 '+(bodega.label||'Bodega')+'</strong>');
+      bounds.push([bodega.lat,bodega.lng]);
+    }
+  }
+
+  el('route-stops').innerHTML = list.map(function(c,idx){
+    var g = resolveContractGeo(fecha,c);
+    if(g){
+      stopsWithGeo.push(g);
+      if(mapReady){
+        bounds.push([g.lat,g.lng]);
+        L.marker([g.lat,g.lng],{icon:numIcon(idx+1)}).addTo(markersLayer)
+          .bindPopup('<strong>'+(idx+1)+'. '+(c.nombre||'Sin nombre')+'</strong><br>'+(c.hEntregaL||c.hEntrega||''));
+      }
+    }
+    return '<div class="route-stop">'+
+      '<div class="route-stop-hdr"><span class="route-stop-n">'+(idx+1)+'</span>'+
+        '<span class="route-stop-name">'+(c.nombre||'Sin nombre')+'</span>'+
+        '<span class="route-stop-eta" id="route-eta-'+c.id+'"></span>'+
+        (g?'<span class="route-stop-ok">✓ Ubicada</span>':'<span class="route-stop-warn">⚠️ Falta ubicación</span>')+
+      '</div>'+
+      '<div class="route-stop-actions">'+
+        '<button class="route-mini-btn" onclick="moveRouteStop(\''+fecha+'\','+idx+',-1)"'+(idx===0?' disabled style="opacity:.35"':'')+'>▲ Subir</button>'+
+        '<button class="route-mini-btn" onclick="moveRouteStop(\''+fecha+'\','+idx+',1)"'+(idx===list.length-1?' disabled style="opacity:.35"':'')+'>▼ Bajar</button>'+
+        (c.ubicacion?'<a href="'+c.ubicacion+'" target="_blank" class="route-mini-btn">Abrir link ↗</a>':'')+
+      '</div>'+
+      (g?'':(
+        '<div class="route-capture">'+
+          '<input type="text" id="geo-in-'+c.id+'" class="route-geo-input" placeholder="lat,lng — ej. 25.686613,-100.316116">'+
+          '<button class="route-mini-btn" onclick="captureManualGeo(\''+fecha+'\',\''+c.id+'\')">Guardar</button>'+
+          '<button class="route-mini-btn" onclick="useMyLocationFor(\''+fecha+'\',\''+c.id+'\')">📍 Mi ubicación</button>'+
+        '</div>'
+      ))+
+    '</div>';
+  }).join('');
+
+  if(mapReady){
+    if(bounds.length>1) map.fitBounds(bounds,{padding:[36,36]});
+    else if(bounds.length===1) map.setView(bounds[0],14);
+  }
+
+  el('route-result').innerHTML='';
+
+  if(bodega && stopsWithGeo.length){
+    var points=[{lat:bodega.lat,lng:bodega.lng}].concat(stopsWithGeo);
+    fetchRoute(fecha, list, points);
+  } else {
+    el('route-sum-dist').textContent='—'; el('route-sum-time').textContent='—';
+  }
+}
+
+// ADDED: intercambia el "orden" (casvel_entregas) de dos paradas adyacentes.
+// Si algún contrato del día aún no tenía un orden manual explícito, primero
+// se le asigna uno secuencial (1..N según el orden visible actual) para no
+// mezclar valores null (que se ordenan por hora) con los ya movidos a mano.
+function moveRouteStop(fecha, idx, dir){
+  var list=getEntregasListForRoute(fecha);
+  var j=idx+dir;
+  if(j<0 || j>=list.length) return;
+  list.forEach(function(c,i){
+    if(getManualOrder(fecha,c.id)===null) setManualOrder(fecha,c.id,i+1);
+  });
+  var a=list[idx], b=list[j];
+  var oa=getManualOrder(fecha,a.id), ob=getManualOrder(fecha,b.id);
+  setManualOrder(fecha, a.id, ob);
+  setManualOrder(fecha, b.id, oa);
+  if(orderState.mode!=='manual') setOrderMode('manual');
+  else renderRouteSheet();
+}
+
+/* ─── Sugerir orden más corto: heurística de vecino más cercano (línea
+   recta / haversine) partiendo de la bodega — aproximación simple, no el
+   óptimo real, pero da un buen punto de partida para 1-10 paradas.
+   MODIFIED (vs. POC): en vez de guardar en una clave local aparte, escribe
+   el resultado directamente como orden manual en casvel_entregas. ───── */
+function haversine(a,b){
+  var R=6371, dLat=(b.lat-a.lat)*Math.PI/180, dLng=(b.lng-a.lng)*Math.PI/180;
+  var s=Math.sin(dLat/2)*Math.sin(dLat/2)+Math.cos(a.lat*Math.PI/180)*Math.cos(b.lat*Math.PI/180)*Math.sin(dLng/2)*Math.sin(dLng/2);
+  return 2*R*Math.asin(Math.sqrt(s));
+}
+function suggestRouteOrder(){
+  var fecha=(el('ent-fecha')||{value:todayISO_val}).value||todayISO_val;
+  var bodega=getBodega();
+  if(!bodega){ showToast('⚠️ Configura primero la ubicación de tu bodega'); openBodegaCapture(); return; }
+  var list=getEntregasListForRoute(fecha);
+  var withGeo=[], noGeo=[];
+  list.forEach(function(c){
+    var g=resolveContractGeo(fecha,c);
+    if(g) withGeo.push({c:c,g:g}); else noGeo.push(c);
+  });
+  if(noGeo.length) showToast('⚠️ Faltan coordenadas de: '+noGeo.map(function(c){return c.nombre||'Sin nombre';}).join(', '));
+  var remaining=withGeo.slice(), order=[], cur=bodega;
+  while(remaining.length){
+    var bestI=0, bestD=Infinity;
+    remaining.forEach(function(item,i){
+      var d=haversine(cur,item.g);
+      if(d<bestD){ bestD=d; bestI=i; }
+    });
+    var chosen=remaining.splice(bestI,1)[0];
+    order.push(chosen.c); cur=chosen.g;
+  }
+  noGeo.forEach(function(c){ order.push(c); }); // sin coords, al final
+  order.forEach(function(c,i){ setManualOrder(fecha, c.id, i+1); });
+  if(orderState.mode!=='manual') setOrderMode('manual');
+  else renderRouteSheet();
+  showToast('🧭 Orden sugerido (por distancia en línea recta desde la bodega)');
+}
+function resetToHoraOrder(){ setOrderMode('hora'); }
+function recalcRouteETA(){ renderRouteSheet(); }
+
+/* ─── OSRM: ruta real dibujada + distancia/tiempo/ETA por parada
+   (servidor demo público, gratis pero NO apto para producción pesada —
+   suficiente para esta app de uso personal). Portado del POC. ────────── */
+function fetchRoute(fecha, list, points){
+  var coords=points.map(function(p){ return p.lng+','+p.lat; }).join(';');
+  var url='https://router.project-osrm.org/route/v1/driving/'+coords+'?overview=full&geometries=geojson&steps=false';
+  fetch(url).then(function(r){ return r.json(); }).then(function(data){
+    if(!data.routes || !data.routes[0]){ showToast('⚠️ No se pudo calcular la ruta (servidor OSRM)'); return; }
+    var route=data.routes[0];
+    if(!map) return; // la hoja pudo cerrarse mientras se esperaba la respuesta
+    if(routeLine){ map.removeLayer(routeLine); }
+    var latlngs=route.geometry.coordinates.map(function(pt){ return [pt[1],pt[0]]; });
+    routeLine=L.polyline(latlngs,{color:'#2563a8',weight:4,opacity:.75}).addTo(map);
+
+    el('route-sum-dist').textContent=(route.distance/1000).toFixed(1)+' km';
+    el('route-sum-time').textContent=Math.round(route.duration/60)+' min';
+
+    // ETA por parada = hora de salida + suma acumulada de (tramo OSRM + min. de espera)
+    var legs=route.legs||[];
+    var start=(el('route-start')||{}).value||'09:00';
+    var dwell=Number((el('route-dwell')||{}).value)||0;
+    var parts=start.split(':'); var cursor=new Date(); cursor.setHours(Number(parts[0]),Number(parts[1]),0,0);
+    var withGeoIds=list.filter(function(c){ return resolveContractGeo(fecha,c); }).map(function(c){return c.id;});
+    legs.forEach(function(leg,i){
+      cursor=new Date(cursor.getTime()+leg.duration*1000);
+      var stopEl=el('route-eta-'+withGeoIds[i]);
+      if(stopEl) stopEl.textContent='~ '+fmtHM(cursor);
+      cursor=new Date(cursor.getTime()+dwell*60000);
+    });
+  }).catch(function(){
+    showToast('⚠️ No se pudo contactar el servidor de rutas (OSRM demo) — intenta de nuevo');
+  });
+}
+function fmtHM(d){
+  var h=d.getHours(), m=d.getMinutes();
+  return (h<10?'0':'')+h+':'+(m<10?'0':'')+m;
+}
+
+// El esquema de URLs de Google Maps admite hasta 9 paradas intermedias en
+// navegador de escritorio, pero solo 3 en navegador móvil (developers.google.com/
+// maps/documentation/urls/get-started) — la mayoría de los repartidores usan
+// el celular. Para que la ruta siempre abra completa, si hay más de 3 paradas
+// se genera en varios links encadenados (cada uno con máximo 3 paradas).
+function buildMapsLink(points){
+  var origin=fmtCoord(points[0]);
+  var destination=fmtCoord(points[points.length-1]);
+  var mid=points.slice(1,-1).map(fmtCoord);
+  var url='https://www.google.com/maps/dir/?api=1&travelmode=driving'+
+    '&origin='+encodeURIComponent(origin)+
+    '&destination='+encodeURIComponent(destination);
+  if(mid.length) url+='&waypoints='+encodeURIComponent(mid.join('|'));
+  return url;
+}
+function buildRouteLegs(points){
+  var MAX_MID=3, STEP=MAX_MID+1;
+  if(points.length<=MAX_MID+2) return [buildMapsLink(points)];
+  var legs=[];
+  for(var i=0;i<points.length-1;i+=STEP){
+    var end=Math.min(i+STEP, points.length-1);
+    legs.push(buildMapsLink(points.slice(i,end+1)));
+    if(end===points.length-1) break;
+  }
+  return legs;
+}
+
+function generateRoute(){
+  var fecha=(el('ent-fecha')||{value:todayISO_val}).value||todayISO_val;
+  var list=getEntregasListForRoute(fecha);
+  if(list.length===0){ showToast('⚠️ No hay entregas este día'); return; }
+  var bodega=getBodega();
+  if(!bodega){ showToast('⚠️ Configura primero la ubicación de tu bodega'); openBodegaCapture(); return; }
+
+  var points=[{lat:bodega.lat,lng:bodega.lng}];
+  var missing=[];
+  list.forEach(function(c){
+    var g=resolveContractGeo(fecha,c);
+    if(g) points.push(g); else missing.push(c.nombre||'Sin nombre');
+  });
+  if(missing.length){
+    showToast('⚠️ Falta ubicación de: '+missing.join(', '));
+    return;
+  }
+  var roundtrip = el('route-roundtrip').checked;
+  localStorage.setItem(ROUTE_RT_KEY, roundtrip?'1':'0');
+  if(roundtrip) points.push({lat:bodega.lat,lng:bodega.lng});
+
+  var legs=buildRouteLegs(points);
+  el('route-result').innerHTML =
+    '<div class="route-result-hdr">'+(legs.length>1
+      ? 'Ruta dividida en '+legs.length+' tramos, para que abra completa en celular:'
+      : 'Link de la ruta:')+'</div>'+
+    legs.map(function(url,i){
+      return '<div class="route-link-row">'+
+        (legs.length>1?'<span class="route-link-tag">Tramo '+(i+1)+'</span>':'')+
+        '<a href="'+url+'" target="_blank" class="route-mini-btn route-link-open">Abrir ↗</a>'+
+        '<button class="route-mini-btn" onclick="copyRouteLink(this,\''+encodeURIComponent(url)+'\')">Copiar link</button>'+
+      '</div>';
+    }).join('');
+}
+function copyRouteLink(btn, encoded){
+  var url=decodeURIComponent(encoded);
+  if(navigator.clipboard && navigator.clipboard.writeText){
+    navigator.clipboard.writeText(url).then(function(){ showToast('📋 Link copiado'); })
+      .catch(function(){ showToast('⚠️ No se pudo copiar'); });
+  } else {
+    showToast('⚠️ Copia no soportada en este navegador');
+  }
+}
+
+/* ═══════════════════════════════════════════════════════════════
    ADDED: PWA — Service Worker + instalación
    Registra sw-entregas.js (cachea la app completa) y muestra un
    banner para "Agregar a pantalla de inicio", clave para que la
@@ -843,7 +1508,7 @@ document.addEventListener('DOMContentLoaded', function(){
   el('ord-hora').classList.toggle('on', orderState.mode==='hora');
   el('ord-manual').classList.toggle('on', orderState.mode==='manual');
   el('order-hint').textContent = orderState.mode==='manual'
-    ? 'Asigna un número a cada contrato (1, 2, 3…) para fijar tu ruta. Se guarda en este dispositivo.'
+    ? 'Asigna un número a cada contrato (1, 2, 3…) para fijar tu ruta. Se sincroniza entre dispositivos.'
     : 'Ordenado por hora de entrega registrada en el contrato.';
 
   updateFbBadge(isFbMode());
@@ -851,7 +1516,47 @@ document.addEventListener('DOMContentLoaded', function(){
   updateNetBadge();
   updateInstallBanner();
   registerSW();
-  renderEntregas();
+  refreshRouteBadge();   // ADDED: refleja si ya hay bodega configurada
+
+  migrateLegacyEntregasData();     // ADDED: sube a la nube el orden/entregado que solo vivía aquí
+
+  // ADDED: mantiene entMeta al día — al registrar el listener ya dispara un
+  // render con lo que haya en caché (local u online), y los siguientes
+  // llegan cuando cambia algo en este dispositivo o en cualquier otro
+  // conectado al mismo proyecto de Firebase.
+  onEntregasChange(function(meta){
+    entMeta = meta;
+    renderEntregas();
+    // ADDED: si la hoja de ruta está abierta, refresca las ubicaciones/estado
+    // cuando llega una captura manual de otro dispositivo o del listener local.
+    if(el('route-sheet') && el('route-sheet').classList.contains('on')) renderRouteSheet();
+  });
+
+  // ADDED: conexión en segundo plano SOLO para metadatos de entrega — no
+  // activa el caché completo de contratos (eso sigue siendo manual, vía
+  // "Sincronizar"), así no cambia el consumo de datos de esta página.
+  tryConnectEntregas();
+});
+
+// ADDED: conecta (o reintenta) la sincronización de metadatos de entrega si
+// hay una configuración de Firebase guardada. También se reintenta al
+// recuperar conexión, para no perder cambios hechos por otros mientras este
+// dispositivo estuvo sin señal.
+function tryConnectEntregas(){
+  if(isEntregasSynced()) return;
+  var cfg = fbGetConfig();
+  if(!cfg) return;
+  fbInitEntregasOnly(cfg, function(err){
+    if(err) console.warn('No se pudo sincronizar entregas en línea', err);
+  });
+}
+window.addEventListener('online', tryConnectEntregas);
+
+// ADDED: recalcula el tamaño del mapa de la ruta al girar el celular o
+// cambiar de tamaño de ventana — Leaflet no lo detecta solo.
+window.addEventListener('resize', function(){ if(map) map.invalidateSize(); });
+window.addEventListener('orientationchange', function(){
+  setTimeout(function(){ if(map) map.invalidateSize(); }, 300);
 });
 </script>
 </body>
