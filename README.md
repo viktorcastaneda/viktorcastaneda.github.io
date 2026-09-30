@@ -187,6 +187,7 @@ Cada contrato se almacena como un objeto JSON con la siguiente estructura:
 |---|---|
 | `casvel_v1` | Array JSON de todos los contratos (modo local) |
 | `casvel_fb_cfg` | Configuración de Firebase (`apiKey`, `databaseURL`, `projectId`) |
+| `casvel_entregas` | Metadatos de entrega por contrato+fecha (orden manual, entregado, recolectado) — modo local; en Firebase vive en el nodo `casvel_entregas` |
 
 ---
 
@@ -258,7 +259,7 @@ Cada artículo del catálogo también tiene dos IDs: `pq` (cantidad) y `pa` (imp
 7. En **Configuración del proyecto → General**, copia el `apiKey` y el `projectId`
 8. Abre la app, ve a **Sincronización** y pega los tres valores
 
-Los contratos se sincronizan en tiempo real en todos los dispositivos conectados al mismo proyecto.
+Los contratos se sincronizan en tiempo real en todos los dispositivos conectados al mismo proyecto. `entregas.html` también sincroniza en línea el orden de entrega, "entregado" y "recolectado" de cada contrato (nodo `casvel_entregas`) — se conecta a esto en segundo plano al abrir la página, sin descargar el historial completo de contratos (eso sigue siendo manual, con el botón "Sincronizar").
 
 > **Seguridad:** el `apiKey` de Firebase no es secreto — el control de acceso real vive en las Reglas (paso 5). Sin el paso 4+5, la base queda en modo de prueba: abierta a cualquiera que tenga la URL. Para un endurecimiento adicional (limitar el acceso solo a tu dominio publicado), considera activar [Firebase App Check](https://firebase.google.com/docs/app-check) con reCAPTCHA v3.
 
