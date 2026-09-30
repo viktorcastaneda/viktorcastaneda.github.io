@@ -14,11 +14,6 @@
     "casvel_catalog": {
       ".read": "auth != null",
       ".write": "auth != null"
-    },
-
-    "casvel_entregas": {
-      ".read": "auth != null",
-      ".write": "auth != null"
     }
   }
 }
