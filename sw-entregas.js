@@ -6,12 +6,15 @@
 
    Para forzar que los repartidores reciban una actualización, sube este
    número en el próximo deploy. */
-// MODIFIED: subido a v2 — un deploy anterior cambió entregas.html/shared.js
-// sin subir este número, así que el navegador nunca detectó que el Service
-// Worker había cambiado (el archivo era byte-idéntico) y siguió sirviendo
-// shared.js viejo desde caché junto al entregas.html nuevo, causando
-// "ReferenceError: entregaKey/onEntregasChange is not defined" en producción.
-var CACHE_VERSION = "casvel-entregas-v2";
+// MODIFIED: subido a v3 — el deploy que agregó la sincronización en línea de
+// orden/entregado/recolectado (entregaKey/saveEntregaMeta/onEntregasChange en
+// shared.js) se subió a producción SOLO como entregas.html, sin shared.js ni
+// este archivo, así que los dispositivos con el Service Worker v1 (cache-first
+// para todo) siguieron sirviendo el shared.js viejo cacheado junto al
+// entregas.html nuevo — "ReferenceError: entregaKey is not defined" al
+// renderizar, que se veía como "al cambiar de fecha no muestra contratos".
+// Subir este número fuerza a esos dispositivos a descartar ese caché viejo.
+var CACHE_VERSION = "casvel-entregas-v3";
 
 var APP_SHELL = [
   "./entregas.html",
