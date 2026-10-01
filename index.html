@@ -686,7 +686,8 @@ function calcDesk(){
   el('c-total').textContent=f2(g);
   var ai=el('c-anticipo');
   if(!ai.dataset.manual) ai.value=(g*.25).toFixed(2);
-  el('c-resta').textContent='Resta por Pagar: '+f2(g-(parseFloat(ai.value)||0));
+  // MODIFIED: descuenta los abonos ya registrados (se administran desde la app móvil)
+  el('c-resta').textContent='Resta por Pagar: '+f2(g-(parseFloat(ai.value)||0)-sumAbonos(getById(D_editId)||{}));
   updateInvWarningDesk();
 }
 
@@ -780,7 +781,12 @@ function saveFromEditor(){
   var now=new Date().toISOString();
   if(D_editId){
     var existing=getById(D_editId);
-    var updated=Object.assign({}, existing||{}, d, {id:D_editId, updatedAt:now});
+    // ADDED: conservar abonos/liquidación al editar y recalcular resta
+    if(existing){
+      d.resta=d.total-d.anticipo-sumAbonos(existing);
+      d.liquidado=!!existing.liquidado && d.resta<=0.004;
+    }
+    var updated=Object.assign({}, existing||{}, d, {id:D_editId, updatedAt:now, lastChange:''});
     if(!updated.createdAt) updated.createdAt=now;
     saveContract(updated);
     showToast('✅ Contrato actualizado');
@@ -797,7 +803,7 @@ function saveFromEditor(){
 function renderDashboard(){
   var list=loadContracts();
   var total=list.reduce(function(s,c){return s+(c.total||0);},0);
-  var mo=new Date().toISOString().substring(0,7);
+  var mo=currentMonthISO(); // MODIFIED: mes actual en GMT-6
   var mc=list.filter(function(c){return(c.fEvento||c.createdAt||'').startsWith(mo);});
   var mt=mc.reduce(function(s,c){return s+(c.total||0);},0);
   function sc(l,v){ return '<div class="stat-card"><div class="stat-lbl">'+l+'</div><div class="stat-val">'+v+'</div></div>'; }

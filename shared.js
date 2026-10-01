@@ -444,12 +444,15 @@ function _fbSetupRefs(onReady){
       _byId = {};
       _memCache.forEach(function(c,i){ _byId[c.id]=i; });
     }
+    var _initialSync = false; // ADDED: true al terminar la carga inicial (child_added de lo ya existente)
     function _upsert(snap){
       var c = snap.val(); if(!c) return;
       if(!c.id) c.id = snap.key;
       var idx = _byId[c.id];
+      var prev = idx!==undefined ? _memCache[idx] : null; // ADDED: versión anterior (null = contrato nuevo)
       if(idx!==undefined) _memCache[idx]=c;
       else { _byId[c.id]=_memCache.length; _memCache.push(c); }
+      if(_initialSync) _notifyRemoteContract(c, prev); // ADDED: aviso de contrato nuevo/actualizado desde otro dispositivo
       _scheduleNotify();
     }
     var _notifyTimer=null;
@@ -471,6 +474,9 @@ function _fbSetupRefs(onReady){
       _rebuildIndex();
       _scheduleNotify();
     });
+    // ADDED: "value" llega después de todos los child_added iniciales; a partir de
+    // ahí, cualquier child_added/child_changed es un cambio real de otro usuario.
+    _fbRef.once("value").then(function(){ _initialSync = true; }).catch(function(){ _initialSync = true; });
 
     // ADDED: listener en tiempo real para el catálogo (tamaño fijo/pequeño —
     // no forma parte del problema de escalado con el historial de contratos,
@@ -638,6 +644,7 @@ function saveContracts(list){
 }
 
 function saveContract(c){
+  c.updatedBy = getDeviceId(); // ADDED: dispositivo que escribe (para no notificarse a sí mismo)
   if(_fbMode && _fbRef){
     // Firebase: el listener onValue actualizará _memCache y notificará
     _fbRef.child(c.id).set(c).catch(function(e){console.error("Firebase write",e);});
@@ -691,7 +698,16 @@ function _resetToLocalCache(){
 }
 
 /* ── Fechas y formato ── */
-function todayISO(){return new Date().toISOString().split("T")[0];}
+// MODIFIED: el "hoy" de la app es siempre GMT-06:00 (sin horario de verano), sin importar la zona
+// del dispositivo. Antes usaba UTC (toISOString) y por la tarde-noche saltaba al día siguiente.
+var CASVEL_TZ_OFFSET_MIN = -360;
+function nowGMT6(){ // Date cuyos getUTC* devuelven la hora de reloj en GMT-6
+  return new Date(Date.now() + CASVEL_TZ_OFFSET_MIN*60000);
+}
+function todayISO(){return nowGMT6().toISOString().split("T")[0];}
+function currentMonthISO(){return todayISO().substring(0,7);}  // 'YYYY-MM' en GMT-6
+function currentYearNum(){return parseInt(todayISO().substring(0,4),10);}
+function currentMonthNum(){return parseInt(todayISO().substring(5,7),10);}
 function pad2(n){return n<10?"0"+n:""+n;}
 function fmtDate(iso){
   if(!iso||iso.length<10) return "--/---/----";
@@ -1174,6 +1190,119 @@ function itemsSummary(items){
     // MODIFIED: usa getItemByIndex para compatibilidad con contratos pasados
     return r.qty+'\u00d7 '+getItemByIndex(i).abbrev;
   }).filter(Boolean).join(' \u00b7 ');
+}
+
+/* ═══════════════════════════════════════════════════════════════════════
+   ADDED: ABONOS Y LIQUIDACIÓN
+   Un contrato puede tener c.abonos = [{id, fecha, monto, nota}] — pagos
+   parciales del resto por liquidar. c.resta SIEMPRE es el saldo vigente
+   (total − anticipo − abonos), así reportes/entregas/detalle lo muestran
+   correcto sin cambios. c.liquidado=true marca el contrato como pagado por
+   completo (c.liquidadoAt = fecha). Los abonos no cambian el anticipo.
+═══════════════════════════════════════════════════════════════════════ */
+function _round2(n){ return Math.round((+n||0)*100)/100; }
+function sumAbonos(c){
+  return _round2(((c&&c.abonos)||[]).reduce(function(s,a){ return s+(+a.monto||0); },0));
+}
+function calcSaldo(c){ return _round2((c.total||0)-(c.anticipo||0)-sumAbonos(c)); }
+
+// Aplica el abono y devuelve {ok, error, contract}. fecha: 'YYYY-MM-DD'.
+function addAbono(id, monto, fecha, nota){
+  var c=getById(id);
+  if(!c) return {ok:false,error:"Contrato no encontrado"};
+  monto=_round2(monto);
+  if(!(monto>0)) return {ok:false,error:"Ingresa un monto mayor a cero"};
+  var saldo=calcSaldo(c);
+  if(monto>saldo+0.004) return {ok:false,error:"El abono excede el saldo pendiente ("+f2(saldo)+")"};
+  var u=Object.assign({},c);
+  u.abonos=(c.abonos||[]).concat([{id:"ab_"+Date.now(),fecha:fecha||todayISO(),monto:monto,nota:(nota||"").trim()}]);
+  u.resta=Math.max(0,calcSaldo(u));
+  if(u.resta<=0.004){ u.resta=0; u.liquidado=true; u.liquidadoAt=fecha||todayISO(); }
+  u.updatedAt=new Date().toISOString();
+  u.lastChange="Abono de "+f2(monto)+(u.liquidado?" · Contrato liquidado":" · Resta "+f2(u.resta));
+  saveContract(u);
+  return {ok:true,contract:u};
+}
+function removeAbono(id, abonoId){
+  var c=getById(id);
+  if(!c) return {ok:false,error:"Contrato no encontrado"};
+  var u=Object.assign({},c);
+  u.abonos=(c.abonos||[]).filter(function(a){ return a.id!==abonoId; });
+  u.resta=Math.max(0,calcSaldo(u));
+  if(u.resta>0.004){ u.liquidado=false; u.liquidadoAt=""; }
+  u.updatedAt=new Date().toISOString();
+  u.lastChange="Abono eliminado · Resta "+f2(u.resta);
+  saveContract(u);
+  return {ok:true,contract:u};
+}
+// Marca como liquidado: si queda saldo, lo registra como un último abono.
+function liquidarContrato(id){
+  var c=getById(id);
+  if(!c) return {ok:false,error:"Contrato no encontrado"};
+  var saldo=calcSaldo(c);
+  if(saldo>0.004) return addAbono(id,saldo,todayISO(),"Liquidación");
+  var u=Object.assign({},c);
+  u.resta=0; u.liquidado=true; u.liquidadoAt=todayISO();
+  u.updatedAt=new Date().toISOString();
+  u.lastChange="Contrato liquidado";
+  saveContract(u);
+  return {ok:true,contract:u};
+}
+
+/* ═══════════════════════════════════════════════════════════════════════
+   ADDED: NOTIFICACIONES de contrato nuevo / actualizado
+   Funcionan con la sincronización Firebase: cuando OTRO dispositivo crea o
+   modifica un contrato, este dispositivo recibe el aviso. Si la app está a la
+   vista se muestra un aviso dentro de la app; si está en segundo plano, una
+   notificación del sistema (vía Service Worker, con la PWA instalada).
+   Limitación: sin un servidor de push (FCM) no llegan con la app totalmente
+   cerrada — ver README.
+═══════════════════════════════════════════════════════════════════════ */
+var NOTIF_PREF_KEY="casvel_notif_on";
+function getDeviceId(){
+  try{
+    var id=localStorage.getItem("casvel_device_id");
+    if(!id){ id="dv_"+Date.now().toString(36)+Math.random().toString(36).slice(2,8); localStorage.setItem("casvel_device_id",id); }
+    return id;
+  }catch(e){ return "dv_anon"; }
+}
+function notifSupported(){ return ("Notification" in window) && ("serviceWorker" in navigator); }
+function notifPermission(){ return notifSupported() ? Notification.permission : "unsupported"; }
+function notifEnabled(){
+  return notifSupported() && Notification.permission==="granted" && localStorage.getItem(NOTIF_PREF_KEY)!=="0";
+}
+// Pide permiso (debe llamarse desde un toque del usuario). cb(permission)
+function notifEnable(cb){
+  if(!notifSupported()){ if(cb) cb("unsupported"); return; }
+  Notification.requestPermission().then(function(p){
+    if(p==="granted") localStorage.setItem(NOTIF_PREF_KEY,"1");
+    if(cb) cb(p);
+  });
+}
+function notifDisable(){ localStorage.setItem(NOTIF_PREF_KEY,"0"); }
+function notifShow(title, body, tag, contractId){
+  if(!notifEnabled()) return;
+  navigator.serviceWorker.ready.then(function(reg){
+    reg.showNotification(title,{
+      body:body, tag:tag||"casvel", renotify:true,
+      icon:"apple-touch-icon.png", badge:"apple-touch-icon.png",
+      data:{url:"./mobile.html", id:contractId||""}
+    });
+  }).catch(function(){});
+}
+// prev=null → contrato nuevo; prev≠null → actualización
+function _notifyRemoteContract(c, prev){
+  if(!c || localStorage.getItem(NOTIF_PREF_KEY)==="0") return;
+  if(!c.updatedBy || c.updatedBy===getDeviceId()) return;            // cambio hecho aquí mismo / dato antiguo
+  if(prev && (prev.updatedAt||"")===(c.updatedAt||"")) return;       // sin cambio real
+  var nombre=c.nombre||"Sin nombre";
+  var title=(prev?"Contrato actualizado · ":"Nuevo contrato · ")+nombre;
+  var detalle=c.lastChange && prev ? c.lastChange : ("Evento "+fmtDate(c.fEvento)+" · Total "+f2(c.total||0));
+  if(document.visibilityState==="visible" && typeof showToast==="function"){
+    showToast((prev?"🔄 ":"🆕 ")+title+" — "+detalle);
+  } else {
+    notifShow(title, detalle, "casvel-"+c.id, c.id);
+  }
 }
 
 // ADDED: inicializa catálogo al arrancar — al final del archivo para garantizar que

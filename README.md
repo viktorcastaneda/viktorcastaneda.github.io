@@ -342,3 +342,31 @@ La app detecta automáticamente si el visitante usa un dispositivo móvil y redi
 ## Licencia
 
 Proyecto privado — EVENTOS CASVEL © 2026. Todos los derechos reservados.
+
+---
+
+## Abonos y liquidación (v23)
+
+Desde el **detalle del contrato** (botón 👁 Ver) → sección *Abonos y liquidación*:
+- **Registrar abono** (monto, fecha, nota): se descuenta del saldo. `resta` siempre es el saldo vigente
+  (`total − anticipo − abonos`), por lo que Reportes, Entregas y Detalle se actualizan solos.
+- **Liquidar saldo**: registra el pago del saldo restante y marca el contrato como liquidado. Un abono que cubre
+  el saldo completo también lo liquida automáticamente. Eliminar un abono recalcula el saldo y reabre el contrato.
+- Campos nuevos del contrato: `abonos:[{id,fecha,monto,nota}]`, `liquidado`, `liquidadoAt`.
+  Funciones en `shared.js`: `sumAbonos`, `calcSaldo`, `addAbono`, `removeAbono`, `liquidarContrato`.
+
+## Contrato Formal (PDF A4)
+
+Rediseñado en hoja **A4 real (210×297 mm)** con encabezado de marca EVENTOS CASVEL, etiquetas de sección sutiles
+y pie con contacto. La paginación es por bloques: si el contenido no cabe, continúa en una segunda hoja
+(las filas de la tabla, las cláusulas y las firmas nunca se cortan). Incluye anticipo, abonos y saldo (sello LIQUIDADO).
+
+## Notificaciones (v23)
+
+☁️ Sincronización → **Activar notificaciones**. Cuando OTRO dispositivo conectado a Firebase crea o actualiza un contrato
+se avisa en este dispositivo: con la app a la vista como aviso dentro de la app; en segundo plano como notificación del
+sistema (Service Worker). Cada contrato guarda `updatedBy` (id de dispositivo) y `lastChange` (texto del último cambio).
+
+**Limitación:** sin un servidor de push no llegan con la app totalmente cerrada. Para eso se requiere Firebase Cloud
+Messaging + una Cloud Function (plan Blaze) que envíe el push cuando se cree o modifique un contrato; `sw-app.js` ya
+incluye el manejador `push`. En iPhone solo funciona con la app instalada en la pantalla de inicio (iOS 16.4+).

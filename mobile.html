@@ -373,6 +373,104 @@ input[type=date].fi{color-scheme:light}
 .fpdf-fairy-badge .txt{font-size:9.5px;color:#6b1a8c;line-height:1.45}
 .fpdf-fairy-badge .txt strong{display:block;font-size:11.5px;color:#8b0fc4;font-weight:800;letter-spacing:.01em}
 .fpdf-et-formal{background:#f0fdf4;color:#15803d}
+/* ADDED: abonos y liquidación (detalle de contrato) */
+.ab-row{display:flex;align-items:center;gap:10px;padding:8px 0;border-bottom:1px solid var(--border);font-size:13px}
+.ab-info{flex:1;min-width:0}
+.ab-date{font-weight:600;color:var(--dark)}
+.ab-note{font-size:11px;color:var(--mid);margin-top:1px;word-break:break-word}
+.ab-amt{font-weight:700;color:#15803d;white-space:nowrap}
+.ab-del{border:none;background:none;font-size:15px;padding:6px;cursor:pointer;opacity:.6}
+.ab-form{margin-top:10px;padding:12px;background:var(--light);border-radius:12px}
+.ab-saldo{font-size:12px;color:var(--mid);margin-bottom:8px}
+.ab-saldo strong{color:var(--red);font-size:15px;margin-left:4px}
+.ab-grid{display:grid;grid-template-columns:1fr 1fr;gap:8px;margin-bottom:8px}
+.ab-form input{width:100%;padding:11px 12px;border:1.5px solid var(--border);border-radius:10px;font-size:16px;font-family:inherit;background:var(--white);box-sizing:border-box;outline:none}
+.ab-form input:focus{border-color:var(--blue)}
+.ab-btns{display:flex;gap:8px;margin-top:10px}
+.ab-btn{flex:1;padding:12px 6px;border:none;border-radius:12px;font-size:13px;font-weight:700;font-family:inherit;cursor:pointer}
+.ab-btn-p{background:var(--blue);color:#fff}
+.ab-btn-g{background:#dcfce7;color:#15803d}
+.ab-paid{margin-top:10px;padding:10px 12px;background:#dcfce7;color:#15803d;border-radius:12px;font-weight:700;font-size:13px;text-align:center}
+/* ADDED: notificaciones (hoja de sincronización) */
+.nt-box{margin:4px 0 14px;padding:12px 14px;background:var(--light);border-radius:12px}
+.nt-ttl{font-size:13px;font-weight:700;color:var(--dark)}
+.nt-sub{font-size:12px;color:var(--mid);margin:3px 0 10px;line-height:1.45}
+
+/* ═══ ADDED: Contrato formal A4 (794×1123 px) — familia .cpdf-* ═══
+   Páginas A4 reales con paginación por bloques: ningún elemento se corta;
+   si el contenido no cabe, continúa en la siguiente página. */
+.cpdf-page{width:794px;height:1123px;position:relative;display:flex;flex-direction:column;box-sizing:border-box;
+  background:#fff;color:#1a1f2e;font-family:'DM Sans',system-ui,sans-serif;font-size:11px;overflow:hidden}
+.cpdf-band{height:4px;flex-shrink:0;background:linear-gradient(90deg,#1e4f87 0%,#2563a8 55%,#5b9bd5 100%)}
+.cpdf-hd{padding:16px 54px 0;flex-shrink:0}
+.cpdf-hd-row{display:flex;justify-content:space-between;align-items:center;padding-bottom:9px;border-bottom:1px solid #d9e0ea}
+.cpdf-brand{display:flex;align-items:center;gap:11px}
+.cpdf-logo{width:42px;height:42px;object-fit:contain;display:block}
+.cpdf-wordmark{font-size:17px;font-weight:800;letter-spacing:.14em;color:#1a1f2e;line-height:1}
+.cpdf-wordmark span{color:#2563a8}
+.cpdf-tag{font-size:7.5px;letter-spacing:.22em;text-transform:uppercase;color:#6b7689;margin-top:4px;font-weight:600}
+.cpdf-doc{text-align:right}
+.cpdf-doc-ttl{font-size:8.5px;letter-spacing:.2em;text-transform:uppercase;color:#2563a8;font-weight:700}
+.cpdf-doc-no{font-size:15px;font-weight:700;color:#1a1f2e;margin-top:4px;letter-spacing:.02em}
+.cpdf-doc-meta{font-size:9px;color:#6b7689;margin-top:3px}
+.cpdf-hd-mini{display:flex;justify-content:space-between;align-items:center;padding-bottom:9px;border-bottom:1px solid #d9e0ea}
+.cpdf-hd-mini .l{display:flex;align-items:center;gap:8px;font-size:11px;font-weight:800;letter-spacing:.14em}
+.cpdf-hd-mini img{width:26px;height:26px;object-fit:contain}
+.cpdf-hd-mini .r{font-size:9px;color:#6b7689;letter-spacing:.04em}
+.cpdf-body{flex:1;min-height:0;padding:16px 54px 0;display:flex;flex-direction:column;overflow:hidden}
+.cpdf-body>*{flex-shrink:0}
+.cpdf-blk{margin-bottom:15px}
+.cpdf-keep{display:flex;flex-direction:column;flex:1 0 auto}
+/* modo compacto: solo espaciados, la tipografía de datos no se reduce */
+.cpdf-tight .cpdf-blk{margin-bottom:9px}
+.cpdf-tight .cpdf-sec{margin-bottom:5px}
+.cpdf-tight .cpdf-cell{padding:3px 0 4px}
+.cpdf-tight .cpdf-tbl td{padding:2.5px 8px}
+.cpdf-tight .cpdf-tl{padding-top:2px;padding-bottom:2px}
+.cpdf-tight .cpdf-tl.due{margin-top:4px;padding:6px 10px}
+.cpdf-tight .cpdf-fairy{padding:5px 12px;margin-bottom:9px}
+.cpdf-tight .cpdf-fairy img{height:28px}
+.cpdf-tight .cpdf-sig{padding-top:10px}
+.cpdf-tight .cpdf-sig .ln{height:24px}
+.cpdf-sec{display:flex;align-items:center;gap:10px;margin-bottom:10px}
+.cpdf-sec .n{font-size:8.5px;font-weight:700;color:#2563a8;letter-spacing:.1em}
+.cpdf-sec .t{font-size:8.5px;font-weight:700;color:#6b7689;letter-spacing:.2em;text-transform:uppercase;white-space:nowrap}
+.cpdf-sec .r{flex:1;height:1px;background:#e3e8ef}
+.cpdf-grid{display:grid;grid-template-columns:repeat(6,1fr);column-gap:22px}
+.cpdf-cell{padding:5px 0 6px;border-bottom:1px solid #edf0f5}
+.cpdf-cell .k{font-size:7.5px;letter-spacing:.14em;text-transform:uppercase;color:#8a94a6;font-weight:600}
+.cpdf-cell .v{font-size:11.5px;font-weight:600;color:#1a1f2e;margin-top:3px;line-height:1.35;word-break:break-word}
+.cpdf-tbl{width:100%;border-collapse:collapse;font-size:10.5px}
+.cpdf-tbl th{font-size:7.5px;letter-spacing:.14em;text-transform:uppercase;color:#6b7689;font-weight:700;
+  padding:0 8px 7px;text-align:left;border-bottom:1.5px solid #1a1f2e}
+.cpdf-tbl th.num,.cpdf-tbl td.num{text-align:right;white-space:nowrap}
+.cpdf-tbl td{padding:5.5px 8px;border-bottom:1px solid #edf0f5;vertical-align:top;line-height:1.35}
+.cpdf-tbl td.d{font-weight:500;color:#1a1f2e}
+.cpdf-tbl td.num{font-variant-numeric:tabular-nums}
+.cpdf-tbl td em{font-style:normal;font-size:8.5px;color:#8a94a6;margin-left:4px}
+.cpdf-tot{display:flex;justify-content:flex-end}
+.cpdf-tot-in{width:290px}
+.cpdf-tl{display:flex;justify-content:space-between;padding:5px 8px;font-size:10.5px;color:#4a5568}
+.cpdf-tl.sub{font-size:9.5px;color:#6b7689;padding:3px 8px 3px 20px}
+.cpdf-tl.strong{font-weight:700;color:#1a1f2e;border-top:1.5px solid #1a1f2e;margin-top:3px;padding-top:8px;font-size:12px}
+.cpdf-tl.due{margin-top:7px;padding:9px 10px;background:#eef4fb;border-radius:4px;font-weight:800;color:#1e4f87;font-size:12.5px}
+.cpdf-tl.due.paid{background:#e8f6ee;color:#15803d}
+.cpdf-stamp{display:inline-block;font-size:7.5px;font-weight:800;letter-spacing:.16em;border:1.2px solid #15803d;color:#15803d;padding:2px 6px;border-radius:3px;margin-left:8px;vertical-align:2px}
+.cpdf-fairy{display:flex;align-items:center;gap:14px;border:1px solid #e3a6f5;background:#fdf8ff;border-radius:6px;padding:10px 14px;margin-bottom:18px}
+.cpdf-fairy img{height:46px;width:auto;flex-shrink:0}
+.cpdf-fairy .tx{font-size:9px;color:#6b1a8c;line-height:1.5}
+.cpdf-fairy .tx b{display:block;font-size:10.5px;color:#8b0fc4;letter-spacing:.02em}
+.cpdf-cl-ttl{font-size:8px;font-weight:700;letter-spacing:.14em;text-transform:uppercase;color:#1a1f2e;margin:2px 0 6px}
+.cpdf-cl-ttl i{font-weight:400;font-style:italic;text-transform:none;letter-spacing:0;color:#6b7689}
+.cpdf-cl{display:flex;gap:8px;font-size:var(--clfs,9.3px);line-height:1.5;color:#3d4756;margin-bottom:calc(var(--clfs,9.3px)*.3);text-align:justify}
+.cpdf-cl .n{flex:0 0 1.7em;font-weight:700;color:#2563a8}
+.cpdf-sig{margin-top:auto;padding-top:16px;display:grid;grid-template-columns:1fr 1fr;gap:64px}
+.cpdf-sig .ln{border-bottom:1px solid #1a1f2e;height:30px}
+.cpdf-sig .nm{font-size:10px;font-weight:700;margin-top:7px;text-align:center}
+.cpdf-sig .rl{font-size:8.5px;color:#6b7689;margin-top:2px;text-align:center}
+.cpdf-ft{flex-shrink:0;margin:0 54px;padding:8px 0 18px;border-top:1px solid #d9e0ea;display:flex;justify-content:space-between;
+  font-size:8px;color:#8a94a6;letter-spacing:.06em}
+.cpdf-ft b{color:#2563a8;font-weight:700}
 /* ADDED: inventory viewer sheet */
 .inv-sheet-bg{display:none;position:fixed;inset:0;background:rgba(0,0,0,.55);z-index:360}
 .inv-sheet-bg.on{display:block}
@@ -999,6 +1097,8 @@ if(!/[?&]m=1/.test(location.search) && !/[?&]view=/.test(location.search) &&
         <div class="tr ant"><span class="tlbl">Anticipo (25%)</span>
           <input type="number" class="tinp" id="m-anticipo" min="0" step="0.01" value="0">
         </div>
+        <!-- ADDED: abonos recibidos (solo lectura; se registran desde el detalle del contrato) -->
+        <div class="tr" id="m-abonos-row" style="display:none"><span class="tlbl">Abonos recibidos</span><span class="tval" id="m-abonos-tot">$0.00</span></div>
         <div class="tr"><span class="tlbl">Resta por Pagar</span><span class="tval" id="m-resta">$0.00</span></div>
       </div>
     </div>
@@ -1530,6 +1630,12 @@ if(!/[?&]m=1/.test(location.search) && !/[?&]view=/.test(location.search) &&
     <input type="text" id="m-fb-dburl" placeholder="https://tu-proyecto-rtdb.firebaseio.com" autocomplete="off"></div>
   <div class="fb-field"><label>Project ID</label>
     <input type="text" id="m-fb-projid" placeholder="tu-proyecto-12345" autocomplete="off"></div>
+  <!-- ADDED: notificaciones de contrato nuevo / actualizado -->
+  <div class="nt-box">
+    <div class="nt-ttl">🔔 Notificaciones</div>
+    <div class="nt-sub" id="nt-sub">Recibe un aviso cuando otro dispositivo cree o actualice un contrato.</div>
+    <button class="fb-btn fb-btn-p" id="nt-btn" onclick="toggleNotifications()" style="width:100%">Activar notificaciones</button>
+  </div>
   <div class="fb-btns">
     <button class="fb-btn fb-btn-p" onclick="mFbConnect()">Conectar Firebase</button>
     <button class="fb-btn fb-btn-d" id="m-fb-disc" onclick="mFbDisconnect()" style="display:none">Desconectar</button>
@@ -1583,6 +1689,10 @@ var M_editId = null;
 var M_delId  = null;
 // ADDED: extra (non-inventory) items state
 var M_extraItems = []; // [{desc:'', qty:1, price:0}]
+// ADDED: abonos del contrato en edición (se administran desde el detalle del contrato)
+var M_abonos = [];        // [{id, fecha, monto, nota}]
+var M_liquidado = false;
+var M_liquidadoAt = '';
 
 /* ── Helpers ── */
 function el(id){ return document.getElementById(id); }
@@ -1868,8 +1978,41 @@ function openFbSheet(){
   el('fb-msub').textContent=isFbMode()
     ?'✅ Conectado. El historial se sincroniza en tiempo real.'
     :'Comparte el historial entre dispositivos con Firebase (gratis).';
+  updateNotifUI(); // ADDED
   el('fb-sbg').classList.add('on');
   el('fb-sheet').classList.add('on');
+}
+/* ADDED: botón de notificaciones dentro de la hoja de sincronización */
+function updateNotifUI(){
+  var b=el('nt-btn'), s=el('nt-sub'); if(!b||!s) return;
+  var p=notifPermission();
+  if(p==='unsupported'){
+    b.style.display='none';
+    s.textContent=pwaIsIOS()
+      ? 'En iPhone/iPad: instala la app ("Agregar a pantalla de inicio") y ábrela desde ahí para poder activar notificaciones.'
+      : 'Este navegador no admite notificaciones.';
+  } else if(p==='denied'){
+    b.style.display='none';
+    s.textContent='Las notificaciones están bloqueadas. Actívalas en los ajustes del navegador/sistema para este sitio.';
+  } else if(notifEnabled()){
+    b.style.display=''; b.textContent='Desactivar notificaciones';
+    s.textContent=isFbMode()
+      ? '✅ Activas. Te avisaremos cuando otro dispositivo cree o actualice un contrato (con la app abierta o en segundo plano).'
+      : '✅ Activas, pero requieren conectar Firebase para enterarse de los cambios de otros dispositivos.';
+  } else {
+    b.style.display=''; b.textContent='Activar notificaciones';
+    s.textContent='Recibe un aviso cuando otro dispositivo cree o actualice un contrato.';
+  }
+}
+function toggleNotifications(){
+  if(notifEnabled()){ notifDisable(); updateNotifUI(); showToast('🔕 Notificaciones desactivadas'); return; }
+  notifEnable(function(p){
+    updateNotifUI();
+    if(p==='granted'){
+      showToast('🔔 Notificaciones activadas');
+      notifShow('CASVEL','Las notificaciones están activas en este dispositivo.','casvel-test');
+    } else showToast('⚠️ No se concedió el permiso');
+  });
 }
 function closeFbSheet(){
   el('fb-sbg').classList.remove('on');
@@ -2278,7 +2421,11 @@ function mCalc(){
 function mCalcResta(){
   var total=parseFloat((gt('m-total')||'$0').replace('$',''))||0;
   var ant=parseFloat(gv('m-anticipo'))||0;
-  st('m-resta','$'+(total-ant).toFixed(2));
+  var ab=sumAbonos({abonos:M_abonos}); // ADDED: descuenta abonos ya recibidos
+  st('m-resta','$'+(total-ant-ab).toFixed(2));
+  // ADDED: fila informativa de abonos en el paso de Totales
+  var ar=el('m-abonos-row');
+  if(ar){ ar.style.display=ab>0?'':'none'; st('m-abonos-tot','−$'+ab.toFixed(2)); }
 }
 
 /* ── Collect ── */
@@ -2296,7 +2443,11 @@ function mCollect(){
     fEvento:gv('m-fevento'), hEntrega:gv('m-hentrega'), hEntregaL:sl('m-hentrega'),
     hRecol:gv('m-hrecol'), hRecolL:sl('m-hrecol'),
     traslado:parseFloat(gv('m-traslado'))||0,
-    anticipo:ant, total:total, resta:total-ant, items:items,
+    // MODIFIED: resta = total − anticipo − abonos; se conservan abonos/liquidado
+    anticipo:ant, total:total, resta:total-ant-sumAbonos({abonos:M_abonos}), items:items,
+    abonos:M_abonos.slice(),
+    liquidado:(M_liquidado && (total-ant-sumAbonos({abonos:M_abonos}))<=0.004),
+    liquidadoAt:M_liquidadoAt||'',
     // ADDED: extra items (non-inventory)
     extraItems: M_extraItems.filter(function(ex){ return ex.qty>0 || ex.desc; }).map(function(ex){
       return {desc:ex.desc||'', qty:ex.qty||0, price:ex.price||0, amt:(ex.qty||0)*(ex.price||0), isFairy:!!ex.isFairy};
@@ -2316,6 +2467,8 @@ function mPopulate(d){
   sv('m-status',d.status||'abierto');
   sv('m-ubicacion',d.ubicacion||'');
   sv('m-notas',d.notas||'');
+  // ADDED: abonos del contrato
+  M_abonos=(d.abonos||[]).slice(); M_liquidado=!!d.liquidado; M_liquidadoAt=d.liquidadoAt||'';
   var ai=el('m-anticipo'); if(ai){ ai.value=(d.anticipo||0).toFixed(2); ai.removeAttribute('data-manual'); }
   if(d.items) d.items.forEach(function(r,i){
     var qe=el('mq'+i), pe=el('mp'+i);
@@ -2360,6 +2513,7 @@ function renderSummary(){
       sr('Traslado','$'+d.traslado.toFixed(2))+
       sr('Total','$'+d.total.toFixed(2))+
       sr('Anticipo','$'+d.anticipo.toFixed(2))+
+      (sumAbonos(d)>0?sr('Abonos','−$'+sumAbonos(d).toFixed(2)):'')+ // ADDED
       sr('Resta','$'+d.resta.toFixed(2))+
     '</div>';
 }
@@ -2373,7 +2527,13 @@ function mSave(){
   var now=new Date().toISOString();
   if(M_editId){
     var existing=getById(M_editId);
-    var updated=Object.assign({}, existing||{}, data, {id:M_editId, updatedAt:now});
+    // ADDED: usar los abonos más recientes guardados (otro dispositivo pudo registrar uno) y recalcular resta
+    if(existing){
+      data.abonos=(existing.abonos||[]).slice(); data.liquidado=!!existing.liquidado; data.liquidadoAt=existing.liquidadoAt||'';
+      data.resta=data.total-data.anticipo-sumAbonos(data);
+      data.liquidado=data.liquidado && data.resta<=0.004;
+    }
+    var updated=Object.assign({}, existing||{}, data, {id:M_editId, updatedAt:now, lastChange:''}); // MODIFIED: lastChange vacío = edición normal
     if(!updated.createdAt) updated.createdAt=now;
     saveContract(updated);
     showToast('✅ Contrato actualizado');
@@ -2398,6 +2558,7 @@ function startNew(){
   var iw=el('m-inv-warn'); if(iw){ iw.textContent=''; iw.classList.remove('on'); }
   M_invConflicts=[]; // ADDED: reset conflicts
   M_extraItems=[]; renderExtraItems(); // ADDED: reset extra items
+  M_abonos=[]; M_liquidado=false; M_liquidadoAt=''; // ADDED: reset abonos
   var ai=el('m-anticipo'); if(ai){ ai.value='0'; ai.removeAttribute('data-manual'); }
   ITEMS.forEach(function(it,i){
     var qe=el('mq'+i), pe=el('mp'+i), ae=el('ma'+i);
@@ -2423,7 +2584,7 @@ function renderHome(){
   // MODIFIED: exclude cancelled contracts from monetary stats
   var active=list.filter(function(c){return resolveStatus(c)!=='cancelado';});
   var total=active.reduce(function(s,c){return s+(c.total||0);},0);
-  var mo=new Date().toISOString().substring(0,7);
+  var mo=currentMonthISO(); // MODIFIED: mes actual en GMT-6
   var mc=active.filter(function(c){return(c.fEvento||c.createdAt||'').startsWith(mo);});
   var mt=mc.reduce(function(s,c){return s+(c.total||0);},0);
   function sc(l,v){ return '<div class="scard"><div class="sclbl">'+l+'</div><div class="scval">'+v+'</div></div>'; }
@@ -2588,214 +2749,232 @@ function mDoPDFFormal(){
   var ready = needsFairy ? Promise.all([ensureLogoLoaded(), ensureFairyLogoLoaded()]) : ensureLogoLoaded();
   ready.then(_mDoPDFFormalImpl);
 }
+// MODIFIED: rediseño del contrato formal — A4 real (794×1123 px = 210×297 mm), diseño sobrio con
+// branding CASVEL, etiquetas de sección sutiles y paginación por bloques: si el contenido no cabe
+// en una hoja continúa en la siguiente (nada se recorta ni se escala). Incluye anticipo, abonos y saldo.
 function _mDoPDFFormalImpl(){
   var d = mCollect();
   showLoad('Generando contrato formal...');
-
+  // Precargar fuentes e imágenes ANTES de medir/paginar, para que la medición sea la definitiva
+  var pre = [ (document.fonts && document.fonts.load)
+    ? Promise.all(['500','600','700','800'].map(function(w){ return document.fonts.load(w+' 11px "DM Sans"').catch(function(){}); }))
+    : Promise.resolve() ];
+  var srcs = ['data:image/jpeg;base64,' + LOGO_B64];
+  if((d.extraItems||[]).some(function(ex){ return ex.isFairy; })) srcs.push('data:image/png;base64,' + FAIRY_LOGO_B64);
+  srcs.forEach(function(src){ pre.push(new Promise(function(r){ var im=new Image(); im.onload=im.onerror=r; im.src=src; })); });
+  Promise.all(pre).then(function(){ _cpdfRender(d); });
+}
+function _cpdfRender(d){
+  var A4W = 794, A4H = 1123;
   var logoSrc = 'data:image/jpeg;base64,' + LOGO_B64;
-  var contratoNum = (d.cDate||'').replace(/-/g,'') + '-' + (d.nombre||'').replace(/\s+/g,'').substring(0,6).toUpperCase();
+  function CM(n){ return '$' + (+n||0).toLocaleString('es-MX',{minimumFractionDigits:2,maximumFractionDigits:2}); }
+  function X(s){ return _xe(s==null?'':String(s)); }
 
-  // -- Section A: Datos generales (compact inline layout) --
-  function infoCell(lbl, val){
-    return '<td style="padding:5px 10px 5px 0;vertical-align:top;white-space:nowrap">'+
-      '<span style="font-size:8px;font-weight:700;color:#5a6580;text-transform:uppercase;letter-spacing:.05em;display:block">'+lbl+'</span>'+
-      '<span style="font-size:11px;font-weight:600;color:#1a1f2e">'+(val||'—')+'</span>'+
-    '</td>';
+  var container = el('formal-pdf-container');
+  container.innerHTML = '';
+  container.style.width = A4W + 'px';
+
+  /* ── Paginador ─────────────────────────────────────────────── */
+  var pages = [], curBody = null;
+  // Construye todas las hojas con un tamaño de letra dado para cláusulas y condiciones de uso.
+  function buildAll(clfs){
+  pages = []; curBody = null;
+  container.innerHTML = '';
+  container.style.setProperty('--clfs', clfs + 'px');
+  function headerHTML(first){
+    if(first){
+      return '<div class="cpdf-hd"><div class="cpdf-hd-row">'+
+        '<div class="cpdf-brand"><img class="cpdf-logo" src="'+logoSrc+'" alt="">'+
+          '<div><div class="cpdf-wordmark">EVENTOS <span>CASVEL</span></div>'+
+          '<div class="cpdf-tag">Renta de mobiliario para eventos</div></div></div>'+
+        '<div class="cpdf-doc"><div class="cpdf-doc-ttl">Contrato de arrendamiento</div>'+
+          '<div class="cpdf-doc-meta">Chihuahua, Chihuahua · '+fmtDate(d.cDate)+'</div></div>'+
+      '</div></div>';
+    }
+    return '<div class="cpdf-hd"><div class="cpdf-hd-mini">'+
+      '<div class="l"><img src="'+logoSrc+'" alt="">EVENTOS <span style="color:#2563a8;margin-left:-4px">CASVEL</span></div>'+
+      '<div class="r">Contrato de arrendamiento · '+fmtDate(d.cDate)+'</div></div></div>';
   }
-  var secA =
-    '<div class="fpdf-section" style="margin-bottom:14px">'+
-      '<div class="fpdf-sec-title">A &nbsp;·&nbsp; Datos Generales</div>'+
-      '<table style="width:100%;border-collapse:collapse;border:1px solid #dce6f1;border-radius:6px;overflow:hidden">'+
-        '<tr style="background:#f8fafc">'+
-          infoCell('No. Contrato', contratoNum)+
-          infoCell('Fecha Contrato', fmtDate(d.cDate))+
-          infoCell('Fecha Evento', fmtDate(d.fEvento))+
-          infoCell('Entrega', d.hEntregaL||d.hEntrega)+
-          infoCell('Recolección', d.hRecolL||d.hRecol)+
-        '</tr>'+
-        '<tr style="background:#fff;border-top:1px solid #dce6f1">'+
-          '<td colspan="2" style="padding:5px 10px 5px 0;vertical-align:top">'+
-            '<span style="font-size:8px;font-weight:700;color:#5a6580;text-transform:uppercase;letter-spacing:.05em;display:block">Arrendatario</span>'+
-            '<span style="font-size:11px;font-weight:700;color:#1a1f2e">'+(d.nombre||'—')+'</span>'+
-            (d.tel?'<span style="font-size:10px;color:#5a6580"> &nbsp;·&nbsp; '+_xe(d.tel)+'</span>':'')+
-          '</td>'+
-          '<td colspan="3" style="padding:5px 0;vertical-align:top">'+
-            '<span style="font-size:8px;font-weight:700;color:#5a6580;text-transform:uppercase;letter-spacing:.05em;display:block">Dirección del Evento</span>'+
-            '<span style="font-size:11px;font-weight:600;color:#1a1f2e">'+(d.dir||'—')+'</span>'+
-          '</td>'+
-        '</tr>'+
-      '</table>'+
-    '</div>';
+  function newPage(){
+    var pg = document.createElement('div');
+    pg.className = 'cpdf-page';
+    pg.innerHTML = '<div class="cpdf-band"></div>'+headerHTML(pages.length===0)+
+      '<div class="cpdf-body"></div>'+
+      '<div class="cpdf-ft"><span><b>EVENTOS CASVEL</b> · Tel. 614 126 6784 · @EventosCasVel</span><span class="pgn"></span></div>';
+    container.appendChild(pg);
+    pages.push(pg);
+    curBody = pg.querySelector('.cpdf-body');
+  }
+  function over(){ return curBody.scrollHeight > curBody.clientHeight + 1; }
+  function toNode(html){ var t=document.createElement('div'); t.innerHTML=html; return t.firstChild; }
+  function addBlock(html){
+    var node = toNode(html);
+    curBody.appendChild(node);
+    if(over() && curBody.children.length > 1){   // no cabe → bloque completo a la siguiente hoja
+      curBody.removeChild(node);
+      newPage();
+      curBody.appendChild(node);
+    }
+  }
+  function secHTML(n, title){
+    return '<div class="cpdf-sec"><span class="t">'+title+'</span><span class="r"></span></div>';
+  }
+  function cell(span, k, v){
+    return '<div class="cpdf-cell" style="grid-column:span '+span+'"><div class="k">'+k+'</div><div class="v">'+(v||'—')+'</div></div>';
+  }
 
-  // -- Section B: Mobiliario table --
-  var tableRows = '';
-  var hasAny = false;
-  var hasFairyItem = false; // ADDED
+  /* ── 01 · Datos generales ── */
+  var secA =
+    '<div class="cpdf-blk">'+secHTML('01','Datos generales')+
+      '<div class="cpdf-grid">'+
+        cell(4,'Arrendatario',X(d.nombre))+
+        cell(2,'Teléfono',X(d.tel))+
+        cell(6,'Dirección del evento',X(d.dir))+
+        cell(2,'Fecha del evento',fmtDate(d.fEvento))+
+        cell(2,'Horario de entrega',X(d.hEntregaL||d.hEntrega))+
+        cell(2,'Horario de recolección',X(d.hRecolL||d.hRecol))+
+      '</div></div>';
+
+  /* ── 02 · Mobiliario (la tabla se parte por filas, repitiendo encabezado) ── */
+  var rows = [], hasFairyItem = false;
   ITEMS.forEach(function(it, i){
     var r = d.items[i];
     if(!r || !r.qty) return;
-    hasAny = true;
-    tableRows += '<tr><td>'+_xe(it.desc)+'</td><td class="num">'+r.qty+'</td><td class="num">$'+r.price.toFixed(2)+'</td><td class="num">$'+r.amt.toFixed(2)+'</td></tr>';
+    rows.push('<tr><td class="d">'+X(it.desc)+'</td><td class="num">'+r.qty+'</td><td class="num">'+CM(r.price)+'</td><td class="num">'+CM(r.amt)+'</td></tr>');
   });
   (d.extraItems||[]).forEach(function(ex){
     if(!ex.qty || !ex.desc) return;
-    hasAny = true;
-    if(ex.isFairy) hasFairyItem = true; // ADDED
-    tableRows += '<tr><td>'+_xe(ex.desc)+' <em style="font-size:9px;color:#5a6580">('+(ex.isFairy?'Fairy Decoraciones':'adicional')+')</em></td><td class="num">'+ex.qty+'</td><td class="num">$'+ex.price.toFixed(2)+'</td><td class="num">$'+ex.amt.toFixed(2)+'</td></tr>';
+    if(ex.isFairy) hasFairyItem = true;
+    rows.push('<tr><td class="d">'+X(ex.desc)+'<em>'+(ex.isFairy?'Fairy Decoraciones':'adicional')+'</em></td><td class="num">'+ex.qty+'</td><td class="num">'+CM(ex.price)+'</td><td class="num">'+CM(ex.amt)+'</td></tr>');
   });
-  if(!hasAny) tableRows = '<tr><td colspan="4" style="text-align:center;color:#5a6580;font-style:italic">Sin artículos registrados</td></tr>';
+  if(!rows.length) rows.push('<tr><td colspan="4" style="text-align:center;color:#8a94a6;font-style:italic">Sin artículos registrados</td></tr>');
+
+  newPage();
+  addBlock(secA);
+
+  var tblWrap, tbody;
+  function startTable(cont){
+    tblWrap = toNode('<div class="cpdf-blk">'+secHTML('02','Mobiliario a arrendar'+(cont?' · continuación':''))+
+      '<table class="cpdf-tbl"><colgroup><col style="width:52%"><col style="width:12%"><col style="width:18%"><col style="width:18%"></colgroup>'+
+      '<thead><tr><th>Descripción</th><th class="num">Cant.</th><th class="num">P. unitario</th><th class="num">Importe</th></tr></thead>'+
+      '<tbody></tbody></table></div>');
+    tbody = tblWrap.querySelector('tbody');
+    curBody.appendChild(tblWrap);
+  }
+  startTable(false);
+  rows.forEach(function(rowHTML){
+    var holder = document.createElement('tbody'); holder.innerHTML = rowHTML;
+    var tr = holder.firstChild;
+    tbody.appendChild(tr);
+    if(over()){
+      tbody.removeChild(tr);
+      if(tbody.children.length === 0){ curBody.removeChild(tblWrap); newPage(); startTable(false); }
+      else { newPage(); startTable(true); }
+      tbody.appendChild(tr);
+    }
+  });
+
+  /* ── Totales: subtotal, traslado, total, anticipo, abonos y saldo ── */
   var subtotal = d.total - d.traslado;
-  var secB =
-    '<div class="fpdf-section">'+
-      '<div class="fpdf-sec-title">B &nbsp;·&nbsp; Mobiliario a Arrendar</div>'+
-      '<table class="fpdf-table">'+
-        '<thead><tr><th>Descripción del Artículo</th><th style="text-align:right">Cant.</th><th style="text-align:right">P. Unitario</th><th style="text-align:right">Importe</th></tr></thead>'+
-        '<tbody>'+tableRows+'</tbody>'+
-        '<tfoot>'+
-          (d.traslado>0?'<tr class="tfoot"><td colspan="3">Subtotal artículos</td><td class="num">$'+subtotal.toFixed(2)+'</td></tr>':'')+
-          (d.traslado>0?'<tr class="tfoot"><td colspan="3">Traslado</td><td class="num">$'+d.traslado.toFixed(2)+'</td></tr>':'')+
-          '<tr class="tfoot-total"><td colspan="3">TOTAL</td><td class="num">$'+d.total.toFixed(2)+'</td></tr>'+
-          '<tr class="tfoot"><td colspan="3">Anticipo recibido</td><td class="num">$'+d.anticipo.toFixed(2)+'</td></tr>'+
-          '<tr class="tfoot"><td colspan="3">Saldo por pagar</td><td class="num">$'+d.resta.toFixed(2)+'</td></tr>'+
-        '</tfoot>'+
-      '</table>'+
-    '</div>';
+  var abonos = d.abonos || [];
+  var saldo = d.resta;
+  var pagado = d.liquidado || saldo <= 0.004;
+  var totHTML =
+    '<div class="cpdf-blk cpdf-tot"><div class="cpdf-tot-in">'+
+      (d.traslado>0?'<div class="cpdf-tl"><span>Subtotal artículos</span><span>'+CM(subtotal)+'</span></div>'+
+                    '<div class="cpdf-tl"><span>Traslado</span><span>'+CM(d.traslado)+'</span></div>':'')+
+      '<div class="cpdf-tl strong"><span>Total</span><span>'+CM(d.total)+'</span></div>'+
+      '<div class="cpdf-tl"><span>Anticipo recibido</span><span>− '+CM(d.anticipo)+'</span></div>'+
+      abonos.map(function(a){
+        return '<div class="cpdf-tl"><span>Abono · '+fmtDate(a.fecha)+(a.nota?' · '+X(a.nota):'')+'</span><span>− '+CM(a.monto)+'</span></div>';
+      }).join('')+
+      '<div class="cpdf-tl due'+(pagado?' paid':'')+'"><span>'+(pagado?'Saldo por pagar<span class="cpdf-stamp">LIQUIDADO</span>':'Saldo por pagar')+'</span><span>'+CM(Math.max(0,saldo))+'</span></div>'+
+    '</div></div>';
+  addBlock(totHTML);
 
-  // ADDED: insignia de Fairy Decoraciones — solo si el contrato incluye
-  // al menos un artículo de Fairy Decoraciones
-  var secFairy = hasFairyItem
-    ? '<div class="fpdf-fairy-badge">'+
-        '<img src="data:image/png;base64,'+FAIRY_LOGO_B64+'" alt="Fairy Decoraciones">'+
-        '<div class="txt"><strong>Incluye servicio de Fairy Decoraciones</strong>Decoración adicional a cargo de Fairy Decoraciones, negocio hermano de Eventos CASVEL.</div>'+
-      '</div>'
-    : '';
+  /* ── Fairy Decoraciones (solo si el contrato incluye artículo de Fairy) ── */
+  if(hasFairyItem){
+    addBlock('<div class="cpdf-fairy"><img src="data:image/png;base64,'+FAIRY_LOGO_B64+'" alt="Fairy Decoraciones">'+
+      '<div class="tx"><b>Incluye servicio de Fairy Decoraciones</b>Decoración adicional a cargo de Fairy Decoraciones, negocio hermano de Eventos CASVEL.</div></div>');
+  }
 
-  // -- Section C: Cláusulas exactas del cliente --
-  var secC =
-    '<div class="fpdf-section">'+
-      '<div class="fpdf-sec-title">C &nbsp;·&nbsp; Cláusulas para Alquiler y Condiciones de Uso</div>'+
-      '<div class="fpdf-clauses">'+
-        '<div style="font-size:9px;font-weight:700;color:#1a1f2e;margin-bottom:4px;text-transform:uppercase;letter-spacing:.04em">Cláusulas para Alquiler:</div>'+
-        '<ul style="margin:0 0 8px 14px;padding:0;list-style:disc">'+
-          '<li class="fpdf-bullet">El mobiliario se alquila por día, se entrega el día del evento y se retira el mismo día o al día siguiente a más tardar las 12:00 pm.</li>'+
-          '<li class="fpdf-bullet">El costo del alquiler no incluye Traslado.</li>'+
-          '<li class="fpdf-bullet">El pago debe de hacerse al momento de la entrega del mobiliario.</li>'+
-          '<li class="fpdf-bullet">El mobiliario solo debe ser trasladado por el arrendador, se entrega en el lugar donde se realizará el evento, no debe de ser trasladado a otro sitio, ya que puede sufrir daños y esto tendría un costo adicional.</li>'+
-          '<li class="fpdf-bullet">El mobiliario debe de entregarse en las condiciones físicas en las cuales se haya recibido, no faltar piezas, ni evidenciar quebraduras, roturas o quemaduras, ya que esto correrá por cuenta del arrendatario.</li>'+
-          '<li class="fpdf-bullet">En caso de algún daño al brinca brinca, el cliente deberá pagar el importe acordado de acuerdo con el mismo.</li>'+
-          '<li class="fpdf-bullet">EVENTOS CASVEL NO se hace responsable de algún accidente o incidente dentro o fuera del inflable.</li>'+
-          '<li class="fpdf-bullet">En caso de suspensión del evento por parte del cliente no hay devolución del anticipo.</li>'+
-          '<li class="fpdf-bullet">Cada contrato requiere un anticipo del 25%.</li>'+
-          '<li class="fpdf-bullet">En caso de posponer el evento, el cliente deberá elegir otra fecha siempre y cuando el mobiliario se encuentre disponible y se dé aviso a "EVENTOS CASVEL" al menos 7 días antes de la fecha de dicho evento.</li>'+
-          '<li class="fpdf-bullet">Al firmar el presente contrato se dan por aceptadas todas las condiciones antes mencionadas, así como las condiciones de uso listadas a continuación.</li>'+
-        '</ul>'+
-        '<div style="font-size:9px;font-weight:700;color:#1a1f2e;margin-bottom:4px;text-transform:uppercase;letter-spacing:.04em">Condiciones de uso <span style="font-weight:400;text-transform:none;font-style:italic">(por razones de higiene, seguridad de los niños y deterioro del juego inflable):</span></div>'+
-        '<ul style="margin:0 0 0 14px;padding:0;list-style:disc">'+
-          '<li class="fpdf-bullet">No usar dentro del juego: confeti, serpentinas, papel de china, espuma, luces de bengala, restos de piñata, alimentos y/o bebidas.</li>'+
-          '<li class="fpdf-bullet">No usar zapatos dentro del inflable.</li>'+
-          '<li class="fpdf-bullet">No se permite fumar o colocar inflables cerca de fogatas o parrillas calientes.</li>'+
-        '</ul>'+
-      '</div>'+
-    '</div>';
+  /* ── 03 · Cláusulas (cada cláusula es un bloque; los títulos no quedan huérfanos) ── */
+  var clausulas = [
+    'El mobiliario se alquila por día, se entrega el día del evento y se retira el mismo día o al día siguiente a más tardar las 12:00 pm.',
+    'El costo del alquiler no incluye Traslado.',
+    'El pago debe de hacerse al momento de la entrega del mobiliario.',
+    'El mobiliario solo debe ser trasladado por el arrendador, se entrega en el lugar donde se realizará el evento, no debe de ser trasladado a otro sitio, ya que puede sufrir daños y esto tendría un costo adicional.',
+    'El mobiliario debe de entregarse en las condiciones físicas en las cuales se haya recibido, no faltar piezas, ni evidenciar quebraduras, roturas o quemaduras, ya que esto correrá por cuenta del arrendatario.',
+    'En caso de algún daño al brinca brinca, el cliente deberá pagar el importe acordado de acuerdo con el mismo.',
+    '<b>EVENTOS CASVEL NO</b> se hace responsable de algún accidente o incidente dentro o fuera del inflable.',
+    'En caso de suspensión del evento por parte del cliente no hay devolución del anticipo.',
+    'Cada contrato requiere un anticipo del <b>25%</b>.',
+    'En caso de posponer el evento, el cliente deberá elegir otra fecha siempre y cuando el mobiliario se encuentre disponible y se dé aviso a "EVENTOS CASVEL" al menos 7 días antes de la fecha de dicho evento.',
+    'Al firmar el presente contrato se dan por aceptadas todas las condiciones antes mencionadas, así como las condiciones de uso listadas a continuación.'
+  ];
+  var usos = [
+    'No usar dentro del juego: confeti, serpentinas, papel de china, espuma, luces de bengala, restos de piñata, alimentos y/o bebidas.',
+    'No usar zapatos dentro del inflable.',
+    'No se permite fumar o colocar inflables cerca de fogatas o parrillas calientes.'
+  ];
+  function clHTML(n, t){ return '<div class="cpdf-cl"><span class="n">'+n+'.</span><span>'+t+'</span></div>'; }
+  addBlock('<div class="cpdf-blk" style="margin-bottom:0">'+secHTML('03','Cláusulas para alquiler')+clHTML(1,clausulas[0])+'</div>');
+  for(var ci=1; ci<clausulas.length; ci++) addBlock(clHTML(ci+1, clausulas[ci]));
+  /* ── Condiciones de uso + firmas: viajan juntas, las firmas nunca quedan solas en una hoja ── */
+  var sigHTML = '<div class="cpdf-sig">'+
+    '<div><div class="ln"></div><div class="nm">EVENTOS CASVEL</div><div class="rl">Arrendador · Representante</div></div>'+
+    '<div><div class="ln"></div><div class="nm">'+X(d.nombre||'Arrendatario')+'</div><div class="rl">Arrendatario'+(d.tel?' · Tel. '+X(d.tel):'')+'</div></div>'+
+  '</div>';
+  addBlock('<div class="cpdf-keep"><div style="margin-top:6px"><div class="cpdf-cl-ttl">Condiciones de uso <i>(por razones de higiene, seguridad de los niños y deterioro del juego inflable)</i></div>'+
+    usos.map(function(u,k){ return clHTML(k+1,u); }).join('')+'</div>'+sigHTML+'</div>');
 
-  // -- Section D: Signatures — flex spacer pushes these to the bottom --
-  var secD =
-    '<div style="flex:1;min-height:8px"></div>'+
-    '<div class="fpdf-signatures">'+
-      '<div class="fpdf-sig-block"><div class="fpdf-sig-line"></div>'+
-        '<div class="fpdf-sig-name">EVENTOS CASVEL</div>'+
-        '<div class="fpdf-sig-role">Representante / Arrendador</div></div>'+
-      '<div class="fpdf-sig-block"><div class="fpdf-sig-line"></div>'+
-        '<div class="fpdf-sig-name">'+(d.nombre||'Arrendatario')+'</div>'+
-        '<div class="fpdf-sig-role">Arrendatario · Tel: '+(d.tel||'—')+'</div></div>'+
-    '</div>'+
-    '<div class="fpdf-footer">EVENTOS CASVEL &nbsp;·&nbsp; Contrato No. '+contratoNum+' &nbsp;·&nbsp; Generado el '+fmtDate(d.cDate)+'</div>';
+  } // fin buildAll
 
-  // -- Assemble: outer clip-page wraps a freely-growing inner-wrap that gets scaled --
-  var pageHTML =
-    '<div class="fpdf-page" id="fpdf-outer">'+
-      '<div class="fpdf-header">'+
-        '<div class="fpdf-logo-area">'+
-          '<img class="fpdf-logo" src="'+logoSrc+'" onerror="this.style.display=\'none\'" alt="">'+
-          '<div><div class="fpdf-brand">EVENTOS CASVEL</div><div class="fpdf-brand-sub">Renta de Mobiliario para Eventos</div></div>'+
-        '</div>'+
-        '<div class="fpdf-contract-id"><strong>CONTRATO DE ARRENDAMIENTO</strong>No. '+contratoNum+'</div>'+
-      '</div>'+
-      '<div class="fpdf-inner-wrap" id="fpdf-inner">'+
-        secA + secB + secFairy + secC + secD +
-      '</div>'+
-    '</div>';
+  /* ── Ajuste a una sola hoja: si no cabe, se reduce la letra de cláusulas y condiciones ── */
+  var clFs = 9.3;
+  container.classList.remove('cpdf-tight');
+  buildAll(clFs);
+  while(pages.length > 1 && clFs > 6.9){ clFs = Math.round((clFs - 0.3) * 10) / 10; buildAll(clFs); }
+  if(pages.length > 1){ // contratos con muchísimas líneas: además se compactan los espacios (nunca se escala)
+    container.classList.add('cpdf-tight');
+    clFs = 7.5; buildAll(clFs);
+    while(pages.length > 1 && clFs > 6.3){ clFs = Math.round((clFs - 0.3) * 10) / 10; buildAll(clFs); }
+  }
+  // Solo si aun así no cabe (listas muy largas de artículos) continúa en otra hoja
+  pages.forEach(function(pg, i){
+    pg.querySelector('.pgn').textContent = pages.length > 1 ? 'Página ' + (i+1) + ' de ' + pages.length : '';
+  });
 
-  var container = el('formal-pdf-container');
-  container.innerHTML = pageHTML;
-
-  // Give browser time to lay out, then measure and scale
-  setTimeout(function(){
-    var outer = el('fpdf-outer');
-    var inner = el('fpdf-inner');
-    if(!outer || !inner){ hideLoad(); showToast('❌ Error al preparar el PDF'); return; }
-
-    // Available height inside the page (total 1056 minus header)
-    var outerH   = 1056;
-    var headerEl = outer.querySelector('.fpdf-header');
-    var headerH  = headerEl ? headerEl.offsetHeight + 16 : 90; // 16 = gap
-    var available = outerH - 48 - 40 - headerH; // padding-top + padding-bottom + header
-
-    // Natural height of the inner content
-    var naturalH = inner.scrollHeight;
-
-    // Scale down if needed; never scale up (max 1.0)
-    var scale = naturalH > available ? (available / naturalH) : 1.0;
-    // Clamp: don't shrink below 55% (extremely pathological cases)
-    scale = Math.max(0.55, scale);
-
-    inner.style.transform = 'scale(' + scale + ')';
-    inner.style.transformOrigin = 'top left';
-    // Compensate width so scaled content doesn't leave gap
-    inner.style.width = (100 / scale) + '%';
-    // Fix height so outer doesn't expand
-    inner.style.height = (available / scale) + 'px';
-    inner.style.overflow = 'hidden';
-
-    function doCapture(){
-      html2canvas(outer, {
-        scale: 2,
-        useCORS: true,
-        allowTaint: true,
-        backgroundColor: '#ffffff',
-        width:  816,
-        height: 1056,
-        windowWidth: 816
-      }).then(function(canvas){
-        var imgData = canvas.toDataURL('image/jpeg', 0.95);
-        var jsPDFClass = window.jspdf ? window.jspdf.jsPDF : window.jsPDF;
-        if(!jsPDFClass){ hideLoad(); showToast('❌ jsPDF no disponible'); return; }
-        var pdf = new jsPDFClass({ orientation:'portrait', unit:'pt', format:'letter' });
-        var pW = pdf.internal.pageSize.getWidth();
-        var pH = pdf.internal.pageSize.getHeight();
-        pdf.addImage(imgData, 'JPEG', 0, 0, pW, pH);
-        var fname = 'CASVEL_Contrato_'+(d.nombre||'').replace(/\s+/g,'_')+'_'+contratoNum+'.pdf';
-        pdf.save(fname);
-        container.innerHTML = '';
-        hideLoad();
-        showToast('✅ Contrato formal descargado');
-      }).catch(function(err){
-        container.innerHTML = '';
-        hideLoad();
-        showToast('❌ Error: '+err.message);
-      });
-    }
-
-    if(!window.jspdf && !window.jsPDF){
-      var s = document.createElement('script');
-      s.src = 'https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js';
-      s.onload = function(){ setTimeout(doCapture, 100); };
-      s.onerror = function(){ hideLoad(); showToast('❌ No se pudo cargar jsPDF'); };
-      document.head.appendChild(s);
-    } else {
-      doCapture();
-    }
-  }, 400);
+  /* ── Captura: una imagen por hoja A4 → PDF multipágina ── */
+  function cleanup(){ container.innerHTML = ''; container.style.width = ''; }
+  function capture(){
+    var jsPDFClass = window.jspdf ? window.jspdf.jsPDF : window.jsPDF;
+    if(!jsPDFClass){ cleanup(); hideLoad(); showToast('❌ jsPDF no disponible'); return; }
+    var pdf = new jsPDFClass({ orientation:'portrait', unit:'mm', format:'a4' });
+    var i = 0;
+    (function next(){
+      if(i >= pages.length){
+        pdf.save('CASVEL_Contrato_'+(d.nombre||'').replace(/\s+/g,'_')+'_'+(d.cDate||'')+'.pdf');
+        cleanup(); hideLoad(); showToast('✅ Contrato formal descargado');
+        return;
+      }
+      html2canvas(pages[i], { scale:2, useCORS:true, allowTaint:true, backgroundColor:'#ffffff',
+        width:A4W, height:A4H, windowWidth:A4W, logging:false }).then(function(canvas){
+        if(i > 0) pdf.addPage('a4','portrait');
+        pdf.addImage(canvas.toDataURL('image/jpeg', 0.95), 'JPEG', 0, 0, 210, 297);
+        i++; next();
+      }).catch(function(err){ cleanup(); hideLoad(); showToast('❌ Error: '+err.message); });
+    })();
+  }
+  function ensureJsPDF(){
+    if(window.jspdf || window.jsPDF){ capture(); return; }
+    var s = document.createElement('script');
+    s.src = 'https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js';
+    s.onload = function(){ setTimeout(capture, 100); };
+    s.onerror = function(){ cleanup(); hideLoad(); showToast('❌ No se pudo cargar jsPDF'); };
+    document.head.appendChild(s);
+  }
+  ensureJsPDF();
 }
 
 /* ADDED: contract detail sheet */
@@ -2917,10 +3096,19 @@ function openDetailSheet(id){
   if(extraSec2){ extraSec2.style.display=extraRows2?'':'none'; }
   var extraRowsEl2=el('det-extra-rows');
   if(extraRowsEl2){ extraRowsEl2.innerHTML=extraRows2; }
+  // MODIFIED: desglose financiero con abonos y estado de liquidación
+  var abSum=sumAbonos(c);
+  var mx=function(n){return '$'+(n||0).toLocaleString('es-MX',{minimumFractionDigits:2});};
   el('det-fin-rows').innerHTML=
-    (s==='cerrado'
-      ? '<div class="det-fin-row"><span>Resta por pagar</span><span style="color:#15803d;font-weight:700">$0.00 ✓ Saldado</span></div>'
-      : '<div class="det-fin-row"><span>Resta por pagar</span><span style="color:var(--red)">$'+(c.resta||0).toLocaleString('es-MX',{minimumFractionDigits:2})+'</span></div>');
+    '<div class="det-fin-row"><span style="color:var(--mid)">Total</span><span>'+mx(c.total)+'</span></div>'+
+    '<div class="det-fin-row"><span style="color:var(--mid)">Anticipo</span><span>'+mx(c.anticipo)+'</span></div>'+
+    (abSum>0?'<div class="det-fin-row"><span style="color:var(--mid)">Abonos ('+(c.abonos||[]).length+')</span><span>−'+mx(abSum)+'</span></div>':'')+
+    ((c.liquidado||(c.resta||0)<=0.004)
+      ? '<div class="det-fin-row"><span>Resta por pagar</span><span style="color:#15803d;font-weight:700">$0.00 ✓ Liquidado</span></div>'
+      : (s==='cerrado'
+        ? '<div class="det-fin-row"><span>Resta por pagar</span><span style="color:#15803d;font-weight:700">$0.00 ✓ Saldado</span></div>'
+        : '<div class="det-fin-row"><span>Resta por pagar</span><span style="color:var(--red)">'+mx(c.resta)+'</span></div>'));
+  _detId=id; renderAbonosSection(c); // ADDED: sección de abonos/liquidación
   var notasSec=el('det-notas-section');
   if(c.notas){ el('det-notas-val').textContent=c.notas; notasSec.style.display=''; }
   else        { notasSec.style.display='none'; }
@@ -2945,6 +3133,76 @@ function closeDetailSheet(){
      and adds type:'cotizacion'
    - Convert to contract: copies fields to new contract, opens wizard
 ═══════════════════════════════════════════════════════════════ */
+
+/* ═══════════════════════════════════════════════════════════════
+   ADDED: ABONOS — historial de pagos parciales y liquidación,
+   dentro del detalle del contrato. La lógica vive en shared.js
+   (addAbono / removeAbono / liquidarContrato).
+═══════════════════════════════════════════════════════════════ */
+var _detId = null;
+function renderAbonosSection(c){
+  var fin=el('det-fin-rows'); if(!fin) return;
+  var sec=el('det-abonos-section');
+  if(!sec){
+    sec=document.createElement('div');
+    sec.className='det-section'; sec.id='det-abonos-section';
+    fin.parentNode.parentNode.insertBefore(sec, fin.parentNode.nextSibling);
+  }
+  var mx=function(n){return '$'+(n||0).toLocaleString('es-MX',{minimumFractionDigits:2});};
+  var abonos=c.abonos||[];
+  var saldo=calcSaldo(c);
+  var liquidado=!!c.liquidado || saldo<=0.004;
+  var list=abonos.map(function(a){
+    return '<div class="ab-row">'+
+      '<div class="ab-info"><div class="ab-date">'+fmtDate(a.fecha)+'</div>'+(a.nota?'<div class="ab-note">'+_xe(a.nota)+'</div>':'')+'</div>'+
+      '<div class="ab-amt">'+mx(a.monto)+'</div>'+
+      '<button class="ab-del" onclick="mDelAbono(\''+a.id+'\')" aria-label="Eliminar abono">&#128465;</button>'+
+    '</div>';
+  }).join('');
+  var form = liquidado
+    ? '<div class="ab-paid">&#10003; Contrato liquidado'+(c.liquidadoAt?' · '+fmtDate(c.liquidadoAt):'')+'</div>'
+    : '<div class="ab-form">'+
+        '<div class="ab-saldo">Saldo pendiente <strong>'+mx(saldo)+'</strong></div>'+
+        '<div class="ab-grid">'+
+          '<input type="number" id="ab-monto" inputmode="decimal" min="0" step="0.01" placeholder="Monto del abono">'+
+          '<input type="date" id="ab-fecha" value="'+todayISO()+'">'+
+        '</div>'+
+        '<input type="text" id="ab-nota" maxlength="80" placeholder="Nota (opcional) · efectivo, transferencia…">'+
+        '<div class="ab-btns">'+
+          '<button class="ab-btn ab-btn-p" onclick="mAddAbono()">&#10133; Registrar abono</button>'+
+          '<button class="ab-btn ab-btn-g" onclick="mLiquidar()">&#10003; Liquidar saldo</button>'+
+        '</div>'+
+      '</div>';
+  sec.innerHTML='<div class="det-sec-lbl">Abonos y liquidación</div>'+
+    (list||'<div style="font-size:13px;color:var(--mid);padding:2px 0 6px">Sin abonos registrados</div>')+form;
+}
+function mAddAbono(){
+  if(!_detId) return;
+  var r=addAbono(_detId, parseFloat(gv('ab-monto')), gv('ab-fecha'), gv('ab-nota'));
+  if(!r.ok){ showToast('⚠️ '+r.error); return; }
+  showToast(r.contract.liquidado?'✅ Abono registrado · contrato liquidado':'✅ Abono registrado');
+  openDetailSheet(_detId);
+}
+function mLiquidar(){
+  if(!_detId) return;
+  var c=getById(_detId); if(!c) return;
+  var saldo=calcSaldo(c);
+  if(!confirm(saldo>0.004
+      ? '¿Registrar el pago de $'+saldo.toFixed(2)+' y marcar el contrato como liquidado?'
+      : '¿Marcar el contrato como liquidado?')) return;
+  var r=liquidarContrato(_detId);
+  if(!r.ok){ showToast('⚠️ '+r.error); return; }
+  showToast('✅ Contrato liquidado');
+  openDetailSheet(_detId);
+}
+function mDelAbono(abonoId){
+  if(!_detId) return;
+  if(!confirm('¿Eliminar este abono? El saldo pendiente se recalculará.')) return;
+  var r=removeAbono(_detId, abonoId);
+  if(!r.ok){ showToast('⚠️ '+r.error); return; }
+  showToast('Abono eliminado');
+  openDetailSheet(_detId);
+}
 
 /* ── Quotation storage helpers ── */
 var COT_KEY = 'casvel_cot_v1';
@@ -3573,10 +3831,10 @@ function _mDoPDFCotizacionImpl(fromSheet){
    REPORTES: estado y renderizado (fusionado desde reporte-mobile.html)
 ═══════════════════════════════════════════════════════════════════ */
 /* ─── State ─────────────────────────────────────────────────── */
-var currentYear = new Date().getFullYear();
+var currentYear = currentYearNum(); // MODIFIED: GMT-6
 var currentTab  = 'mensual';
-var xmesYear    = new Date().getFullYear();
-var xmesMonth   = new Date().getMonth()+1;
+var xmesYear    = currentYearNum();  // MODIFIED: GMT-6
+var xmesMonth   = currentMonthNum(); // MODIFIED: GMT-6
 var todayISO_val = todayISO();
 var todayDate    = new Date(todayISO_val + 'T00:00:00');
 
