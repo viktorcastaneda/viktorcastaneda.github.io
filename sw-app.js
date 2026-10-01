@@ -10,7 +10,7 @@
 
    Para forzar que los usuarios reciban una actualización, sube este número
    en el próximo deploy. */
-var CACHE_VERSION = "casvel-app-v1";
+var CACHE_VERSION = "casvel-app-v2"; // MODIFIED: v2 — notificaciones + abonos + contrato formal A4
 
 var APP_SHELL = [
   "./mobile.html",
@@ -68,4 +68,33 @@ self.addEventListener("fetch", function(event){
       return cached || network;
     })
   );
+});
+
+
+// ADDED: al tocar una notificación, enfoca la app abierta o la abre.
+self.addEventListener("notificationclick", function(event){
+  event.notification.close();
+  var url = (event.notification.data && event.notification.data.url) || "./mobile.html";
+  event.waitUntil(
+    self.clients.matchAll({type:"window", includeUncontrolled:true}).then(function(list){
+      for(var i=0;i<list.length;i++){
+        if(list[i].url.indexOf("mobile.html")!==-1 && "focus" in list[i]) return list[i].focus();
+      }
+      return self.clients.openWindow(url);
+    })
+  );
+});
+
+// ADDED: listo para push de servidor (FCM / Web Push) — muestra el payload
+// {title, body, id} si algún día se envía uno. No hace nada sin servidor.
+self.addEventListener("push", function(event){
+  var data = {};
+  try{ data = event.data ? event.data.json() : {}; }catch(e){}
+  event.waitUntil(self.registration.showNotification(data.title || "CASVEL", {
+    body: data.body || "",
+    tag: data.tag || "casvel",
+    icon: "apple-touch-icon.png",
+    badge: "apple-touch-icon.png",
+    data: {url:"./mobile.html", id:data.id || ""}
+  }));
 });
