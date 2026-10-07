@@ -10,7 +10,7 @@
 
    Para forzar que los usuarios reciban una actualización, sube este número
    en el próximo deploy. */
-var CACHE_VERSION = "casvel-app-v2"; // MODIFIED: v2 — notificaciones + abonos + contrato formal A4
+var CACHE_VERSION = "casvel-app-v3"; // MODIFIED: v3 — acceso con cuenta (Firebase Auth) + roles
 
 var APP_SHELL = [
   "./mobile.html",

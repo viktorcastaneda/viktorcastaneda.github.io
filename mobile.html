@@ -1620,7 +1620,7 @@ if(!/[?&]m=1/.test(location.search) && !/[?&]view=/.test(location.search) &&
   <div class="stsub" id="fb-msub">Comparte el historial entre dispositivos con Firebase (gratis).</div>
   <div class="fb-steps">
     1. <a href="https://console.firebase.google.com" target="_blank">console.firebase.google.com</a> → nuevo proyecto<br>
-    2. Realtime Database → <em>Modo de prueba</em><br>
+    2. Realtime Database → pega las reglas de <code>firebase-rules.json</code> y habilita Authentication → <em>Correo/contraseña</em><br>
     3. Copia la URL de la DB (ej: <code>https://mi-app-rtdb.firebaseio.com</code>)<br>
     4. Configuración del proyecto → copia <code>apiKey</code> y <code>projectId</code>
   </div>
@@ -1630,6 +1630,12 @@ if(!/[?&]m=1/.test(location.search) && !/[?&]view=/.test(location.search) &&
     <input type="text" id="m-fb-dburl" placeholder="https://tu-proyecto-rtdb.firebaseio.com" autocomplete="off"></div>
   <div class="fb-field"><label>Project ID</label>
     <input type="text" id="m-fb-projid" placeholder="tu-proyecto-12345" autocomplete="off"></div>
+  <!-- ADDED (seguridad): sesión activa -->
+  <div class="nt-box" id="fb-session" style="display:none">
+    <div class="nt-ttl">🔐 Sesión</div>
+    <div class="nt-sub" id="fb-session-txt"></div>
+    <button class="fb-btn fb-btn-c" onclick="mFbLogout()" style="width:100%">Cerrar sesión</button>
+  </div>
   <!-- ADDED: notificaciones de contrato nuevo / actualizado -->
   <div class="nt-box">
     <div class="nt-ttl">🔔 Notificaciones</div>
@@ -1979,6 +1985,12 @@ function openFbSheet(){
     ?'✅ Conectado. El historial se sincroniza en tiempo real.'
     :'Comparte el historial entre dispositivos con Firebase (gratis).';
   updateNotifUI(); // ADDED
+  // ADDED (seguridad): mostrar la sesión activa y su rol
+  var ses=fbSessionInfo(), sb=el('fb-session');
+  if(sb){
+    sb.style.display=ses?'':'none';
+    if(ses) el('fb-session-txt').textContent=ses.email+' · '+(ses.role==='admin'?'Administrador':'Repartidor (solo lectura de contratos)');
+  }
   el('fb-sbg').classList.add('on');
   el('fb-sheet').classList.add('on');
 }
@@ -2036,6 +2048,13 @@ function mFbConnect(){
     if(err){ fbClearConfig(); showToast('❌ Error: '+err.message); updateFbBadge(false); }
     else { updateFbBadge(true); closeFbSheet(); showToast('✅ Firebase conectado'); }
   });
+}
+/* ADDED (seguridad): cerrar sesión sin borrar la configuración de Firebase */
+function mFbLogout(){
+  closeFbSheet();
+  _resetToLocalCache(); // cierra sesión y vuelve a datos locales
+  updateFbBadge(false);
+  showToast('🔒 Sesión cerrada — vuelve a conectar para iniciar sesión');
 }
 function mFbDisconnect(){
   fbClearConfig(); closeFbSheet();

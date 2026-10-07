@@ -3,22 +3,29 @@
     ".read": false,
     ".write": false,
 
+    "casvel_users": {
+      "$uid": {
+        ".read": "auth != null && auth.uid === $uid",
+        ".write": false
+      }
+    },
+
     "casvel_v1": {
-      ".read": "auth != null",
-      ".write": "auth != null",
+      ".read": "auth != null && (root.child('casvel_users').child(auth.uid).child('role').val() === 'admin' || root.child('casvel_users').child(auth.uid).child('role').val() === 'repartidor')",
+      ".write": "auth != null && root.child('casvel_users').child(auth.uid).child('role').val() === 'admin'",
       "$id": {
         ".validate": "newData.hasChildren(['id','nombre','fEvento']) && newData.child('total').isNumber()"
       }
     },
 
     "casvel_catalog": {
-      ".read": "auth != null",
-      ".write": "auth != null"
+      ".read": "auth != null && (root.child('casvel_users').child(auth.uid).child('role').val() === 'admin' || root.child('casvel_users').child(auth.uid).child('role').val() === 'repartidor')",
+      ".write": "auth != null && root.child('casvel_users').child(auth.uid).child('role').val() === 'admin'"
     },
 
     "casvel_entregas": {
-      ".read": "auth != null",
-      ".write": "auth != null"
+      ".read": "auth != null && (root.child('casvel_users').child(auth.uid).child('role').val() === 'admin' || root.child('casvel_users').child(auth.uid).child('role').val() === 'repartidor')",
+      ".write": "auth != null && (root.child('casvel_users').child(auth.uid).child('role').val() === 'admin' || root.child('casvel_users').child(auth.uid).child('role').val() === 'repartidor')"
     }
   }
 }
