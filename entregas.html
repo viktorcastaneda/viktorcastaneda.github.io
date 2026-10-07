@@ -727,6 +727,7 @@ function runSync(cfg){
     // Se registra un listener único: en cuanto llegue el snapshot en vivo
     // de Firebase, se copia a la caché offline propia de esta página y
     // se desuscribe (no queremos depender de la conexión en vivo después).
+    fetchCatalogOnce(); // ADDED: refresca catálogo al sincronizar
     var unsub = onContractsChange(function(){
       var live = loadContracts();
       saveOffline(live);
@@ -911,6 +912,7 @@ function openDetailSheet(id){
   el('det-subtitle').textContent=fmtDate(c.fEvento)+' · Contrato: '+fmtDate(c.cDate);
   el('det-status-badge').innerHTML='<span style="'+statusStyles[s]+';padding:3px 10px;border-radius:10px;font-size:11px;font-weight:700">'+statusLabels[s]+'</span>';
   var rows=[];
+  rows.push(['ID contrato','<span style="font-family:monospace;font-size:12px;user-select:all;word-break:break-all">'+xe(c.id)+'</span>']); // ADDED: ID para localizar el contrato en la base de datos
   if(c.tel)    rows.push(['Teléfono','<a href="https://wa.me/'+(c.tel+'').replace(/\D/g,'')+'" target="_blank" style="color:#15803d;font-weight:600;text-decoration:none">💬 '+xe(c.tel)+'</a>']);
   if(c.dir)    rows.push(['Dirección',xe(c.dir)]);
   if(c.hEntregaL||c.hEntrega) rows.push(['Entrega',xe(c.hEntregaL||c.hEntrega)]);
@@ -921,7 +923,7 @@ function openDetailSheet(id){
   }).join('');
   var itemRows=(c.items||[]).map(function(r,i){
     if(!r||!(r.qty>0)) return '';
-    return '<div class="det-item-row"><span class="det-item-name">'+ITEMS[i].desc+' ×'+r.qty+'</span><span class="det-item-amt">$'+r.amt.toFixed(2)+'</span></div>';
+    return '<div class="det-item-row"><span class="det-item-name">'+getItemByIndex(i).desc+' ×'+r.qty+'</span><span class="det-item-amt">$'+r.amt.toFixed(2)+'</span></div>';
   }).filter(Boolean).join('');
   el('det-items-rows').innerHTML=itemRows||'<div style="font-size:13px;color:var(--mid);padding:4px 0">Sin artículos</div>';
   var extraRows=(c.extraItems||[]).filter(function(ex){return ex.qty>0&&ex.desc;}).map(function(ex){
@@ -1043,6 +1045,7 @@ function resolveContractGeo(fecha, c){
   var key = entregaKey(fecha,c.id);
   var meta = entMeta[key];
   if(meta && meta.geo && typeof meta.geo.lat==='number') return meta.geo;
+  if(meta && meta.geoReset) return null; // ADDED: ubicación reseteada a propósito — no re-parsear el link, pedir captura nueva
   var parsed = parseLatLngFromLink(c.ubicacion);
   if(parsed && !_geoCachedThisSession[key]){
     _geoCachedThisSession[key] = true;
@@ -1161,6 +1164,15 @@ function captureManualGeo(fecha,id){
   renderRouteSheet();
 }
 
+// ADDED: borra las coordenadas ya resueltas de esta entrega para definirlas de nuevo
+// (solo toca casvel_entregas, nunca el contrato en casvel_v1)
+function resetGeo(fecha,id){
+  if(!confirm('¿Resetear la ubicación GPS de esta entrega para definirla de nuevo?')) return;
+  saveEntregaMeta(fecha,id,{geo:null,geoReset:true});
+  showToast('🔄 Ubicación reseteada');
+  renderRouteSheet();
+}
+
 function useMyLocationFor(fecha,id){
   if(!navigator.geolocation){ showToast('⚠️ Tu navegador no soporta geolocalización'); return; }
   showToast('📍 Obteniendo tu ubicación...');
@@ -1239,6 +1251,7 @@ function renderRouteSheet(){
         '<button class="route-mini-btn" onclick="moveRouteStop(\''+fecha+'\','+idx+',-1)"'+(idx===0?' disabled style="opacity:.35"':'')+'>▲ Subir</button>'+
         '<button class="route-mini-btn" onclick="moveRouteStop(\''+fecha+'\','+idx+',1)"'+(idx===list.length-1?' disabled style="opacity:.35"':'')+'>▼ Bajar</button>'+
         (c.ubicacion?'<a href="'+c.ubicacion+'" target="_blank" class="route-mini-btn">Abrir link ↗</a>':'')+
+        (g?'<button class="route-mini-btn" onclick="resetGeo(\''+fecha+'\',\''+c.id+'\')">🔄 Resetear GPS</button>':'')+ // ADDED
       '</div>'+
       (g?'':(
         '<div class="route-capture">'+
@@ -1519,6 +1532,10 @@ document.addEventListener('DOMContentLoaded', function(){
   registerSW();
   refreshRouteBadge();   // ADDED: refleja si ya hay bodega configurada
 
+  // ADDED: aplica el catálogo guardado (artículos agregados después de los 13 originales,
+  // p.ej. "Sweet") para que itemsSummary no los muestre como "Art.14"
+  applyOfflineCatalog();
+
   migrateLegacyEntregasData();     // ADDED: sube a la nube el orden/entregado que solo vivía aquí
 
   // ADDED: mantiene entMeta al día — al registrar el listener ya dispara un
@@ -1548,8 +1565,35 @@ function tryConnectEntregas(){
   var cfg = fbGetConfig();
   if(!cfg) return;
   fbInitEntregasOnly(cfg, function(err){
-    if(err) console.warn('No se pudo sincronizar entregas en línea', err);
+    if(err){ console.warn('No se pudo sincronizar entregas en línea', err); return; }
+    fetchCatalogOnce(); // ADDED
   });
+}
+
+// ADDED: entregas.html solo tenía el catálogo por defecto (13 artículos); los
+// contratos con artículos posteriores (índice 13+) salían como "Art.14".
+// Lectura única (solo lectura) de casvel_catalog + copia offline.
+var CATALOG_OFFLINE_KEY = 'casvel_entregas_catalog';
+function applyOfflineCatalog(){
+  try{
+    var raw = localStorage.getItem(CATALOG_OFFLINE_KEY);
+    if(!raw) return;
+    var cat = JSON.parse(raw);
+    if(cat && cat.items && cat.resources){ _rebuildCatalogVars(cat); renderEntregas(); }
+  }catch(e){}
+}
+function fetchCatalogOnce(){
+  try{
+    _fbDb.ref('casvel_catalog').once('value').then(function(snap){
+      var cat = snap.val();
+      if(!cat || !cat.items) return;
+      if(!Array.isArray(cat.items)) cat.items = Object.keys(cat.items).map(function(k){return cat.items[k];}); // RTDB puede devolver objeto
+      if(!cat.resources) cat.resources = {};
+      localStorage.setItem(CATALOG_OFFLINE_KEY, JSON.stringify(cat));
+      _rebuildCatalogVars(cat);
+      renderEntregas();
+    }).catch(function(e){ console.warn('No se pudo leer el catálogo', e); });
+  }catch(e){}
 }
 window.addEventListener('online', tryConnectEntregas);
 

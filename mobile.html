@@ -2993,6 +2993,7 @@ function openDetailSheet(id){
 
   // Info rows
   var rows=[];
+  rows.push(['ID contrato','<span style="font-family:monospace;font-size:12px;user-select:all;word-break:break-all">'+xe(c.id)+'</span>']); // ADDED: ID para localizar el contrato en la base de datos
   if(c.tel)    rows.push(['Teléfono','<a href="https://wa.me/'+(c.tel+'').replace(/\D/g,'')+'" target="_blank" style="color:#15803d;font-weight:600;text-decoration:none">&#128172; '+xe(c.tel)+'</a>']);
   if(c.dir)    rows.push(['Dirección', xe(c.dir)]);
   if(c.hEntregaL||c.hEntrega) rows.push(['Entrega',   xe(c.hEntregaL||c.hEntrega)]);
@@ -3070,6 +3071,7 @@ function openDetailSheet(id){
   el('det-subtitle').textContent=fmtDate(c.fEvento)+' · Contrato: '+fmtDate(c.cDate);
   el('det-status-badge').innerHTML='<span style="'+statusStyles[s]+';padding:3px 10px;border-radius:10px;font-size:11px;font-weight:700">'+statusLabels[s]+'</span>';
   var rows=[];
+  rows.push(['ID contrato','<span style="font-family:monospace;font-size:12px;user-select:all;word-break:break-all">'+xe(c.id)+'</span>']); // ADDED: ID para localizar el contrato en la base de datos
   if(c.tel)    rows.push(['Teléfono','<a href="https://wa.me/'+(c.tel+'').replace(/\D/g,'')+'" target="_blank" style="color:#15803d;font-weight:600;text-decoration:none">&#128172; '+xe(c.tel)+'</a>']);
   if(c.dir)    rows.push(['Dirección',xe(c.dir)]);
   if(c.hEntregaL||c.hEntrega) rows.push(['Entrega',xe(c.hEntregaL||c.hEntrega)]);
