@@ -387,118 +387,12 @@ function _fbLoadSDK(onDone){
   scripts.forEach(function(src){
     var s=document.createElement("script");
     s.src=src;
-    s.async=false; // ADDED: ejecutar en orden (app antes que auth/database) — evita "firebase.auth is not a function"
     s.onload=function(){ loaded++; if(loaded===scripts.length) onDone(); };
     s.onerror=function(){ onDone(new Error("No se pudo cargar Firebase SDK")); };
     document.head.appendChild(s);
   });
 }
-/* ═══════════════════════════════════════════════════════════════════════
-   ADDED (seguridad): AUTENTICACIÓN con correo y contraseña + roles.
-   · Los usuarios se crean en Firebase Authentication (consola) y se habilitan
-     en la base de datos: casvel_users/<uid>/role = "admin" | "repartidor".
-   · admin: lee y escribe todo. repartidor: lee contratos/catálogo y solo
-     escribe casvel_entregas (ver firebase-rules.json).
-   · La sesión se conserva en el dispositivo (la PWA no pide login cada vez).
-═══════════════════════════════════════════════════════════════════════ */
-var _fbUser = null;           // usuario autenticado actual
-var _fbRole = null;           // "admin" | "repartidor"
-var _fbLoginDeclined = false; // el usuario cerró el diálogo de acceso en esta carga de página
-var FB_ROLES = ["admin","repartidor"];
-
-function fbSessionInfo(){ return _fbUser ? {email:_fbUser.email||"", uid:_fbUser.uid, role:_fbRole} : null; }
-function fbCanWrite(){ return !_fbUser || _fbRole==="admin"; } // sin sesión = modo local (sin restricción)
-function fbLogout(){
-  try{ if(_fbApp) firebase.auth(_fbApp).signOut(); }catch(e){}
-  _fbUser=null; _fbRole=null;
-}
-function _fbAuthMsg(e){
-  var m={
-    "auth/invalid-credential":"Correo o contraseña incorrectos.",
-    "auth/invalid-login-credentials":"Correo o contraseña incorrectos.",
-    "auth/wrong-password":"Correo o contraseña incorrectos.",
-    "auth/user-not-found":"Correo o contraseña incorrectos.",
-    "auth/invalid-email":"El correo no es válido.",
-    "auth/user-disabled":"Esta cuenta está deshabilitada.",
-    "auth/too-many-requests":"Demasiados intentos. Espera unos minutos e inténtalo de nuevo.",
-    "auth/network-request-failed":"Sin conexión. Revisa tu internet.",
-    "auth/operation-not-allowed":"El acceso con correo/contraseña no está habilitado en Firebase."
-  };
-  return (e && m[e.code]) || (e && e.message) || "No se pudo iniciar sesión.";
-}
-// Verifica que la cuenta esté habilitada en casvel_users y obtiene su rol.
-function _fbCheckRole(user, ok, fail){
-  firebase.database(_fbApp).ref("casvel_users/"+user.uid+"/role").once("value").then(function(snap){
-    var role=snap.val();
-    if(FB_ROLES.indexOf(role)===-1){
-      firebase.auth(_fbApp).signOut();
-      fail(Object.assign(new Error("Tu cuenta no tiene acceso autorizado. Pide al administrador que la habilite."),{code:"casvel/no-role"}));
-      return;
-    }
-    _fbUser=user; _fbRole=role;
-    ok();
-  }).catch(function(e){
-    firebase.auth(_fbApp).signOut();
-    fail(Object.assign(new Error("No se pudo verificar tu acceso ("+(e&&e.code||"error")+")."),{code:"casvel/role-check"}));
-  });
-}
-// Garantiza una sesión válida: reutiliza la guardada o (si interactive) muestra el diálogo.
-function _fbAuthEnsure(onOk, onFail, interactive){
-  var auth=firebase.auth(_fbApp), done=false;
-  var unsub=auth.onAuthStateChanged(function(u){
-    if(done) return; done=true; unsub();
-    if(u){
-      _fbCheckRole(u, onOk, function(err){
-        if(interactive) fbPromptLogin(onOk, onFail, err.message); else onFail(err);
-      });
-    } else if(interactive){
-      fbPromptLogin(onOk, onFail, "");
-    } else {
-      onFail(Object.assign(new Error("Inicia sesión para sincronizar."),{code:"casvel/login-required"}));
-    }
-  });
-}
-// Diálogo de acceso (autocontenido: no depende del HTML de cada página).
-function fbPromptLogin(onOk, onCancel, msg){
-  var old=document.getElementById("cv-login-bg"); if(old) old.remove();
-  var bg=document.createElement("div"); bg.id="cv-login-bg";
-  bg.style.cssText="position:fixed;inset:0;z-index:99999;background:rgba(15,23,42,.65);display:flex;align-items:center;justify-content:center;padding:20px;font-family:'DM Sans',system-ui,sans-serif";
-  var inp="width:100%;box-sizing:border-box;padding:12px 14px;border:1.5px solid #d9e0ea;border-radius:10px;font-size:16px;font-family:inherit;margin-bottom:10px;outline:none";
-  bg.innerHTML=
-    '<form id="cv-login-f" style="background:#fff;border-radius:16px;padding:22px 20px;width:100%;max-width:360px;box-shadow:0 20px 50px rgba(0,0,0,.35)">'+
-      '<div style="font-size:11px;letter-spacing:.2em;font-weight:700;color:#2563a8;text-transform:uppercase">Eventos CasVel</div>'+
-      '<div style="font-size:18px;font-weight:800;color:#1a1f2e;margin:4px 0 4px">Iniciar sesión</div>'+
-      '<div style="font-size:12px;color:#6b7689;margin-bottom:14px">Accede con tu cuenta para sincronizar los contratos.</div>'+
-      '<input id="cv-l-mail" type="email" autocomplete="username" placeholder="Correo" required style="'+inp+'">'+
-      '<input id="cv-l-pass" type="password" autocomplete="current-password" placeholder="Contraseña" required style="'+inp+'">'+
-      '<div id="cv-l-err" style="font-size:12px;color:#b91c1c;min-height:16px;margin-bottom:8px"></div>'+
-      '<div style="display:flex;gap:8px">'+
-        '<button type="button" id="cv-l-cancel" style="flex:1;padding:12px;border:none;border-radius:10px;background:#f0f4f8;color:#475569;font-weight:700;font-size:14px;font-family:inherit">Cancelar</button>'+
-        '<button type="submit" id="cv-l-go" style="flex:1.4;padding:12px;border:none;border-radius:10px;background:#2563a8;color:#fff;font-weight:700;font-size:14px;font-family:inherit">Entrar</button>'+
-      '</div></form>';
-  document.body.appendChild(bg);
-  var err=document.getElementById("cv-l-err"); err.textContent=msg||"";
-  var mail=document.getElementById("cv-l-mail"), pass=document.getElementById("cv-l-pass"), go=document.getElementById("cv-l-go");
-  try{ mail.value=localStorage.getItem("casvel_last_email")||""; }catch(e){}
-  (mail.value?pass:mail).focus();
-  document.getElementById("cv-l-cancel").onclick=function(){
-    bg.remove(); _fbLoginDeclined=true;
-    onCancel(Object.assign(new Error("Sesión no iniciada."),{code:"casvel/login-cancelled"}));
-  };
-  document.getElementById("cv-login-f").onsubmit=function(ev){
-    ev.preventDefault();
-    go.disabled=true; go.textContent="Entrando..."; err.textContent="";
-    firebase.auth(_fbApp).signInWithEmailAndPassword(mail.value.trim(), pass.value).then(function(cred){
-      _fbCheckRole(cred.user, function(){
-        try{ localStorage.setItem("casvel_last_email", mail.value.trim()); }catch(e){}
-        _fbLoginDeclined=false; bg.remove(); onOk();
-      }, function(e){ err.textContent=e.message; go.disabled=false; go.textContent="Entrar"; });
-    }).catch(function(e){ err.textContent=_fbAuthMsg(e); go.disabled=false; go.textContent="Entrar"; });
-  };
-}
-
 function fbInit(cfg, onReady){
-  _fbLoginDeclined=false; // acción del usuario: se permite volver a mostrar el acceso
   _fbLoadSDK(function(err){
     if(err){ if(onReady) onReady(err); return; }
     _fbSetup(cfg, onReady);
@@ -509,14 +403,15 @@ function _fbSetup(cfg, onReady){
   try{
     try{ _fbApp=firebase.app("casvel"); }
     catch(e){ _fbApp=firebase.initializeApp(cfg,"casvel"); }
-    // MODIFIED (seguridad): ya no se usa autenticación anónima. Se exige una sesión de
-    // correo/contraseña de un usuario habilitado en casvel_users (rol admin/repartidor).
-    _fbAuthEnsure(function(){
+    // ADDED: autenticación anónima requerida por las reglas de seguridad
+    // (".read"/".write": "auth != null"). Transparente para el usuario: no
+    // pide login, solo exige que la petición pase por el SDK de Firebase Auth.
+    firebase.auth(_fbApp).signInAnonymously().then(function(){
       _fbSetupRefs(onReady);
-    }, function(err){
+    }).catch(function(err){
       _fbMode=false;
       if(onReady) onReady(err);
-    }, true);
+    });
   } catch(e){
     _fbMode=false;
     if(onReady) onReady(e);
@@ -669,13 +564,11 @@ function fbInitEntregasOnly(cfg, onReady){
     try{
       try{ _fbApp = firebase.app("casvel"); }
       catch(e){ _fbApp = firebase.initializeApp(cfg,"casvel"); }
-      // MODIFIED (seguridad): sesión de correo/contraseña; el diálogo de acceso solo se
-      // muestra de forma automática una vez por carga de página (si se rechaza, no insiste).
-      _fbAuthEnsure(function(){
+      firebase.auth(_fbApp).signInAnonymously().then(function(){
         _fbDb = _fbDb || firebase.database(_fbApp);
         _fbSetupEntregasRefOnce();
         if(onReady) onReady(null);
-      }, function(e){ if(onReady) onReady(e); }, !_fbLoginDeclined);
+      }).catch(function(e){ if(onReady) onReady(e); });
     } catch(e){ if(onReady) onReady(e); }
   });
 }
@@ -754,7 +647,7 @@ function saveContract(c){
   c.updatedBy = getDeviceId(); // ADDED: dispositivo que escribe (para no notificarse a sí mismo)
   if(_fbMode && _fbRef){
     // Firebase: el listener onValue actualizará _memCache y notificará
-    _fbRef.child(c.id).set(c).catch(_fbWriteErr); // MODIFIED: avisa si no hay permiso (rol repartidor / sesión vencida)
+    _fbRef.child(c.id).set(c).catch(function(e){console.error("Firebase write",e);});
     return;
   }
   // MODIFIED: modo local — mutar caché en memoria, notificar y persistir
@@ -769,7 +662,7 @@ function saveContract(c){
 function deleteContract(id){
   if(_fbMode && _fbRef){
     // Firebase: el listener onValue actualizará _memCache y notificará
-    _fbRef.child(id).remove().catch(_fbWriteErr); // MODIFIED
+    _fbRef.child(id).remove().catch(function(e){console.error("Firebase delete",e);});
     return;
   }
   // MODIFIED: modo local — mutar caché, notificar y persistir
@@ -779,16 +672,6 @@ function deleteContract(id){
   localStorage.setItem("casvel_v1",JSON.stringify(_memCache));
 }
 
-// ADDED (seguridad): error de escritura en Firebase (reglas / sesión). Los datos locales en memoria
-// ya cambiaron por latencia compensada; el listener los revertirá solos si el servidor los rechaza.
-function _fbWriteErr(e){
-  console.error("Firebase write", e);
-  if(typeof showToast==="function"){
-    showToast(e && e.code==="PERMISSION_DENIED"
-      ? "🔒 Sin permiso para guardar con esta cuenta"
-      : "⚠️ No se pudo guardar en la nube");
-  }
-}
 function getById(id){
   // MODIFIED: busca en caché, sin re-leer storage
   if(!_fbMode) _initLocalCache();
@@ -800,7 +683,6 @@ function isFbMode(){return _fbMode;}
 // ADDED: resetea el caché al desconectarse de Firebase para que _initLocalCache
 // lo recargue limpio desde localStorage. Llamar desde mFbDisconnect antes de renderizar.
 function _resetToLocalCache(){
-  fbLogout();                    // ADDED (seguridad): cerrar la sesión de Firebase al volver a modo local
   _fbMode   = false;
   _fbCatRef = null;              // ADDED: limpiar ref de catálogo
   _fbEntRef = null;              // ADDED: limpiar ref de metadatos de entrega
