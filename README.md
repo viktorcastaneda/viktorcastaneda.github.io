@@ -253,7 +253,7 @@ Cada artículo del catálogo también tiene dos IDs: `pq` (cantidad) y `pa` (imp
 1. Ve a [console.firebase.google.com](https://console.firebase.google.com)
 2. Crea un nuevo proyecto
 3. En **Realtime Database** → **Crear base de datos** → elige **Modo de prueba** (se cierra solo a los 30 días — sigue con el paso 4 antes de eso)
-4. En **Authentication → Sign-in method**, habilita **Correo electrónico/contraseña** (ya no se usa el acceso anónimo; ver "Seguridad de Firebase (v24)" al final)
+4. En **Authentication → Sign-in method**, habilita el proveedor **Anónimo**
 5. En **Realtime Database → Reglas**, pega el contenido de [`firebase-rules.json`](firebase-rules.json) (exige `auth != null` para leer/escribir — la app inicia sesión anónima automáticamente, sin pedir login al usuario)
 6. Copia la URL de la base de datos (ej: `https://mi-proyecto-default-rtdb.firebaseio.com`)
 7. En **Configuración del proyecto → General**, copia el `apiKey` y el `projectId`
@@ -370,28 +370,3 @@ sistema (Service Worker). Cada contrato guarda `updatedBy` (id de dispositivo) y
 **Limitación:** sin un servidor de push no llegan con la app totalmente cerrada. Para eso se requiere Firebase Cloud
 Messaging + una Cloud Function (plan Blaze) que envíe el push cuando se cree o modifique un contrato; `sw-app.js` ya
 incluye el manejador `push`. En iPhone solo funciona con la app instalada en la pantalla de inicio (iOS 16.4+).
-
-## Seguridad de Firebase (v24)
-
-La app ya no usa autenticación anónima (cualquiera con la URL y la apiKey podía leer/escribir todo). Ahora exige
-**correo y contraseña** y un **rol** por usuario:
-
-| Rol | Contratos | Catálogo | Entregas |
-|---|---|---|---|
-| `admin` | leer y escribir | leer y escribir | leer y escribir |
-| `repartidor` | solo leer | solo leer | leer y escribir |
-
-### Puesta en marcha (en este orden, para no quedarse sin acceso)
-1. **Authentication → Sign-in method**: habilita **Correo electrónico/contraseña**.
-2. **Authentication → Users → Add user**: crea una cuenta por persona (correo + contraseña propia). Copia el **UID** de cada una.
-3. **Realtime Database → Datos**: crea el nodo `casvel_users` y, dentro, un hijo por UID con el hijo `role`:
-   `casvel_users → <UID> → role: "admin"` (o `"repartidor"`). Solo se puede hacer desde la consola.
-4. Publica esta versión de la app (GitHub Pages) y abre la PWA en cada dispositivo: pedirá correo y contraseña una vez
-   (la sesión se conserva en el dispositivo). **Cerrar sesión** está en ☁️ Sincronización.
-5. **Realtime Database → Reglas**: pega el contenido de `firebase-rules.json` y publica.
-6. **Authentication → Sign-in method**: **deshabilita Anónimo** y elimina los usuarios anónimos antiguos.
-7. Recomendado: en **Google Cloud → APIs y servicios → Credenciales**, restringe la API key a los referentes
-   `https://viktorcastaneda.github.io/*`, y activa **App Check** (reCAPTCHA v3) para la base de datos.
-
-Si una cuenta no tiene `role` en `casvel_users`, la app la rechaza ("Tu cuenta no tiene acceso autorizado").
-Las contraseñas las gestiona Firebase Authentication; nunca se guardan en la app ni en el repositorio.

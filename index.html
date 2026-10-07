@@ -640,7 +640,6 @@ function fbConnect(){
   });
 }
 function fbDisconnect(){
-  fbLogout(); // ADDED (seguridad): cerrar sesión de Firebase
   fbClearConfig();
   updateFbBadge(false);
   closeFbModal();
