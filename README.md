@@ -370,3 +370,12 @@ sistema (Service Worker). Cada contrato guarda `updatedBy` (id de dispositivo) y
 **Limitación:** sin un servidor de push no llegan con la app totalmente cerrada. Para eso se requiere Firebase Cloud
 Messaging + una Cloud Function (plan Blaze) que envíe el push cuando se cree o modifique un contrato; `sw-app.js` ya
 incluye el manejador `push`. En iPhone solo funciona con la app instalada en la pantalla de inicio (iOS 16.4+).
+---
+
+## Módulos nuevos (V26 — sobre la rama main)
+
+- **`finanzas.html`** — Finanzas. Lee las rentas de los contratos (excluye cancelados; mes = fecha del evento; cobrado = anticipo + abonos, o total si está liquidado; los contratos cerrados sin registro de pagos se consideran cobrados). Registra **gastos** por categoría (sueldos, mantenimiento, gasolina, mobiliario/equipo, insumos, servicios, renta de bodega, publicidad, impuestos, otros) e **ingresos de contratos históricos / no registrados / otros**. Guarda en Firebase `/casvel_finanzas/movimientos` (o en localStorage sin Firebase). Reportes: estado de resultados, ingresos vs gastos por mes, gastos por categoría, comparativo anual, cuentas por cobrar, indicadores, mayores gastos y CSV.
+- **`respaldos.html`** — Respaldos manual y programado (mientras la página está abierta) en JSON con la forma de la exportación nativa, copias internas (IndexedDB), carpeta opcional (Chrome/Edge escritorio) y verificador de archivos. Solo puede leer los nodos que las reglas permiten.
+- **`respaldo-servidor/`** — GitHub Actions + `respaldo.py`: respaldo diario automático de toda la base. Ver `LEEME.md`.
+- **`firebase-rules.json`** — agrega `casvel_finanzas`. **Publícalo en la consola de Firebase** o finanzas no podrá guardar en modo Firebase.
+- Cambios en archivos existentes: `mobile.html` (2 enlaces en el inicio + `flex-wrap` en `.hquick`) y `sw-app.js` (cache v3 + 2 páginas nuevas).

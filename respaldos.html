@@ -1,0 +1,332 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
+<meta name="theme-color" content="#1a1f2e">
+<title>CASVEL – Respaldos</title>
+<link rel="icon" href="eventos_casvel_favicon.ico">
+<link rel="manifest" href="manifest-app.json">
+<link href="https://fonts.googleapis.com/css2?family=DM+Sans:wght@400;500;600;700;800&family=DM+Mono:wght@400;500&display=swap" rel="stylesheet">
+<style>
+*{box-sizing:border-box;margin:0;padding:0;-webkit-tap-highlight-color:transparent}
+:root{--blue:#2563a8;--bbg:#dce6f1;--dark:#1a1f2e;--mid:#5a6580;--light:#f0f4f8;--red:#c0392b;--red-lt:#fbe9e7;--green:#1a7a44;--green-lt:#e3f4ea;--gold:#b8860b;--gold-lt:#fdf3d0;--border:#d1dde8;--fm:'DM Mono',monospace;--r:14px;--st:env(safe-area-inset-top,0px);--sb:env(safe-area-inset-bottom,0px)}
+html,body{min-height:100%;font-family:'DM Sans',system-ui,sans-serif;background:var(--light);color:var(--dark)}
+body{padding-bottom:calc(30px + var(--sb))}
+button{font-family:inherit;cursor:pointer}
+.tb{background:var(--dark);color:#fff;display:flex;align-items:center;gap:10px;padding:14px 16px;padding-top:calc(14px + var(--st));position:sticky;top:0;z-index:100}
+.tb a.bk{color:rgba(255,255,255,.75);text-decoration:none;font-size:22px;padding:2px 6px}
+.tb .ttl{flex:1;font-size:16px;font-weight:700}
+.badge{font-size:11px;font-weight:700;padding:5px 11px;border-radius:20px;color:#fff}
+.badge.live{background:#1a7a44}.badge.local{background:#8a6d1a}
+.wrap{max-width:760px;margin:0 auto;padding:14px 16px}
+.card{background:#fff;border-radius:var(--r);border:1px solid var(--border);padding:15px;margin-bottom:14px}
+.card h3{font-size:12px;font-weight:700;text-transform:uppercase;letter-spacing:.06em;color:var(--blue);margin-bottom:10px}
+.row{display:flex;justify-content:space-between;gap:10px;padding:8px 0;border-bottom:1px solid #eef2f6;font-size:14px;align-items:baseline}
+.row:last-child{border-bottom:none}.row .n{font-family:var(--fm);white-space:nowrap}
+.muted{color:var(--mid);font-size:12.5px;line-height:1.45}
+.btn{padding:13px 16px;border:none;border-radius:11px;font-size:14px;font-weight:700}
+.btn.p{background:var(--blue);color:#fff}.btn.s{background:var(--light);color:var(--mid)}.btn.o{background:#fff;color:var(--blue);border:1.5px solid var(--blue)}
+.btn:disabled{opacity:.5}
+.big{width:100%;padding:17px;font-size:16px;margin-bottom:8px}
+.fl{font-size:11px;font-weight:700;text-transform:uppercase;letter-spacing:.05em;color:var(--mid);margin:12px 0 4px}
+.sel,.inp{width:100%;padding:11px 12px;border:1.5px solid var(--border);border-radius:10px;font-size:15px;font-family:inherit;background:#fff;outline:none}
+.sel:focus,.inp:focus{border-color:var(--blue)}
+.two{display:grid;grid-template-columns:1fr 1fr;gap:10px}
+.sw{display:flex;align-items:center;justify-content:space-between;padding:6px 0}
+.sw input{width:22px;height:22px;accent-color:var(--blue)}
+.status{padding:12px 14px;border-radius:11px;font-size:13.5px;line-height:1.45;margin-bottom:12px}
+.status.ok{background:var(--green-lt);color:var(--green)}.status.warn{background:var(--gold-lt);color:var(--gold)}.status.err{background:var(--red-lt);color:var(--red)}
+.hist{display:flex;gap:10px;align-items:center;padding:10px 0;border-bottom:1px solid #eef2f6}
+.hist:last-child{border-bottom:none}.hist .m{flex:1;min-width:0}
+.hist .t{font-size:13.5px;font-weight:600}.hist .d{font-size:12px;color:var(--mid);margin-top:2px}
+.hist button{padding:8px 12px;font-size:12px}
+.pill{font-size:10.5px;font-weight:700;padding:2px 8px;border-radius:10px;background:var(--bbg);color:var(--blue);margin-left:6px}
+.pill.g{background:var(--green-lt);color:var(--green)}.pill.r{background:var(--red-lt);color:var(--red)}
+.gate{max-width:420px;margin:60px auto;padding:0 20px;text-align:center}
+.gate h2{font-size:20px;margin-bottom:8px}.gate p{color:var(--mid);font-size:14px;margin-bottom:16px;line-height:1.5}
+#toast{position:fixed;left:50%;bottom:calc(24px + var(--sb));transform:translateX(-50%) translateY(20px);background:var(--dark);color:#fff;padding:11px 18px;border-radius:24px;font-size:13px;opacity:0;pointer-events:none;transition:.25s;z-index:500;max-width:90%}
+#toast.show{opacity:1;transform:translateX(-50%)}
+code{font-family:var(--fm);font-size:12px;background:var(--light);padding:1px 5px;border-radius:5px;word-break:break-all}
+</style>
+</head>
+<body>
+<div class="tb">
+  <a class="bk" href="mobile.html" title="Volver">‹</a>
+  <span style="font-size:20px">🛡️</span>
+  <span class="ttl">Respaldos</span>
+  <span class="badge local" id="fb-badge">⬡ Local</span>
+</div>
+
+<div id="gate" class="gate" style="display:none"></div>
+
+<div id="app" class="wrap" style="display:none">
+  <div id="state"></div>
+
+  <div class="card">
+    <h3>Respaldo manual</h3>
+    <button class="btn p big" id="btn-now" onclick="runBackup('manual')">⬇ Respaldar ahora</button>
+    <div class="muted">Descarga un archivo <b>.json</b> con el mismo formato que “Exportar JSON” de la consola de Firebase (contratos, catálogo, inventario, entregas y finanzas). Además guarda una copia dentro de este dispositivo.</div>
+  </div>
+
+  <div class="card">
+    <h3>Respaldo programado</h3>
+    <div class="sw"><span style="font-weight:600">Activar respaldo automático</span><input type="checkbox" id="c-on" onchange="saveCfg()"></div>
+    <div class="two">
+      <div><div class="fl">Frecuencia</div>
+        <select class="sel" id="c-freq" onchange="saveCfg()">
+          <option value="6">Cada 6 horas</option><option value="12">Cada 12 horas</option>
+          <option value="24">Diario</option><option value="72">Cada 3 días</option><option value="168">Semanal</option>
+        </select></div>
+      <div><div class="fl">Copias a conservar aquí</div>
+        <select class="sel" id="c-keep" onchange="saveCfg()">
+          <option value="5">5</option><option value="10">10</option><option value="20">20</option><option value="40">40</option>
+        </select></div>
+    </div>
+    <div class="fl">Destino del archivo automático</div>
+    <select class="sel" id="c-dest" onchange="saveCfg()">
+      <option value="device">Solo copia interna del dispositivo</option>
+      <option value="folder">Guardar archivo en una carpeta (Chrome/Edge de escritorio)</option>
+      <option value="download">Descargar archivo cada vez</option>
+    </select>
+    <div id="folder-row" style="display:none;margin-top:10px">
+      <button class="btn o" onclick="pickFolder()">📁 Elegir carpeta…</button>
+      <span class="muted" id="folder-name" style="margin-left:8px"></span>
+    </div>
+    <div class="muted" style="margin-top:12px">⚠ Una app web solo puede ejecutar el respaldo mientras está abierta (o se abre). Al abrir esta página (y cada 5 min mientras siga abierta) se revisa si el respaldo está vencido y se hace solo. Para un respaldo que corra <b>aunque nadie abra la app</b>, usa el respaldo en servidor (GitHub Actions) descrito abajo.</div>
+  </div>
+
+  <div class="card">
+    <h3>Respaldo en servidor (100 % automático)</h3>
+    <div class="muted">Incluido en <code>respaldo-servidor/</code>: un workflow de GitHub Actions que descarga <b>toda</b> la base (incluso los nodos que las reglas no exponen a la app, como <code>casvel_inventory_v1</code>) con la API REST de Firebase, en su formato nativo, y lo guarda en un repositorio privado cada día. Pasos en <code>respaldo-servidor/LEEME.md</code>.</div>
+  </div>
+
+  <div class="card">
+    <h3>Copias guardadas en este dispositivo</h3>
+    <div id="hist"></div>
+  </div>
+
+  <div class="card">
+    <h3>Verificar un archivo de respaldo</h3>
+    <input type="file" id="v-file" accept=".json,application/json" class="inp" onchange="verifyFile(this.files[0])">
+    <div id="v-out" style="margin-top:10px"></div>
+    <div class="muted" style="margin-top:8px">Compara el conteo de registros del archivo contra la base en vivo. No modifica nada.</div>
+  </div>
+</div>
+<div id="toast"></div>
+
+<script src="shared.js"></script>
+<script>
+"use strict";
+/* ═══════════════════════════════════════════════════════════════════════
+   MÓDULO DE RESPALDOS — Eventos CasVel
+   Lee los nodos de Firebase RTDB permitidos por las reglas y arma un JSON con la
+   misma forma que la exportación nativa de la consola (raíz → nodos).
+═══════════════════════════════════════════════════════════════════════ */
+var NODES = ["casvel_v1","casvel_catalog","casvel_entregas","casvel_inventory_v1","casvel_finanzas"];
+var CFG_KEY = "casvel_backup_cfg", LOG_KEY = "casvel_backup_log";
+var CFG = {on:false, freq:24, keep:10, dest:"device"};
+var _busy = false;
+
+function el(id){ return document.getElementById(id); }
+function toast(m){ var t=el("toast"); t.textContent=m; t.classList.add("show"); clearTimeout(t._t); t._t=setTimeout(function(){t.classList.remove("show");},3500); }
+function gateMsg(t,p,retry){
+  el("app").style.display="none"; var g=el("gate"); g.style.display="block";
+  g.innerHTML='<h2>'+xe(t)+'</h2><p>'+xe(p)+'</p>'+(retry?'<button class="btn p" onclick="location.reload()">Reintentar</button> ':'')+'<a class="btn s" style="display:inline-block;text-decoration:none" href="mobile.html">Volver a la app</a>';
+}
+function fmtSize(b){ return b>1048576 ? (b/1048576).toFixed(2)+" MB" : Math.round(b/1024)+" KB"; }
+function fmtWhen(iso){ var d=new Date(iso); return d.toLocaleDateString("es-MX",{day:"2-digit",month:"short",year:"numeric"})+" "+d.toLocaleTimeString("es-MX",{hour:"2-digit",minute:"2-digit"}); }
+
+/* ── IndexedDB: copias internas + handle de carpeta ─────────────── */
+function idb(){
+  return new Promise(function(res,rej){
+    var rq = indexedDB.open("casvel_backups",1);
+    rq.onupgradeneeded=function(){ var db=rq.result; db.createObjectStore("snaps",{keyPath:"id"}); db.createObjectStore("kv"); };
+    rq.onsuccess=function(){ res(rq.result); }; rq.onerror=function(){ rej(rq.error); };
+  });
+}
+function idbTx(store,mode,fn){
+  return idb().then(function(db){ return new Promise(function(res,rej){
+    var tx=db.transaction(store,mode), st=tx.objectStore(store), out=fn(st);
+    tx.oncomplete=function(){ res(out&&out.result!==undefined?out.result:out); }; tx.onerror=function(){ rej(tx.error); };
+  }); });
+}
+function idbAll(){ return idbTx("snaps","readonly",function(s){ return s.getAll(); }); }
+function idbPut(o){ return idbTx("snaps","readwrite",function(s){ s.put(o); }); }
+function idbDel(id){ return idbTx("snaps","readwrite",function(s){ s.delete(id); }); }
+function kvGet(k){ return idbTx("kv","readonly",function(s){ return s.get(k); }); }
+function kvSet(k,v){ return idbTx("kv","readwrite",function(s){ s.put(v,k); }); }
+
+/* ── Config / bitácora ──────────────────────────────────────────── */
+function loadCfg(){ try{ var c=JSON.parse(localStorage.getItem(CFG_KEY)||"null"); if(c) CFG=Object.assign(CFG,c); }catch(e){} }
+function saveCfg(){
+  CFG.on=el("c-on").checked; CFG.freq=+el("c-freq").value; CFG.keep=+el("c-keep").value; CFG.dest=el("c-dest").value;
+  try{ localStorage.setItem(CFG_KEY, JSON.stringify(CFG)); }catch(e){}
+  el("folder-row").style.display = CFG.dest==="folder" ? "" : "none";
+  renderState();
+}
+function getLog(){ try{ return JSON.parse(localStorage.getItem(LOG_KEY)||"[]"); }catch(e){ return []; } }
+function addLog(e){ var l=getLog(); l.unshift(e); try{ localStorage.setItem(LOG_KEY, JSON.stringify(l.slice(0,60))); }catch(x){} }
+function lastOk(){ return getLog().find(function(e){return e.ok;}); }
+
+/* ── Arranque ───────────────────────────────────────────────────── */
+document.addEventListener("DOMContentLoaded", function(){
+  loadCfg();
+  var cfg = fbGetConfig();
+  if(!cfg){ gateMsg("Firebase no configurado","Configura la conexión a Firebase en la app principal para poder respaldar la base."); return; }
+  gateMsg("Conectando…","Verificando tu sesión.");
+  fbInit(cfg, function(err){
+    if(err){ gateMsg("No se pudo conectar", err.message, true); return; }
+    el("fb-badge").className="badge live"; el("fb-badge").textContent="● Firebase";
+    el("gate").style.display="none"; el("app").style.display="block";
+    el("c-on").checked=CFG.on; el("c-freq").value=CFG.freq; el("c-keep").value=CFG.keep; el("c-dest").value=CFG.dest;
+    el("folder-row").style.display = CFG.dest==="folder" ? "" : "none";
+    renderState(); renderHist(); showFolderName();
+    checkDue();
+    setInterval(checkDue, 5*60*1000); // mientras la página esté abierta
+  });
+});
+
+function isDue(){
+  if(!CFG.on) return false;
+  var l = lastOk(); if(!l) return true;
+  return Date.now() - new Date(l.at).getTime() >= CFG.freq*3600*1000;
+}
+function checkDue(){ if(isDue() && !_busy) runBackup("auto"); }
+
+function renderState(){
+  var l = lastOk(), last = getLog()[0], h="";
+  if(last && !last.ok) h='<div class="status err">❌ El último intento falló ('+fmtWhen(last.at)+'): '+xe(last.error||"error")+'</div>';
+  else if(l){
+    var age=(Date.now()-new Date(l.at).getTime())/3600000;
+    var late = CFG.on && age > CFG.freq*1.5;
+    h='<div class="status '+(late?"warn":"ok")+'">'+(late?"⚠ Respaldo atrasado. ":"✅ ")+'Último respaldo: <b>'+fmtWhen(l.at)+'</b> · '+fmtSize(l.size)+' · '+l.records+' registros.'+
+      (CFG.on? '<br>Próximo: '+fmtWhen(new Date(new Date(l.at).getTime()+CFG.freq*3600000).toISOString()):"")+'</div>';
+  } else h='<div class="status warn">⚠ Aún no hay respaldos en este dispositivo.</div>';
+  el("state").innerHTML=h;
+}
+
+/* ── Construcción del respaldo ──────────────────────────────────── */
+function readNode(db, name){
+  return db.ref(name).once("value").then(function(s){ return s.val(); });
+}
+function sortKeys(o){
+  if(o===null || typeof o!=="object") return o;
+  if(Array.isArray(o)) return o.map(sortKeys);
+  var r={}; Object.keys(o).sort().forEach(function(k){ r[k]=sortKeys(o[k]); }); return r;
+}
+function countRecords(root){
+  var n=0; Object.keys(root).forEach(function(k){ var v=root[k]; n += (v && typeof v==="object") ? Object.keys(v).length : 1; }); return n;
+}
+function sha256(text){
+  if(!window.crypto||!crypto.subtle) return Promise.resolve("");
+  return crypto.subtle.digest("SHA-256", new TextEncoder().encode(text)).then(function(b){
+    return Array.prototype.map.call(new Uint8Array(b),function(x){return ("0"+x.toString(16)).slice(-2);}).join("");
+  });
+}
+function buildSnapshot(){
+  var db = firebase.database(_fbApp), root = {}, skipped = [];
+  return Promise.all(NODES.map(function(n){
+    return readNode(db,n).then(function(v){ if(v!==null && v!==undefined) root[n]=v; })
+      .catch(function(e){ skipped.push(n+" ("+(e&&e.code||"error")+")"); });
+  })).then(function(){
+    if(!root.casvel_v1) throw new Error("No se pudo leer casvel_v1 (contratos). Revisa permisos/sesión.");
+    var text = JSON.stringify(sortKeys(root), null, 2);
+    return sha256(text).then(function(h){ return {text:text, root:root, hash:h, skipped:skipped}; });
+  });
+}
+function stamp(d){
+  d=d||new Date(); function p(n){return ("0"+n).slice(-2);}
+  return d.getFullYear()+p(d.getMonth()+1)+p(d.getDate())+"-"+p(d.getHours())+p(d.getMinutes());
+}
+
+/* ── Ejecutar respaldo ──────────────────────────────────────────── */
+function runBackup(mode){
+  if(_busy) return Promise.resolve();
+  _busy=true; var btn=el("btn-now"); btn.disabled=true; btn.textContent="Respaldando…";
+  var fname;
+  return buildSnapshot().then(function(s){
+    fname = stamp()+"-contratoscasvel-rtdb-export.json";
+    var rec = {id:"bk_"+Date.now(), at:new Date().toISOString(), name:fname, size:new Blob([s.text]).size,
+               records:countRecords(s.root), hash:s.hash, mode:mode, text:s.text,
+               counts:Object.keys(s.root).reduce(function(o,k){ o[k]=(s.root[k]&&typeof s.root[k]==="object")?Object.keys(s.root[k]).length:1; return o; },{})};
+    return idbPut(rec).then(pruneOld).then(function(){
+      var blob = new Blob([s.text],{type:"application/json"});
+      if(mode==="manual" || CFG.dest==="download") dlBlob(blob, fname);
+      else if(CFG.dest==="folder") return saveToFolder(blob, fname).catch(function(e){ rec.folderError=e.message; toast("Copia interna OK; carpeta: "+e.message); });
+    }).then(function(){
+      addLog({ok:true, at:rec.at, size:rec.size, records:rec.records, mode:mode, name:fname, hash:s.hash});
+      toast("Respaldo listo · "+rec.records+" registros"+(s.skipped.length?" (omitidos: "+s.skipped.join(", ")+")":""));
+    });
+  }).catch(function(e){
+    addLog({ok:false, at:new Date().toISOString(), error:e.message||String(e), mode:mode});
+    toast("Falló el respaldo: "+(e.message||e));
+  }).then(function(){
+    _busy=false; btn.disabled=false; btn.textContent="⬇ Respaldar ahora";
+    renderState(); renderHist();
+  });
+}
+function pruneOld(){
+  return idbAll().then(function(all){
+    all.sort(function(a,b){return b.at.localeCompare(a.at);});
+    return Promise.all(all.slice(CFG.keep).map(function(r){ return idbDel(r.id); }));
+  });
+}
+
+/* ── Carpeta (File System Access API) ───────────────────────────── */
+function pickFolder(){
+  if(!window.showDirectoryPicker){ toast("Tu navegador no permite elegir carpeta. Usa Chrome/Edge de escritorio."); return; }
+  window.showDirectoryPicker({mode:"readwrite"}).then(function(h){ return kvSet("dir",h).then(function(){ showFolderName(); toast("Carpeta configurada"); }); })
+    .catch(function(e){ if(e&&e.name!=="AbortError") toast("No se pudo elegir la carpeta"); });
+}
+function showFolderName(){ kvGet("dir").then(function(h){ el("folder-name").textContent = h ? "📁 "+h.name : ""; }).catch(function(){}); }
+function saveToFolder(blob, name){
+  return kvGet("dir").then(function(h){
+    if(!h) throw new Error("no hay carpeta elegida");
+    return h.requestPermission({mode:"readwrite"}).then(function(p){
+      if(p!=="granted") throw new Error("permiso de carpeta denegado (abre esta página y pulsa Respaldar ahora para concederlo)");
+      return h.getFileHandle(name,{create:true}).then(function(fh){ return fh.createWritable(); })
+        .then(function(w){ return w.write(blob).then(function(){ return w.close(); }); });
+    });
+  });
+}
+
+/* ── Historial ──────────────────────────────────────────────────── */
+function renderHist(){
+  idbAll().then(function(all){
+    all.sort(function(a,b){return b.at.localeCompare(a.at);});
+    el("hist").innerHTML = all.length ? all.map(function(r){
+      return '<div class="hist"><div class="m"><div class="t">'+fmtWhen(r.at)+'<span class="pill">'+(r.mode==="auto"?"automático":"manual")+'</span></div>'+
+        '<div class="d">'+fmtSize(r.size)+' · '+r.records+' registros · '+(r.counts&&r.counts.casvel_v1||0)+' contratos'+(r.hash?' · SHA-256 '+r.hash.slice(0,8)+'…':'')+'</div></div>'+
+        '<button class="btn o" onclick="dlSnap(\''+r.id+'\')">⬇</button></div>';
+    }).join("") : '<div class="muted">Sin copias todavía.</div>';
+  }).catch(function(){ el("hist").innerHTML='<div class="muted">No se pudo leer el almacenamiento local.</div>'; });
+}
+function dlSnap(id){
+  idbAll().then(function(all){ var r=all.find(function(x){return x.id===id;}); if(r) dlBlob(new Blob([r.text],{type:"application/json"}), r.name); });
+}
+
+/* ── Verificación de archivo ────────────────────────────────────── */
+function verifyFile(f){
+  var out=el("v-out"); if(!f) return; out.innerHTML='<div class="muted">Analizando…</div>';
+  var rd=new FileReader();
+  rd.onload=function(){
+    var root; try{ root=JSON.parse(rd.result); }catch(e){ out.innerHTML='<div class="status err">El archivo no es un JSON válido.</div>'; return; }
+    var db=firebase.database(_fbApp), keys=Object.keys(root);
+    Promise.all(keys.filter(function(k){return NODES.indexOf(k)>-1;}).map(function(k){
+      return readNode(db,k).then(function(v){ return [k, v&&typeof v==="object"?Object.keys(v).length:(v?1:0)]; }).catch(function(){ return [k,null]; });
+    })).then(function(live){
+      var liveMap={}; live.forEach(function(x){liveMap[x[0]]=x[1];});
+      var h='<table style="width:100%;font-size:13px;border-collapse:collapse"><tr><th align="left">Nodo</th><th align="right">Archivo</th><th align="right">En vivo</th></tr>';
+      keys.forEach(function(k){
+        var n=(root[k]&&typeof root[k]==="object")?Object.keys(root[k]).length:1, lv=liveMap[k];
+        h+='<tr style="border-top:1px solid #eef2f6"><td style="padding:6px 0">'+xe(k)+'</td><td align="right" style="font-family:var(--fm)">'+n+'</td><td align="right" style="font-family:var(--fm)">'+(lv===undefined?"–":lv===null?"sin acceso":lv)+'</td></tr>';
+      });
+      out.innerHTML='<div class="status ok">✅ JSON válido · '+keys.length+' nodos · '+countRecords(root)+' registros</div>'+h+'</table>';
+    });
+  };
+  rd.readAsText(f);
+}
+</script>
+</body>
+</html>

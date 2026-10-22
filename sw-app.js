@@ -10,13 +10,15 @@
 
    Para forzar que los usuarios reciban una actualización, sube este número
    en el próximo deploy. */
-var CACHE_VERSION = "casvel-app-v2"; // MODIFIED: v2 — notificaciones + abonos + contrato formal A4
+var CACHE_VERSION = "casvel-app-v3"; // MODIFIED: v3 — módulos finanzas.html y respaldos.html
 
 var APP_SHELL = [
   "./mobile.html",
   "./index.html",
   "./reporte-mobile.html",
   "./inventario.html",
+  "./finanzas.html",   // ADDED
+  "./respaldos.html",  // ADDED
   "./shared.js",
   "./logo-b64.js",
   "./manifest-app.json",

@@ -135,11 +135,20 @@ input[type=date].fi{color-scheme:light}
 .hbrand{font-size:22px;font-weight:700;color:#fff}
 .hsub{font-size:13px;color:rgba(255,255,255,.4);margin-top:2px}
 .hlink{margin-left:auto;font-size:10px;color:rgba(255,255,255,.3);text-decoration:none;flex-shrink:0}
-/* ADDED: fila propia para Entregas/Escritorio — full-width, nunca compite
-   por espacio con el badge de Firebase (ver comentario junto al HTML) */
-.hquick{background:var(--dark);padding:0 18px 14px;display:flex;gap:18px;flex-shrink:0}
-.hquick-link{font-size:12px;font-weight:600;color:rgba(255,255,255,.5);text-decoration:none;
-  display:flex;align-items:center;gap:5px;white-space:nowrap}
+/* MODIFIED: los enlaces rápidos (Entregas, Escritorio, Finanzas, Respaldos) ahora viven
+   en un menú de hamburguesa en el encabezado del inicio, en lugar de una fila apilada. */
+.hhero{position:relative}
+.hmenu-btn{flex-shrink:0;width:38px;height:38px;border:none;border-radius:10px;background:rgba(255,255,255,.12);
+  color:#fff;font-size:20px;line-height:1;cursor:pointer;display:flex;align-items:center;justify-content:center;
+  -webkit-tap-highlight-color:transparent}
+.hmenu{position:absolute;right:14px;top:calc(100% - 8px);z-index:250;min-width:200px;background:#fff;border-radius:14px;
+  box-shadow:0 12px 32px rgba(0,0,0,.3);padding:6px;display:none}
+.hmenu.show{display:block}
+.hmenu a{display:flex;align-items:center;gap:12px;padding:13px 14px;border-radius:10px;font-size:15px;font-weight:600;
+  color:var(--dark);text-decoration:none}
+.hmenu a:active{background:var(--light)}
+.hmenu-bg{position:fixed;inset:0;z-index:240;display:none}
+.hmenu-bg.show{display:block}
 .hcontent{flex:1;overflow-y:auto;-webkit-overflow-scrolling:touch;
   padding:16px 16px calc(90px + var(--sb))}
 /* ── ADDED: banner de instalación de la app (PWA de toda la app) ── */
@@ -835,15 +844,17 @@ if(!/[?&]m=1/.test(location.search) && !/[?&]view=/.test(location.search) &&
     <img id="m-logo" src="" alt="">
     <div><div class="hbrand">CASVEL</div><div class="hsub">Gestor de Contratos</div></div>
     <button class="fb-sync local" id="m-fb-status" onclick="openFbSheet()">⬡ Local</button>
+    <!-- MODIFIED: Entregas, Escritorio, Finanzas y Respaldos pasaron de una fila de enlaces
+         a este menú de hamburguesa (ya no se apilan ni compiten por espacio con el badge). -->
+    <button class="hmenu-btn" id="hmenu-btn" aria-label="Menú" aria-expanded="false" onclick="toggleHomeMenu()">☰</button>
+    <div class="hmenu" id="hmenu" role="menu">
+      <a href="entregas.html" role="menuitem">🚚 Entregas</a>
+      <a href="index.html?d=1" role="menuitem">🖥 Escritorio</a>
+      <a href="finanzas.html" role="menuitem">💰 Finanzas</a>
+      <a href="respaldos.html" role="menuitem">🛡️ Respaldos</a>
+    </div>
   </div>
-  <!-- MODIFIED: Entregas/Escritorio en su propia fila, con ancho de sobra siempre —
-       antes compartían renglón con el badge de Firebase y en pantallas angostas
-       (~320px) con "● Firebase" (más largo que "⬡ Local") se salían del contenedor.
-       Reportes y Catálogo se quitaron de aquí: ya están en el bottom-nav. -->
-  <div class="hquick">
-    <a class="hquick-link" href="entregas.html">🚚 Entregas</a>
-    <a class="hquick-link" href="index.html?d=1">🖥 Escritorio</a>
-  </div>
+  <div class="hmenu-bg" id="hmenu-bg" onclick="toggleHomeMenu(false)"></div>
   <div class="hcontent">
     <!-- ADDED: banner de instalación — se muestra solo si la app no está ya instalada -->
     <div class="install-banner" id="install-banner" style="display:none">
@@ -1709,6 +1720,15 @@ function showLoad(msg){ el('m-load-msg').textContent=msg||'Generando...'; el('m-
 function hideLoad(){ el('m-loading').classList.remove('show'); }
 
 /* ── Screen navigation ── */
+/* ADDED: menú de hamburguesa del inicio (Entregas, Escritorio, Finanzas, Respaldos) */
+function toggleHomeMenu(force){
+  var m=el('hmenu'), bg=el('hmenu-bg'), b=el('hmenu-btn');
+  var open = (typeof force==='boolean') ? force : !m.classList.contains('show');
+  m.classList.toggle('show', open); bg.classList.toggle('show', open);
+  if(b){ b.setAttribute('aria-expanded', open?'true':'false'); b.textContent = open ? '✕' : '☰'; }
+}
+document.addEventListener('keydown', function(e){ if(e.key==='Escape') toggleHomeMenu(false); });
+
 /* ── Screen navigation ── */
 function setActiveNav(tab){
   ['home','clientes','hist','quot','reportes','catalogo'].forEach(function(t){
