@@ -1,0 +1,30 @@
+# Copia este archivo a .github/workflows/ de un repositorio PRIVADO (ej. casvel-respaldos),
+# junto con respaldo.py en la raíz del repo. No lo pongas en el repo público de la app.
+name: Respaldo Firebase
+on:
+  schedule:
+    - cron: "0 9 * * *"      # todos los días 09:00 UTC (~03:00 Chihuahua)
+  workflow_dispatch: {}       # botón "Run workflow" para respaldar a mano
+permissions:
+  contents: write
+jobs:
+  backup:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with: { python-version: "3.12" }
+      - run: pip install google-auth requests
+      - name: Respaldar
+        env:
+          FIREBASE_DB_URL: ${{ secrets.FIREBASE_DB_URL }}
+          FIREBASE_SERVICE_ACCOUNT: ${{ secrets.FIREBASE_SERVICE_ACCOUNT }}
+          BACKUP_KEEP: "90"
+        run: python respaldo.py
+      - name: Guardar en el repositorio
+        run: |
+          git config user.name "casvel-backup"
+          git config user.email "casvel-backup@users.noreply.github.com"
+          git add respaldos
+          git diff --cached --quiet || git commit -m "Respaldo $(date -u +%F)"
+          git push
