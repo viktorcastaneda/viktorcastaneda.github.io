@@ -36,8 +36,11 @@ def main():
     out = pathlib.Path(os.environ.get("BACKUP_DIR", "respaldos"))
     out.mkdir(parents=True, exist_ok=True)
     name = datetime.datetime.utcnow().strftime("%Y%m%d-%H%M") + "-contratoscasvel-rtdb-export.json"
-    (out / name).write_bytes(raw)                # bytes tal cual los entrega Firebase
-    print(f"OK {name}: {len(raw)} bytes, {len(data)} nodos, {len(data['casvel_v1'])} contratos")
+    # La API REST devuelve JSON compacto (una sola línea); la consola de Firebase exporta
+    # indentado a 2 espacios, claves ordenadas y UTF-8 literal. Se reproduce ese formato.
+    pretty = json.dumps(data, indent=2, sort_keys=True, ensure_ascii=False)
+    (out / name).write_text(pretty, encoding="utf-8")
+    print(f"OK {name}: {len(pretty)} caracteres, {len(data)} nodos, {len(data['casvel_v1'])} contratos")
 
     keep = int(os.environ.get("BACKUP_KEEP", "60"))
     if keep:
