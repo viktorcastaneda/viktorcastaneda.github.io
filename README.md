@@ -55,6 +55,21 @@ Sistema web de gestión de contratos de renta de mobiliario para eventos y fiest
 
 ---
 
+## Cobros y recibos (Mercado Pago Point Smart 2)
+
+`cobros.html` permite cobrar un anticipo, liquidar el saldo o cobrar un servicio suelto, y generar un **recibo térmico** (58 u 80 mm) con folio, artículos, pagos previos y saldo pendiente. Cada pago se guarda en el contrato (`pagos[]`), así que se sincroniza por Firebase y se puede reimprimir.
+
+**Modo manual (funciona sin configurar nada):** cobras en la terminal, registras el pago en la página e imprimes el recibo (`window.print()` hacia una impresora térmica Bluetooth/USB) o lo compartes como imagen por WhatsApp.
+
+**Modo integrado (opcional):** la página envía el monto directo a la terminal y espera la aprobación.
+1. En Mercado Pago Developers crea una aplicación y copia el *Access Token* de producción.
+2. Publica `mp-worker.js` como Cloudflare Worker y define los secretos `MP_TOKEN`, `CASVEL_KEY` y `ALLOW_ORIGIN`. El token **no** va en el sitio ni en el navegador.
+3. En ⚙️ de `cobros.html` captura la URL del Worker, la clave, pulsa *Buscar* para elegir la terminal y *Poner terminal en modo integrado (PDV)*; reinicia la terminal.
+
+> Los endpoints de la API Point (`/point/integration-api/...`) y los estados de la intención de pago deben verificarse contra la documentación vigente de Mercado Pago antes de usar en producción.
+
+---
+
 ## Archivos del proyecto
 
 ```

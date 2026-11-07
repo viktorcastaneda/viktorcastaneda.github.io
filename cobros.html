@@ -1,0 +1,434 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width,initial-scale=1,maximum-scale=1,user-scalable=no">
+<meta name="theme-color" content="#1a1f2e">
+<title>CASVEL – Cobros y recibos</title>
+<link href="https://fonts.googleapis.com/css2?family=DM+Sans:wght@400;500;600;700&family=DM+Mono:wght@400;500&display=swap" rel="stylesheet">
+<link rel="icon" type="image/x-icon" href="eventos_casvel_favicon.ico">
+<link rel="apple-touch-icon" sizes="180x180" href="apple-touch-icon.png">
+<script src="https://cdnjs.cloudflare.com/ajax/libs/html2canvas/1.4.1/html2canvas.min.js"></script>
+<style>
+*{box-sizing:border-box;margin:0;padding:0}
+:root{--blue:#2563a8;--bbg:#dce6f1;--dark:#1a1f2e;--mid:#5a6580;--light:#f0f4f8;--white:#fff;
+  --red:#c0392b;--green:#1a7a44;--border:#d1dde8;--mp:#009ee3;--fm:'DM Mono',monospace;
+  --sb:env(safe-area-inset-bottom,16px);--st:env(safe-area-inset-top,0px)}
+html,body{font-family:'DM Sans',system-ui,sans-serif;background:var(--light);color:var(--dark)}
+body{-webkit-text-size-adjust:100%}
+.hhero{background:var(--dark);padding:18px;padding-top:calc(18px + var(--st));display:flex;align-items:center;gap:14px}
+.hhero img{width:48px;border-radius:8px}
+.hbrand{font-size:20px;font-weight:700;color:#fff}
+.hsub{font-size:12px;color:rgba(255,255,255,.45);margin-top:2px}
+.gear{margin-left:auto;background:rgba(255,255,255,.1);border:none;color:#fff;font-size:18px;width:40px;height:40px;border-radius:10px;cursor:pointer}
+.wrap{max-width:560px;margin:0 auto;padding:14px 16px calc(90px + var(--sb))}
+.card{background:var(--white);border:1px solid var(--border);border-radius:14px;padding:14px 16px;margin-bottom:12px}
+.lbl{font-size:11px;font-weight:700;text-transform:uppercase;letter-spacing:.06em;color:var(--mid);margin-bottom:6px;display:block}
+input,select,textarea{width:100%;padding:11px 12px;border:1.5px solid var(--border);border-radius:10px;font:inherit;font-size:15px;background:#fff;color:var(--dark);outline:none}
+input:focus,select:focus,textarea:focus{border-color:var(--blue)}
+.row{display:flex;gap:10px}.row>*{flex:1}
+.gap{height:10px}
+.seg{display:flex;gap:6px;flex-wrap:wrap}
+.seg button{flex:1;min-width:30%;padding:10px 6px;border:1.5px solid var(--border);background:var(--light);border-radius:10px;font:inherit;font-size:13px;font-weight:700;color:var(--mid);cursor:pointer}
+.seg button.on{background:var(--blue);border-color:var(--blue);color:#fff}
+.btn{width:100%;padding:14px;border:none;border-radius:12px;font:inherit;font-size:15px;font-weight:700;cursor:pointer;color:#fff;background:var(--blue);margin-top:8px}
+.btn.mp{background:var(--mp)}.btn.green{background:var(--green)}.btn.gray{background:#6b7590}.btn.red{background:var(--red)}
+.btn:disabled{opacity:.5}
+.hint{font-size:12px;color:var(--mid);line-height:1.45;margin-top:6px}
+.pick{border:1.5px solid var(--border);border-radius:10px;padding:10px 12px;margin-top:8px;cursor:pointer;background:#fff}
+.pick:active{background:var(--bbg)}
+.pick b{font-size:14px}.pick small{display:block;color:var(--mid);font-size:12px;margin-top:2px}
+.sel{background:var(--bbg);border-color:var(--blue)}
+.money{font-family:var(--fm);font-weight:500}
+.sum{display:flex;justify-content:space-between;padding:4px 0;font-size:14px}
+.sum.big{font-size:17px;font-weight:700;border-top:1px dashed var(--border);margin-top:6px;padding-top:8px}
+.status{padding:12px;border-radius:10px;font-size:14px;font-weight:600;margin-top:10px;display:none}
+.status.on{display:block}.status.info{background:#e0f2f7;color:#0e7490}.status.ok{background:#d6f5e3;color:var(--green)}.status.err{background:#fde8e8;color:var(--red)}
+.sheetbg{position:fixed;inset:0;background:rgba(0,0,0,.5);display:none;z-index:200}
+.sheetbg.on{display:block}
+.sheet{position:fixed;left:0;right:0;bottom:0;background:#fff;border-radius:18px 18px 0 0;max-height:92vh;overflow:auto;padding:18px 16px calc(24px + var(--sb));z-index:201;display:none}
+.sheet.on{display:block}
+.sheet h3{font-size:17px;margin-bottom:12px}
+.bnav{position:fixed;bottom:0;left:0;right:0;background:var(--dark);display:flex;padding-bottom:var(--sb);z-index:100}
+.bn{flex:1;text-align:center;padding:9px 0 7px;color:rgba(255,255,255,.55);text-decoration:none;font-size:10px;font-weight:700}
+.bn.on{color:#fff}.bn .bi{display:block;font-size:20px}
+.toast{position:fixed;left:50%;bottom:calc(80px + var(--sb));transform:translateX(-50%);background:var(--dark);color:#fff;padding:10px 16px;border-radius:10px;font-size:13px;opacity:0;pointer-events:none;transition:.2s;z-index:300;max-width:90%}
+.toast.show{opacity:1}
+.hrow{display:flex;justify-content:space-between;align-items:center;gap:10px;padding:9px 0;border-bottom:1px solid var(--border);font-size:13px}
+.hrow:last-child{border:none}
+
+/* ───── RECIBO (se imprime solo esto) ───── */
+#rcptHost{background:#ddd;padding:12px;border-radius:10px;overflow:auto;margin-bottom:10px}
+#rcpt{background:#fff;color:#000;margin:0 auto;padding:3mm;font-family:'Courier New',monospace;font-size:11px;line-height:1.3;width:58mm}
+#rcpt.w80{width:80mm;font-size:12px}
+#rcpt .c{text-align:center}
+#rcpt .logo{display:block;margin:0 auto 4px;width:30mm;filter:grayscale(1) contrast(1.6)}
+#rcpt .t{font-size:1.2em;font-weight:700}
+#rcpt hr{border:none;border-top:1px dashed #000;margin:5px 0}
+#rcpt .l{display:flex;justify-content:space-between;gap:6px}
+#rcpt .l span:first-child{flex:1 1 auto;min-width:40%}
+#rcpt .l span:last-child{flex:0 1 auto;max-width:60%;text-align:right;word-break:break-word}
+#rcpt .b{font-weight:700}
+#rcpt .big{font-size:1.1em}
+#rcpt .b span:last-child{white-space:nowrap;max-width:none;flex:none}
+@media print{
+  body *{visibility:hidden!important}
+  #rcpt,#rcpt *{visibility:visible!important}
+  #rcptHost{background:none;padding:0;margin:0;overflow:visible}
+  #rcpt{position:absolute;left:0;top:0;margin:0}
+  html,body{background:#fff}
+}
+</style>
+<style id="pageSize">@page{size:58mm auto;margin:0}</style>
+</head>
+<body>
+
+<div class="hhero">
+  <img id="hero-logo" src="" alt="CASVEL">
+  <div><div class="hbrand">Cobros y recibos</div><div class="hsub">Point Smart 2 · impresión térmica</div></div>
+  <button class="gear" onclick="openCfg()" aria-label="Ajustes">⚙️</button>
+</div>
+
+<div class="wrap">
+
+  <!-- 1. Contrato -->
+  <div class="card">
+    <span class="lbl">1 · Contrato o servicio</span>
+    <input id="q" placeholder="Buscar cliente, teléfono o fecha…" oninput="renderPicks()">
+    <div id="picks"></div>
+    <div class="seg" style="margin-top:10px"><button id="noContract" onclick="pickNone()">➕ Servicio sin contrato</button></div>
+    <div id="sinCliente" style="display:none;margin-top:10px">
+      <input id="clienteLibre" placeholder="Nombre del cliente (opcional)" oninput="updTotals()">
+    </div>
+  </div>
+
+  <!-- 2. Cobro -->
+  <div class="card" id="cardCobro" style="display:none">
+    <span class="lbl">2 · Cobro</span>
+    <div id="resumen"></div>
+    <div class="gap"></div>
+    <span class="lbl">Concepto</span>
+    <div class="seg" id="segConcepto">
+      <button data-v="saldo" class="on" onclick="setConcepto('saldo')">Liquidar saldo</button>
+      <button data-v="anticipo" onclick="setConcepto('anticipo')">Anticipo</button>
+      <button data-v="otro" onclick="setConcepto('otro')">Otro servicio</button>
+    </div>
+    <div id="otroWrap" style="display:none;margin-top:10px">
+      <input id="otroTxt" placeholder="Ej. Flete extra, daño a mobiliario, hora extra…">
+    </div>
+    <div class="gap"></div>
+    <span class="lbl">Monto (MXN)</span>
+    <input id="monto" type="number" inputmode="decimal" min="0" step="0.01" placeholder="0.00" oninput="updTotals()">
+    <div class="gap"></div>
+    <span class="lbl">Forma de pago</span>
+    <div class="seg" id="segMetodo">
+      <button data-v="terminal" class="on" onclick="setMetodo('terminal')">💳 Terminal MP</button>
+      <button data-v="efectivo" onclick="setMetodo('efectivo')">💵 Efectivo</button>
+      <button data-v="transfer" onclick="setMetodo('transfer')">🏦 Transfer.</button>
+    </div>
+    <div id="termOpts" style="margin-top:10px">
+      <div class="row">
+        <div><span class="lbl">Tarjeta</span>
+          <select id="cardType"><option value="debit_card">Débito</option><option value="credit_card">Crédito</option></select></div>
+        <div><span class="lbl">Referencia MP (opcional)</span>
+          <input id="mpRef" placeholder="ID de pago / aprob."></div>
+      </div>
+      <div class="hint" id="termHint"></div>
+    </div>
+    <div class="gap"></div>
+    <span class="lbl">Nota en el recibo (opcional)</span>
+    <input id="nota" placeholder="Ej. Recibió: Juan">
+
+    <div id="sumNuevo" style="margin-top:12px"></div>
+
+    <button class="btn mp" id="btnPoint" onclick="cobrarPoint()">💳 Enviar cobro a la terminal Point</button>
+    <button class="btn green" id="btnManual" onclick="registrarManual()">✅ Ya cobré · registrar y generar recibo</button>
+    <div class="status" id="status"></div>
+    <button class="btn red" id="btnCancel" style="display:none" onclick="cancelarIntento()">Cancelar cobro en terminal</button>
+  </div>
+
+  <!-- 3. Recibo -->
+  <div class="card" id="cardRecibo" style="display:none">
+    <span class="lbl">3 · Recibo</span>
+    <div id="rcptHost"><div id="rcpt"></div></div>
+    <button class="btn" onclick="imprimir()">🖨️ Imprimir recibo</button>
+    <button class="btn gray" onclick="compartirImg()">📤 Compartir / guardar como imagen</button>
+    <div class="hint">Para papel térmico usa una impresora Bluetooth/USB (58 u 80 mm) instalada en el dispositivo. Si no hay impresora, comparte la imagen por WhatsApp.</div>
+  </div>
+
+  <!-- Historial -->
+  <div class="card">
+    <span class="lbl">Últimos cobros (reimprimir)</span>
+    <div id="hist"></div>
+  </div>
+</div>
+
+<nav class="bnav">
+  <a class="bn" href="mobile.html"><span class="bi">📋</span>Contratos</a>
+  <a class="bn" href="entregas.html"><span class="bi">🚚</span>Entregas</a>
+  <a class="bn on" href="cobros.html"><span class="bi">💳</span>Cobros</a>
+  <a class="bn" href="reporte-mobile.html"><span class="bi">💰</span>Reportes</a>
+</nav>
+
+<!-- Ajustes -->
+<div class="sheetbg" id="cfgBg" onclick="closeCfg()"></div>
+<div class="sheet" id="cfgSheet">
+  <h3>⚙️ Ajustes de cobros y recibo</h3>
+  <span class="lbl">Datos del recibo</span>
+  <input id="c_nombre" placeholder="Nombre del negocio"><div class="gap"></div>
+  <input id="c_tel" placeholder="Teléfono / WhatsApp"><div class="gap"></div>
+  <input id="c_dir" placeholder="Dirección o ciudad (opcional)"><div class="gap"></div>
+  <input id="c_rfc" placeholder="RFC (opcional)"><div class="gap"></div>
+  <textarea id="c_pie" rows="2" placeholder="Mensaje al pie"></textarea><div class="gap"></div>
+  <span class="lbl">Ancho de papel</span>
+  <select id="c_papel"><option value="58">58 mm</option><option value="80">80 mm</option></select>
+  <div class="gap"></div>
+  <label style="display:flex;gap:8px;align-items:center;font-size:14px"><input type="checkbox" id="c_logo" style="width:auto"> Imprimir logo</label>
+
+  <div style="height:16px"></div>
+  <span class="lbl">Mercado Pago Point (opcional · envío automático del cobro)</span>
+  <input id="c_proxy" placeholder="URL del proxy (Cloudflare Worker)"><div class="gap"></div>
+  <input id="c_pass" type="password" placeholder="Clave del proxy"><div class="gap"></div>
+  <div class="row"><input id="c_dev" placeholder="ID de la terminal"><button class="btn gray" style="margin:0;flex:0 0 auto;width:auto;padding:0 14px" onclick="listarDevices()">Buscar</button></div>
+  <div id="devList"></div>
+  <div class="hint">Sin proxy la app funciona en modo manual: cobras en la terminal y aquí registras el pago e imprimes el recibo. El token de Mercado Pago <b>nunca</b> se guarda aquí, vive en el proxy (ver <code>mp-worker.js</code> y README).</div>
+  <button class="btn" onclick="saveCfg()">Guardar</button>
+  <button class="btn gray" onclick="activarPDV()">Poner terminal en modo integrado (PDV)</button>
+</div>
+
+<div class="toast" id="toast"></div>
+
+<script src="shared.js"></script>
+<script>
+"use strict";
+var CFG_KEY='casvel_cobros_cfg', LIBRES_KEY='casvel_cobros_libres';
+var DEF_CFG={nombre:'EVENTOS CASVEL',tel:'',dir:'',rfc:'',pie:'¡Gracias por su preferencia!',papel:'58',logo:true,proxy:'',pass:'',dev:''};
+var selId=null, libre=false, concepto='saldo', metodo='terminal', curIntent=null, pollT=null, lastRecibo=null;
+
+function el(i){return document.getElementById(i);}
+function mxn(n){return '$'+(+n||0).toLocaleString('es-MX',{minimumFractionDigits:2,maximumFractionDigits:2});}
+function toast(m){var t=el('toast');t.textContent=m;t.classList.add('show');clearTimeout(t._t);t._t=setTimeout(function(){t.classList.remove('show');},3200);}
+function cfg(){try{return Object.assign({},DEF_CFG,JSON.parse(localStorage.getItem(CFG_KEY)||'{}'));}catch(e){return Object.assign({},DEF_CFG);}}
+function libres(){try{return JSON.parse(localStorage.getItem(LIBRES_KEY)||'[]');}catch(e){return[];}}
+function setStatus(cls,msg){var s=el('status');s.className='status on '+cls;s.textContent=msg;}
+function pagosDe(c){return (c&&c.pagos)||[];}
+function sumPagos(c){return pagosDe(c).reduce(function(a,p){return a+(p.tipo==='otro'?0:(+p.monto||0));},0);}
+function saldoDe(c){return Math.max(0,(+c.resta||0)-sumPagos(c));}
+function curContract(){return selId?getById(selId):null;}
+
+/* ── Selector de contrato ── */
+function renderPicks(){
+  var q=(el('q').value||'').toLowerCase().trim();
+  var list=loadContracts().filter(function(c){return resolveStatus(c)!=='cancelado';});
+  var hoy=todayISO();
+  if(q) list=list.filter(function(c){return ((c.nombre||'')+' '+(c.tel||'')+' '+(c.fEvento||'')+' '+fmtDate(c.fEvento||'')).toLowerCase().indexOf(q)>=0;});
+  else list=list.filter(function(c){return (c.fEvento||'')>=hoy||saldoDe(c)>0&&resolveStatus(c)==='abierto';});
+  list.sort(function(a,b){return Math.abs(new Date((a.fEvento||hoy)+'T00:00')-new Date(hoy+'T00:00'))-Math.abs(new Date((b.fEvento||hoy)+'T00:00')-new Date(hoy+'T00:00'));});
+  list=list.slice(0,12);
+  el('picks').innerHTML=list.length?list.map(function(c){
+    return '<div class="pick'+(c.id===selId?' sel':'')+'" onclick="pickContract(\''+c.id+'\')"><b>'+xe(c.nombre||'(sin nombre)')+'</b>'+
+      '<small>'+xe(fmtDate(c.fEvento||''))+' · Saldo '+mxn(saldoDe(c))+(c.tel?' · '+xe(c.tel):'')+'</small></div>';
+  }).join(''):'<div class="hint">No hay contratos que coincidan. Si no aparecen, abre «Contratos» para sincronizar con Firebase.</div>';
+}
+function pickContract(id){selId=id;libre=false;el('sinCliente').style.display='none';el('noContract').classList.remove('on');
+  var c=curContract(); setConcepto(saldoDe(c)>0?'saldo':'otro'); el('cardCobro').style.display='block'; renderPicks(); resumen(); fillMonto(); updTotals(); el('cardCobro').scrollIntoView({behavior:'smooth'});}
+function pickNone(){selId=null;libre=true;el('sinCliente').style.display='block';el('noContract').classList.add('on');
+  setConcepto('otro');el('cardCobro').style.display='block';renderPicks();resumen();fillMonto();updTotals();}
+function resumen(){
+  var c=curContract(),h='';
+  if(c){var pag=sumPagos(c);
+    h='<div class="sum"><span>Total contrato</span><span class="money">'+mxn(c.total)+'</span></div>'+
+      '<div class="sum"><span>Anticipo en contrato</span><span class="money">'+mxn(c.anticipo)+'</span></div>'+
+      (pag?'<div class="sum"><span>Pagos posteriores</span><span class="money">'+mxn(pag)+'</span></div>':'')+
+      '<div class="sum big"><span>Saldo pendiente</span><span class="money">'+mxn(saldoDe(c))+'</span></div>';
+  } else h='<div class="hint">Cobro independiente (no afecta ningún contrato).</div>';
+  el('resumen').innerHTML=h;
+}
+function fillMonto(){var c=curContract();el('monto').value=(concepto==='saldo'&&c)?saldoDe(c).toFixed(2):'';}
+function setConcepto(v){concepto=v;[].forEach.call(el('segConcepto').children,function(b){b.classList.toggle('on',b.dataset.v===v);});
+  el('otroWrap').style.display=v==='otro'?'block':'none';fillMonto();updTotals();}
+function setMetodo(v){metodo=v;[].forEach.call(el('segMetodo').children,function(b){b.classList.toggle('on',b.dataset.v===v);});
+  el('termOpts').style.display=v==='terminal'?'block':'none';updTotals();}
+function api(){var c=cfg();return !!(c.proxy&&c.dev);}
+function updTotals(){
+  var m=+el('monto').value||0,c=curContract(),h='';
+  if(c&&concepto!=='otro'){h='<div class="sum big"><span>Saldo después de este pago</span><span class="money">'+mxn(Math.max(0,saldoDe(c)-m))+'</span></div>';
+    if(m>saldoDe(c)+0.001)h+='<div class="hint" style="color:var(--red)">⚠️ El monto es mayor al saldo pendiente.</div>';}
+  el('sumNuevo').innerHTML=h;
+  var pt=metodo==='terminal'&&api();
+  el('btnPoint').style.display=pt?'block':'none';
+  el('btnManual').textContent=pt?'✅ Ya cobré por otro medio · solo registrar':(metodo==='terminal'?'✅ Ya cobré en la terminal · registrar y generar recibo':'✅ Registrar pago y generar recibo');
+  el('termHint').textContent=api()?'El cobro se enviará directo a tu Point Smart 2.':'Modo manual: captura el monto en la terminal, cobra y luego registra aquí. (Configura el proxy en ⚙️ para enviarlo automático.)';
+}
+
+/* ── Cobro Point vía proxy ── */
+function pcall(method,path,body){
+  var c=cfg();
+  return fetch(c.proxy.replace(/\/$/,'')+path,{method:method,headers:{'Content-Type':'application/json','X-Casvel-Key':c.pass},body:body?JSON.stringify(body):undefined})
+    .then(function(r){return r.text().then(function(t){var j;try{j=JSON.parse(t);}catch(e){j={raw:t};}if(!r.ok)throw new Error((j.message||j.error||j.raw||r.status)+'');return j;});});
+}
+function validar(){
+  var m=+el('monto').value||0;
+  if(m<=0){toast('Captura un monto');return null;}
+  if(!curContract()&&!libre){toast('Elige un contrato o «Servicio sin contrato»');return null;}
+  if(concepto==='otro'&&!el('otroTxt').value.trim()){toast('Describe el servicio');return null;}
+  return m;
+}
+function cobrarPoint(){
+  var m=validar(); if(m===null)return;
+  var c=cfg(),ct=curContract();
+  el('btnPoint').disabled=true; setStatus('info','Enviando cobro a la terminal…');
+  var body={amount:Math.round(m*100),description:('Casvel '+(ct?ct.nombre:'servicio')).slice(0,80),
+    payment:{installments:1,type:el('cardType').value,installments_cost:'seller'},
+    additional_info:{external_reference:(ct?ct.id:'libre')+'_'+Date.now(),print_on_terminal:false}};
+  pcall('POST','/point/integration-api/devices/'+encodeURIComponent(c.dev)+'/payment-intents',body).then(function(r){
+    curIntent=r.id; el('btnCancel').style.display='block'; setStatus('info','Cobro enviado. Pide al cliente pasar/insertar la tarjeta en la terminal…'); poll();
+  }).catch(function(e){el('btnPoint').disabled=false;setStatus('err','No se pudo enviar: '+e.message);});
+}
+function poll(){
+  clearTimeout(pollT);
+  if(!curIntent)return;
+  pcall('GET','/point/integration-api/payment-intents/'+curIntent).then(function(r){
+    var s=(r.state||'').toUpperCase();
+    if(s==='FINISHED'||s==='PROCESSED'){
+      var pid=(r.payment&&r.payment.id)||'';
+      curIntent=null;el('btnCancel').style.display='none';el('btnPoint').disabled=false;
+      setStatus('ok','✅ Pago aprobado'+(pid?' · ID '+pid:''));
+      guardarPago(pid||el('mpRef').value.trim());
+    } else if(s==='CANCELED'||s==='ERROR'||s==='ABANDONED'){
+      curIntent=null;el('btnCancel').style.display='none';el('btnPoint').disabled=false;
+      setStatus('err','El cobro terminó con estado '+s+'. No se registró ningún pago.');
+    } else { setStatus('info','Esperando al cliente… ('+(s||'ABIERTO')+')'); pollT=setTimeout(poll,3000); }
+  }).catch(function(e){setStatus('err','Error consultando: '+e.message+' · reintentando'); pollT=setTimeout(poll,5000);});
+}
+function cancelarIntento(){
+  if(!curIntent)return; var c=cfg(),id=curIntent;
+  pcall('DELETE','/point/integration-api/devices/'+encodeURIComponent(c.dev)+'/payment-intents/'+id).then(function(){
+    curIntent=null;clearTimeout(pollT);el('btnCancel').style.display='none';el('btnPoint').disabled=false;setStatus('info','Cobro cancelado en la terminal.');
+  }).catch(function(e){setStatus('err','No se pudo cancelar: '+e.message);});
+}
+function registrarManual(){ if(validar()===null)return; guardarPago(el('mpRef').value.trim()); }
+
+/* ── Guardar pago + recibo ── */
+function folio(){var d=new Date(),p=pad2;return 'R'+(d.getFullYear()+'').slice(2)+p(d.getMonth()+1)+p(d.getDate())+'-'+p(d.getHours())+p(d.getMinutes())+p(d.getSeconds());}
+function guardarPago(ref){
+  var m=+el('monto').value||0,ct=curContract(),now=new Date();
+  var concTxt=concepto==='saldo'?'Liquidación de saldo':concepto==='anticipo'?'Anticipo':el('otroTxt').value.trim();
+  var p={id:'p_'+Date.now(),folio:folio(),fecha:now.toISOString(),monto:m,metodo:metodo,
+    tarjeta:metodo==='terminal'?el('cardType').value:'',ref:ref||'',concepto:concTxt,tipo:concepto,nota:el('nota').value.trim()};
+  if(ct){
+    var saldoAntes=saldoDe(ct);
+    p.saldoDespues=concepto==='otro'?saldoAntes:Math.max(0,saldoAntes-m);
+    p.cliente=ct.nombre;p.contratoId=ct.id;
+    saveContract(Object.assign({},ct,{updatedAt:now.toISOString(),pagos:pagosDe(ct).concat([p])}));
+  } else {
+    p.cliente=el('clienteLibre').value.trim();p.contratoId='';
+    var l=libres();l.unshift(p);localStorage.setItem(LIBRES_KEY,JSON.stringify(l.slice(0,300)));
+  }
+  mostrarRecibo(p,ct); resumen(); fillMonto(); updTotals(); renderPicks(); renderHist();
+  toast('Pago registrado · '+p.folio);
+}
+
+/* ── Render recibo ── */
+function mLine(a,b,cls){return '<div class="l'+(cls?' '+cls:'')+'"><span>'+a+'</span><span>'+b+'</span></div>';}
+function mostrarRecibo(p,ct){
+  var c=cfg(),h='';
+  if(c.logo&&typeof LOGO_B64!=='undefined'&&LOGO_B64)h+='<img class="logo" src="data:image/jpeg;base64,'+LOGO_B64+'" alt="">';
+  h+='<div class="c t">'+xe(c.nombre)+'</div>';
+  if(c.dir)h+='<div class="c">'+xe(c.dir)+'</div>';
+  if(c.tel)h+='<div class="c">Tel. '+xe(c.tel)+'</div>';
+  if(c.rfc)h+='<div class="c">RFC '+xe(c.rfc)+'</div>';
+  h+='<hr><div class="c b">RECIBO DE PAGO</div>';
+  var d=new Date(p.fecha);
+  h+=mLine('Folio',xe(p.folio))+mLine('Fecha',pad2(d.getDate())+'/'+pad2(d.getMonth()+1)+'/'+d.getFullYear()+' '+pad2(d.getHours())+':'+pad2(d.getMinutes()));
+  if(p.cliente)h+='<hr>'+mLine('Cliente',xe(p.cliente));
+  if(ct){
+    h+=mLine('Evento',xe(fmtDate(ct.fEvento||'')));
+    if(ct.dir)h+='<div>'+xe(ct.dir)+'</div>';
+    h+='<hr><div class="b">Servicios contratados</div>';
+    (ct.items||[]).forEach(function(r,i){if(r&&r.qty>0)h+=mLine(r.qty+' x '+xe(getItemByIndex(i).abbrev||getItemByIndex(i).desc),mxn(r.amt!=null?r.amt:r.qty*r.price));});
+    (ct.extraItems||[]).forEach(function(x){if(x&&(x.qty>0||x.desc))h+=mLine((x.qty||1)+' x '+xe(x.desc||'Extra'),mxn((+x.qty||1)*(+x.price||0)));});
+    if(+ct.traslado>0)h+=mLine('Traslado',mxn(ct.traslado));
+    h+='<hr>'+mLine('Total contrato',mxn(ct.total),'b');
+    if(+ct.anticipo>0)h+=mLine('Anticipo contrato','-'+mxn(ct.anticipo));
+    var previos=pagosDe(ct).filter(function(x){return x.id!==p.id&&x.fecha<=p.fecha;});
+    previos.forEach(function(x){if(x.tipo!=='otro')h+=mLine('Pago '+pad2(new Date(x.fecha).getDate())+'/'+pad2(new Date(x.fecha).getMonth()+1),'-'+mxn(x.monto));});
+  }
+  h+='<hr>'+mLine(xe(p.concepto||'Pago'),mxn(p.monto),'b big');
+  var mt=p.metodo==='terminal'?(p.tarjeta==='credit_card'?'Tarjeta crédito':'Tarjeta débito')+' (Mercado Pago)':p.metodo==='efectivo'?'Efectivo':'Transferencia';
+  h+=mLine('Forma de pago',xe(mt));
+  if(p.ref)h+=mLine('Ref. MP',xe(p.ref));
+  if(ct&&p.tipo!=='otro')h+='<hr>'+mLine('SALDO PENDIENTE',mxn(p.saldoDespues!=null?p.saldoDespues:saldoDe(ct)),'b big');
+  if(p.nota)h+='<hr><div>'+xe(p.nota)+'</div>';
+  h+='<hr><div class="c">'+xe(c.pie).replace(/\n/g,'<br>')+'</div><div class="c" style="margin-top:6px">.</div>';
+  var r=el('rcpt');r.innerHTML=h;r.className=c.papel==='80'?'w80':'';
+  el('pageSize').textContent='@page{size:'+(c.papel==='80'?'80':'58')+'mm auto;margin:0}';
+  el('cardRecibo').style.display='block';lastRecibo=p;
+  setTimeout(function(){el('cardRecibo').scrollIntoView({behavior:'smooth'});},50);
+}
+function imprimir(){window.print();}
+function compartirImg(){
+  html2canvas(el('rcpt'),{scale:3,backgroundColor:'#fff'}).then(function(cv){
+    cv.toBlob(function(b){
+      var f=new File([b],'recibo-'+(lastRecibo?lastRecibo.folio:'casvel')+'.png',{type:'image/png'});
+      if(navigator.canShare&&navigator.canShare({files:[f]}))navigator.share({files:[f],title:'Recibo CASVEL'}).catch(function(){});
+      else dlBlob(b,f.name);
+    });
+  });
+}
+
+/* ── Historial ── */
+function allPagos(){
+  var out=libres().slice();
+  loadContracts().forEach(function(c){pagosDe(c).forEach(function(p){out.push(Object.assign({cliente:c.nombre,contratoId:c.id},p));});});
+  return out.sort(function(a,b){return a.fecha<b.fecha?1:-1;}).slice(0,15);
+}
+function renderHist(){
+  var l=allPagos();
+  el('hist').innerHTML=l.length?l.map(function(p){var d=new Date(p.fecha);
+    return '<div class="hrow"><div><b>'+xe(p.cliente||'Sin cliente')+'</b><br><small style="color:var(--mid)">'+pad2(d.getDate())+'/'+pad2(d.getMonth()+1)+' · '+xe(p.concepto||'')+' · '+xe(p.folio)+'</small></div>'+
+      '<div style="text-align:right"><span class="money">'+mxn(p.monto)+'</span><br><a href="#" style="font-size:12px;color:var(--blue)" onclick="reimp(\''+p.id+'\');return false">Ver / imprimir</a></div></div>';
+  }).join(''):'<div class="hint">Aún no hay cobros registrados.</div>';
+}
+function reimp(id){var p=allPagos().filter(function(x){return x.id===id;})[0];if(!p)return;mostrarRecibo(p,p.contratoId?getById(p.contratoId):null);}
+
+/* ── Ajustes ── */
+function openCfg(){var c=cfg();
+  el('c_nombre').value=c.nombre;el('c_tel').value=c.tel;el('c_dir').value=c.dir;el('c_rfc').value=c.rfc;el('c_pie').value=c.pie;
+  el('c_papel').value=c.papel;el('c_logo').checked=!!c.logo;el('c_proxy').value=c.proxy;el('c_pass').value=c.pass;el('c_dev').value=c.dev;
+  el('cfgBg').classList.add('on');el('cfgSheet').classList.add('on');}
+function closeCfg(){el('cfgBg').classList.remove('on');el('cfgSheet').classList.remove('on');}
+function saveCfg(){
+  var o={nombre:el('c_nombre').value.trim()||DEF_CFG.nombre,tel:el('c_tel').value.trim(),dir:el('c_dir').value.trim(),rfc:el('c_rfc').value.trim(),
+    pie:el('c_pie').value,papel:el('c_papel').value,logo:el('c_logo').checked,proxy:el('c_proxy').value.trim(),pass:el('c_pass').value,dev:el('c_dev').value.trim()};
+  localStorage.setItem(CFG_KEY,JSON.stringify(o));closeCfg();updTotals();toast('Ajustes guardados');
+  el('pageSize').textContent='@page{size:'+o.papel+'mm auto;margin:0}';
+}
+function listarDevices(){
+  var c={proxy:el('c_proxy').value.trim(),pass:el('c_pass').value};
+  if(!c.proxy){toast('Captura primero la URL del proxy');return;}
+  fetch(c.proxy.replace(/\/$/,'')+'/point/integration-api/devices',{headers:{'X-Casvel-Key':c.pass}})
+   .then(function(r){return r.json();}).then(function(j){
+    var d=j.devices||[];
+    el('devList').innerHTML=d.length?d.map(function(x){return '<div class="pick" onclick="el(\'c_dev\').value=\''+xe(x.id)+'\'"><b>'+xe(x.id)+'</b><small>Modo: '+xe(x.operating_mode||'?')+'</small></div>';}).join(''):'<div class="hint">No se encontraron terminales.</div>';
+  }).catch(function(e){toast('Error: '+e.message);});
+}
+function activarPDV(){
+  var dev=el('c_dev').value.trim(),proxy=el('c_proxy').value.trim(),pass=el('c_pass').value;
+  if(!dev||!proxy){toast('Falta proxy o ID de terminal');return;}
+  fetch(proxy.replace(/\/$/,'')+'/point/integration-api/devices/'+encodeURIComponent(dev),{method:'PATCH',headers:{'Content-Type':'application/json','X-Casvel-Key':pass},body:JSON.stringify({operating_mode:'PDV'})})
+   .then(function(r){if(!r.ok)throw new Error(r.status);toast('Terminal en modo PDV. Reiníciala para aplicar.');}).catch(function(e){toast('Error: '+e.message);});
+}
+
+/* ── Init ── */
+document.addEventListener('DOMContentLoaded',function(){
+  el('hero-logo').src='data:image/jpeg;base64,'+LOGO_B64;
+  el('pageSize').textContent='@page{size:'+cfg().papel+'mm auto;margin:0}';
+  var fc=fbGetConfig();
+  onContractsChange(function(){renderPicks();renderHist();if(selId)resumen();});
+  if(fc)fbInit(fc,function(err){if(err)toast('⚠️ Firebase: '+err.message);});
+  renderPicks();renderHist();updTotals();
+});
+</script>
+</body>
+</html>
